@@ -177,8 +177,9 @@ export default function SettingsPage() {
 
   // Generate API Key for Shortcuts
   const handleGenerateApiKey = async () => {
-    await createApiKey('iPhone Back Tap');
-    showToast('New API Key generated ✓', 'success');
+    const keyName = prompt('Enter a name for this device / API key:', `Phone ${apiKeys.length + 1}`) || `Device Key ${Date.now().toString().slice(-4)}`;
+    await createApiKey(keyName);
+    showToast(`New API Key "${keyName}" generated ✓`, 'success');
     loadAll();
   };
 
