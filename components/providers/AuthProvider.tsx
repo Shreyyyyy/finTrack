@@ -6,6 +6,7 @@ import { Profile } from '@/types';
 import { isSupabaseConfigured, createClient } from '@/lib/supabase/client';
 import { showToast } from '@/components/ui/Toast';
 import { saveProfile as storeSaveProfile, getProfiles } from '@/lib/data/store';
+import { SignOutConfirmModal } from '@/components/auth/SignOutConfirmModal';
 
 interface AuthContextType {
   user: User | null;
@@ -15,8 +16,8 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (email: string, password?: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
-  signOut: () => Promise<void>;
-  setGuestProfile: (name: string, email: string) => void;
+  signOut: () => void;
+  confirmSignOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   switchActiveProfile: (profileId: string) => Promise<void>;
 }
@@ -29,6 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const isConfigured = isSupabaseConfigured();
 
   const loadProfile = useCallback(async (currentUser: User) => {
@@ -247,34 +250,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async () => {
-    if (isConfigured) {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } else {
+  // Trigger double-check confirmation modal
+  const signOut = () => {
+    setShowSignOutModal(true);
+  };
+
+  // Perform the actual sign out and redirect to /login
+  const confirmSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      if (isConfigured) {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+      }
       if (typeof window !== 'undefined') {
         localStorage.removeItem(GUEST_PROFILE_KEY);
       }
+      setUser(null);
+      setProfile(null);
+      setShowSignOutModal(false);
+      showToast('Signed out successfully ✓', 'info');
+      // Always redirect cleanly to /login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    } catch (err) {
+      console.error('Failed to sign out:', err);
+      showToast('Failed to sign out', 'error');
+    } finally {
+      setIsSigningOut(false);
     }
-    setUser(null);
-    setProfile(null);
-    showToast('Signed out ✓', 'info');
-  };
-
-  const setGuestProfile = (name: string, email: string) => {
-    const updated: Profile = {
-      id: profile?.id || 'usr-1',
-      display_name: name,
-      email: email,
-      currency: profile?.currency || 'INR',
-      default_payment_method: profile?.default_payment_method || 'UPI',
-      avatar_url: profile?.avatar_url,
-    };
-    setProfile(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(updated));
-    }
-    showToast('Profile updated ✓', 'success');
   };
 
   return (
@@ -288,12 +293,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithEmail,
         signUpWithEmail,
         signOut,
-        setGuestProfile,
+        confirmSignOut,
         updateProfile,
         switchActiveProfile,
       }}
     >
       {children}
+      <SignOutConfirmModal
+        isOpen={showSignOutModal}
+        onClose={() => setShowSignOutModal(false)}
+        onConfirm={confirmSignOut}
+        userName={profile?.display_name || user?.email || undefined}
+        isSigningOut={isSigningOut}
+      />
     </AuthContext.Provider>
   );
 }
