@@ -178,7 +178,8 @@ export default function SettingsPage() {
   // Generate API Key for Shortcuts
   const handleGenerateApiKey = async () => {
     const keyName = prompt('Enter a name for this device / API key:', `Phone ${apiKeys.length + 1}`) || `Device Key ${Date.now().toString().slice(-4)}`;
-    await createApiKey(keyName);
+    const currentUid = user?.id || profile?.id;
+    await createApiKey(keyName, currentUid);
     showToast(`New API Key "${keyName}" generated ✓`, 'success');
     loadAll();
   };

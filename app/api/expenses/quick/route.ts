@@ -118,23 +118,66 @@ export async function POST(request: NextRequest) {
     // 3. Insert Expense
     if (isSupabaseConfigured()) {
       const supabase = await createClientServer();
+
+      // Ensure valid UUID for category_id or lookup user's category in DB
+      let finalCategoryId: string | null = null;
+      const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+
+      if (isUUID(categoryId)) {
+        finalCategoryId = categoryId;
+      } else {
+        // Try looking up category by name in database for this user
+        const targetName = matchedCategory ? matchedCategory.name : categoryInput;
+        const { data: dbCat } = await supabase
+          .from('categories')
+          .select('id')
+          .or(`user_id.eq.${userId},is_default.eq.true`)
+          .ilike('name', `%${targetName}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (dbCat?.id && isUUID(dbCat.id)) {
+          finalCategoryId = dbCat.id;
+        }
+      }
+
+      // Ensure valid UUID for payment_method_id or lookup in DB
+      let finalPaymentMethodId: string | null = null;
+      if (isUUID(paymentMethodId)) {
+        finalPaymentMethodId = paymentMethodId;
+      } else {
+        const targetPm = matchedPM ? matchedPM.name : paymentInput;
+        const { data: dbPm } = await supabase
+          .from('payment_methods')
+          .select('id')
+          .or(`user_id.eq.${userId},is_default.eq.true`)
+          .ilike('name', `%${targetPm}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (dbPm?.id && isUUID(dbPm.id)) {
+          finalPaymentMethodId = dbPm.id;
+        }
+      }
+
       const { data, error } = await supabase
         .from('expenses')
         .insert({
           user_id: userId,
           amount,
-          category_id: categoryId,
-          payment_method_id: paymentMethodId,
+          category_id: finalCategoryId,
+          payment_method_id: finalPaymentMethodId,
           merchant,
-          note,
+          note: note || (matchedCategory ? matchedCategory.name : categoryInput),
           expense_date: expenseDate,
         })
         .select()
         .single();
 
       if (error) {
+        console.error('Supabase expense insert error:', error);
         return NextResponse.json(
-          { success: false, error: 'Failed to record expense in database.' },
+          { success: false, error: `Database error: ${error.message}` },
           { status: 500 }
         );
       }

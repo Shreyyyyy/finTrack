@@ -1044,15 +1044,59 @@ export async function addGoalTransaction(
 // API KEYS (Apple Shortcuts Back Tap)
 // -------------------------------------------------------------
 export async function getApiKeys(): Promise<ApiKey[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) {
+        return data as ApiKey[];
+      }
+    } catch (err) {
+      console.warn('Supabase getApiKeys error:', err);
+    }
+  }
   return getLocalItem<ApiKey[]>(STORAGE_KEYS.API_KEYS, DEFAULT_API_KEYS);
 }
 
-export async function createApiKey(name: string): Promise<ApiKey> {
+export async function createApiKey(name: string, explicitUserId?: string): Promise<ApiKey> {
   const randomSuffix = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+  const keyHash = `fintrack_sec_${randomSuffix}`;
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = explicitUserId || session?.user?.id;
+
+      if (userId) {
+        const { data, error } = await supabase
+          .from('api_keys')
+          .insert({
+            user_id: userId,
+            name: name || 'iPhone Shortcut',
+            key_hash: keyHash,
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          const keys = getLocalItem<ApiKey[]>(STORAGE_KEYS.API_KEYS, DEFAULT_API_KEYS);
+          setLocalItem(STORAGE_KEYS.API_KEYS, [data, ...keys]);
+          return data as ApiKey;
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase createApiKey error:', err);
+    }
+  }
+
   const newKey: ApiKey = {
     id: 'key-' + Date.now(),
     name: name || 'iPhone Shortcut',
-    key_hash: `fintrack_sec_${randomSuffix}`,
+    key_hash: keyHash,
     created_at: new Date().toISOString(),
   };
   const keys = getLocalItem<ApiKey[]>(STORAGE_KEYS.API_KEYS, DEFAULT_API_KEYS);
@@ -1062,6 +1106,14 @@ export async function createApiKey(name: string): Promise<ApiKey> {
 }
 
 export async function deleteApiKey(id: string): Promise<boolean> {
+  if (isSupabaseConfigured() && isValidUUID(id)) {
+    try {
+      const supabase = createClient();
+      await supabase.from('api_keys').delete().eq('id', id);
+    } catch (err) {
+      console.warn('Supabase deleteApiKey error:', err);
+    }
+  }
   const keys = getLocalItem<ApiKey[]>(STORAGE_KEYS.API_KEYS, DEFAULT_API_KEYS);
   setLocalItem(STORAGE_KEYS.API_KEYS, keys.filter((k) => k.id !== id));
   return true;
