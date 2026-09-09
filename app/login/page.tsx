@@ -130,7 +130,7 @@ export default function LoginPage() {
               <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[11px] text-amber-800 dark:text-amber-300 flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
                 <span>
-                  Supabase credentials are not yet set in <code>.env.local</code>. Running in local demo mode.
+                  Supabase credentials are not yet configured. Running in live demo mode with full features and persistence.
                 </span>
               </div>
             )}
