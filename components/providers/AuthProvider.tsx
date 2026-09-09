@@ -87,6 +87,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Handle any stray ?code= parameter from OAuth redirect
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      if (code && !window.location.pathname.startsWith('/auth/callback')) {
+        window.location.replace(`/auth/callback?code=${encodeURIComponent(code)}`);
+        return;
+      }
+    }
+
     const supabase = createClient();
 
     supabase.auth.getSession().then(({ data: { session } }) => {
