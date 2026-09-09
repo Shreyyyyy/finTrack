@@ -540,6 +540,28 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
     };
     result.splice(1, 0, ccItem);
     setLocalItem(STORAGE_KEYS.PAYMENT_METHODS, result);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        supabase.auth.getSession().then(({ data }) => {
+          const userId = data?.session?.user?.id;
+          if (userId) {
+            supabase
+              .from('payment_methods')
+              .insert({
+                user_id: userId,
+                name: 'Credit Card',
+                type: 'card',
+                is_default: false,
+              })
+              .then();
+          }
+        });
+      } catch (err) {
+        console.warn('Auto insert credit card to Supabase failed:', err);
+      }
+    }
   }
 
   return result;

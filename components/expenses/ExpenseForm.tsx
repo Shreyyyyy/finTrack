@@ -35,7 +35,18 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
     async function loadMetadata() {
       const [cats, pms] = await Promise.all([getCategories(), getPaymentMethods()]);
       setCategories(cats);
-      setPaymentMethods(pms);
+
+      // Guarantee Credit Card is present in payment methods list
+      const pmsList = [...pms];
+      if (!pmsList.some((p) => p.name.toLowerCase().includes('credit card'))) {
+        pmsList.splice(1, 0, {
+          id: 'pm-credit-card',
+          name: 'Credit Card',
+          type: 'card',
+          is_default: false,
+        });
+      }
+      setPaymentMethods(pmsList);
 
       // Default Category (First one if not set)
       if (!initialExpense && cats.length > 0 && !selectedCategoryId) {
@@ -43,8 +54,8 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
       }
 
       // Default Payment Method
-      if (!initialExpense && pms.length > 0 && !selectedPaymentId) {
-        const defaultPm = pms.find((p) => p.is_default) || pms[0];
+      if (!initialExpense && pmsList.length > 0 && !selectedPaymentId) {
+        const defaultPm = pmsList.find((p) => p.is_default) || pmsList[0];
         setSelectedPaymentId(defaultPm.id);
       }
     }
