@@ -49,6 +49,8 @@ export function BackTapSetupModal({ isOpen, onClose, userEmail }: BackTapSetupMo
       ? `${window.location.origin}/api/expenses/quick`
       : 'https://your-domain.vercel.app/api/expenses/quick';
 
+  const endpointUrlWithKey = apiKey ? `${endpointUrl}?api_key=${apiKey}` : endpointUrl;
+
   const copyText = (text: string, isKey = false) => {
     navigator.clipboard.writeText(text);
     if (isKey) {
@@ -120,23 +122,23 @@ export function BackTapSetupModal({ isOpen, onClose, userEmail }: BackTapSetupMo
                 Copy your unique Webhook URL
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                Your iPhone Shortcut will send amounts and categories to this secure endpoint in your central database.
+                Your iPhone Shortcut will send amounts and categories to this endpoint in your database.
               </p>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 space-y-2">
               <div className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-300">
-                <span>Webhook URL (POST)</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">1-Click URL (Includes Key, No Headers Needed!)</span>
                 <button
-                  onClick={() => copyText(endpointUrl, false)}
+                  onClick={() => copyText(endpointUrlWithKey, false)}
                   className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 hover:underline"
                 >
                   {copiedUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedUrl ? 'Copied' : 'Copy URL'}</span>
+                  <span>{copiedUrl ? 'Copied' : 'Copy 1-Click URL'}</span>
                 </button>
               </div>
               <div className="font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 break-all select-all">
-                {endpointUrl}
+                {endpointUrlWithKey}
               </div>
             </div>
 
@@ -161,7 +163,7 @@ export function BackTapSetupModal({ isOpen, onClose, userEmail }: BackTapSetupMo
                 Copy your personal API Key
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                This key identifies you in the central database. When you record an expense, it is automatically organized under your name.
+                (Optional if you copied the 1-Click URL in Step 1, or used if adding an <code>x-api-key</code> header).
               </p>
             </div>
 
@@ -207,7 +209,7 @@ export function BackTapSetupModal({ isOpen, onClose, userEmail }: BackTapSetupMo
                 Step 3: Create Shortcut on iPhone
               </span>
               <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
-                Add 3 actions in the Apple Shortcuts app
+                Add actions in the Apple Shortcuts app
               </h4>
               <p className="text-xs text-slate-500 mt-1">
                 Open the native <strong>Shortcuts</strong> app on your iPhone, tap <strong>+</strong>, and add:
@@ -241,11 +243,25 @@ export function BackTapSetupModal({ isOpen, onClose, userEmail }: BackTapSetupMo
                   <span>Get Contents of URL</span>
                 </div>
                 <div className="text-slate-500 pl-6 space-y-1">
-                  <p>• URL: Paste your <strong>Webhook URL</strong> from Step 1</p>
+                  <p>• URL: Paste your <strong>1-Click URL</strong> from Step 1 (or Webhook URL)</p>
                   <p>• Method: <strong>POST</strong></p>
-                  <p>• Header: <code>x-api-key</code> → Paste your <strong>API Key</strong> from Step 2</p>
-                  <p>• Body: JSON with <code>amount</code> (Provided Input) and <code>category</code> (Chosen Item)</p>
+                  <p>• Header (if using base URL): <code>x-api-key</code> → Paste <strong>API Key</strong></p>
+                  <p>• Request Body: <strong>JSON</strong></p>
+                  <p className="pl-3 text-slate-600 dark:text-slate-300">
+                    - <code>amount</code> (Number): <strong>Provided Input</strong><br/>
+                    - <code>category</code> (Text): <strong>Chosen Item</strong>
+                  </p>
                 </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
+                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 mb-1">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">4</span>
+                  <span>Show Notification (Live Server Confirmation)</span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 pl-6">
+                  Select <strong>Show Notification</strong> and tap its text box to set it to <strong>Contents of URL</strong>. Your iPhone will now display the exact server confirmation (e.g. <em>&quot;Expense added ✓: ₹100 for Food&quot;</em>)!
+                </p>
               </div>
             </div>
 

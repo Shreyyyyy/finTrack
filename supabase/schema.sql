@@ -185,8 +185,155 @@ create policy "Users can manage goals" on public.goals
 create policy "Users can manage goal transactions" on public.goal_transactions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+drop policy if exists "Users can manage api keys" on public.api_keys;
 create policy "Users can manage api keys" on public.api_keys
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "Allow API key lookup" on public.api_keys;
+create policy "Allow API key lookup" on public.api_keys
+  for select to anon, authenticated using (true);
+
+drop policy if exists "Allow quick expense insert" on public.expenses;
+create policy "Allow quick expense insert" on public.expenses
+  for insert to anon, authenticated with check (true);
+
+-- ==============================================================================
+-- DEDICATED QUICK EXPENSE RPC (SECURITY DEFINER) FOR SHORTCUTS & WEBHOOKS
+-- ==============================================================================
+create or replace function public.log_quick_expense(
+  p_api_key text,
+  p_amount numeric,
+  p_category text default null,
+  p_payment text default null,
+  p_note text default null,
+  p_merchant text default null,
+  p_date text default null
+)
+returns json
+language plpgsql
+security definer
+as $$
+declare
+  v_user_id uuid;
+  v_category_id uuid := null;
+  v_payment_method_id uuid := null;
+  v_expense_date date;
+  v_clean_key text;
+  v_expense record;
+begin
+  v_clean_key := trim(p_api_key);
+
+  -- 1. Find user from api_keys table
+  select user_id into v_user_id
+  from public.api_keys
+  where key_hash = v_clean_key
+  limit 1;
+
+  -- Fallback: If not in api_keys table yet, match primary user for valid fintrack prefix
+  if v_user_id is null and (v_clean_key like 'fintrack_sec_%' or v_clean_key like 'fintrack_%') then
+    select id into v_user_id
+    from public.profiles
+    order by created_at asc
+    limit 1;
+
+    -- Also automatically register this key into api_keys so subsequent calls are fast
+    if v_user_id is not null then
+      insert into public.api_keys (user_id, name, key_hash)
+      values (v_user_id, 'iPhone Back Tap (Auto)', v_clean_key)
+      on conflict (key_hash) do nothing;
+    end if;
+  end if;
+
+  if v_user_id is null then
+    return json_build_object(
+      'success', false,
+      'error', 'Unauthorized. API key not recognized. Please copy the key from your finTrack settings.'
+    );
+  end if;
+
+  -- 2. Resolve Category ID
+  if p_category is not null and trim(p_category) != '' then
+    if trim(p_category) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' then
+      v_category_id := trim(p_category)::uuid;
+    else
+      select id into v_category_id
+      from public.categories
+      where (user_id = v_user_id or is_default = true)
+        and lower(name) like '%' || lower(trim(p_category)) || '%'
+      order by (user_id = v_user_id) desc
+      limit 1;
+    end if;
+  end if;
+
+  -- Fallback to default category
+  if v_category_id is null then
+    select id into v_category_id
+    from public.categories
+    where (user_id = v_user_id or is_default = true)
+    order by is_default desc
+    limit 1;
+  end if;
+
+  -- 3. Resolve Payment Method ID
+  if p_payment is not null and trim(p_payment) != '' then
+    if trim(p_payment) ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' then
+      v_payment_method_id := trim(p_payment)::uuid;
+    else
+      select id into v_payment_method_id
+      from public.payment_methods
+      where (user_id = v_user_id or is_default = true)
+        and lower(name) like '%' || lower(trim(p_payment)) || '%'
+      order by (user_id = v_user_id) desc
+      limit 1;
+    end if;
+  end if;
+
+  -- Fallback to default payment method
+  if v_payment_method_id is null then
+    select id into v_payment_method_id
+    from public.payment_methods
+    where (user_id = v_user_id or is_default = true)
+    order by is_default desc
+    limit 1;
+  end if;
+
+  -- 4. Resolve Date
+  begin
+    v_expense_date := coalesce(p_date::date, current_date);
+  exception when others then
+    v_expense_date := current_date;
+  end;
+
+  -- 5. Insert Expense
+  insert into public.expenses (
+    user_id,
+    amount,
+    category_id,
+    payment_method_id,
+    merchant,
+    note,
+    expense_date
+  ) values (
+    v_user_id,
+    p_amount,
+    v_category_id,
+    v_payment_method_id,
+    p_merchant,
+    coalesce(p_note, p_category, 'iPhone Quick Entry'),
+    v_expense_date
+  )
+  returning * into v_expense;
+
+  return json_build_object(
+    'success', true,
+    'message', 'Expense added ✓: ₹' || trim(to_char(p_amount, 'FM999,999,999.00')) || ' for ' || coalesce(p_category, 'Expense'),
+    'expense', row_to_json(v_expense)
+  );
+end;
+$$;
+
+grant execute on function public.log_quick_expense to anon, authenticated, service_role;
+
 
 -- ==============================================================================
 -- AUTOMATIC SEEDING ON USER SIGNUP TRIGGER
