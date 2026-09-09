@@ -3,9 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 import { AuthProvider } from '@/components/providers/AuthProvider';
-import { DesktopSidebar } from '@/components/navigation/DesktopSidebar';
-import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
-import { MobileTopHeader } from '@/components/navigation/MobileTopHeader';
+import { NavigationShell } from '@/components/navigation/NavigationShell';
 
 export const metadata: Metadata = {
   title: 'finTrack — Personal Expense Tracker',
@@ -41,17 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <ToastProvider>
-              {/* Desktop Sidebar Layout */}
-              <DesktopSidebar />
-
-              {/* Main Application Area */}
-              <main className="flex-1 flex flex-col min-w-0 min-h-screen pb-20 md:pb-6 overflow-x-hidden">
-                <MobileTopHeader />
-                {children}
-              </main>
-
-              {/* Mobile Bottom Navigation */}
-              <MobileBottomNav />
+              <NavigationShell>{children}</NavigationShell>
             </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
