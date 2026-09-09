@@ -9,7 +9,6 @@ import {
   FileSpreadsheet,
   Smartphone,
   Calendar,
-  Sparkles,
 } from 'lucide-react';
 import { Expense, Category, PaymentMethod, MonthlySetting, Goal } from '@/types';
 import {
@@ -32,6 +31,10 @@ import { RecentExpenses } from '@/components/dashboard/RecentExpenses';
 import { SalaryBudgetModal } from '@/components/dashboard/SalaryBudgetModal';
 import { QuickGoalModal } from '@/components/dashboard/QuickGoalModal';
 import { BackTapSetupModal } from '@/components/shortcuts/BackTapSetupModal';
+import { HomePagePieChart } from '@/components/dashboard/HomePagePieChart';
+import { DashboardTabs, DashboardTabType } from '@/components/dashboard/DashboardTabs';
+import { DashboardTransactionsTable } from '@/components/dashboard/DashboardTransactionsTable';
+import { MobileMinimalOverview } from '@/components/dashboard/MobileMinimalOverview';
 import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
@@ -46,6 +49,8 @@ export default function DashboardPage() {
 
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [activeTab, setActiveTab] = useState<DashboardTabType>('overview');
+
   const [showBackTapModal, setShowBackTapModal] = useState<boolean>(false);
   const [showSalaryModal, setShowSalaryModal] = useState<boolean>(false);
   const [showGoalModal, setShowGoalModal] = useState<boolean>(false);
@@ -128,19 +133,27 @@ export default function DashboardPage() {
   const summary = calculateDashboardSummary(expenses, monthlySetting, categories);
   const daysRemaining = Math.max(1, summary.daysInMonth - summary.daysElapsed);
 
+  // Filter expenses belonging to selected month & year
+  const monthExpenses = expenses.filter((e) => {
+    if (!e.expense_date) return false;
+    const parts = e.expense_date.split('-');
+    return parseInt(parts[0], 10) === selectedYear && parseInt(parts[1], 10) === selectedMonth;
+  });
+
   // Compute Today's exact spend
   const todayStr = currentDate.toISOString().split('T')[0];
   const todaySpent = expenses
     .filter((e) => e.expense_date === todayStr)
     .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
+  // Daily safe allowance calculation
+  const safeDailyAllowance =
+    summary.remainingBudget > 0 ? summary.remainingBudget / daysRemaining : 0;
+
   const handleExportMonth = () => {
     try {
       exportToExcel({
-        expenses: expenses.filter((e) => {
-          const parts = e.expense_date.split('-');
-          return parseInt(parts[0], 10) === selectedYear && parseInt(parts[1], 10) === selectedMonth;
-        }),
+        expenses: monthExpenses,
         categories,
         paymentMethods,
         monthlySetting,
@@ -154,7 +167,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-3.5 sm:px-4 py-4 sm:py-6 md:py-8 space-y-6">
+    <div className="w-full max-w-[1700px] mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 space-y-6">
       {/* 0. iPhone Back Tap Quick Setup Banner */}
       <div className="p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30 flex items-center justify-between gap-3 shadow-sm">
         <div className="flex items-center gap-3">
@@ -214,7 +227,7 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            {/* Jump to Today Button (if not viewing current month) */}
+            {/* Jump to Today Button */}
             {!isCurrentMonthView && (
               <button
                 onClick={handleJumpToToday}
@@ -248,54 +261,168 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 2. Unified Cash Flow Spectrum Hero Card */}
-      <CashFlowHeroCard
-        income={summary.income}
-        monthlyBudget={summary.monthlyBudget}
-        totalSpent={summary.totalSpent}
-        savingsTarget={monthlySetting.savings_target}
-        daysRemaining={daysRemaining}
-        todaySpent={todaySpent}
-        onEditPlan={() => setShowSalaryModal(true)}
+      {/* 2. Top Navigation Tabs Controller */}
+      <DashboardTabs
+        activeTab={activeTab}
+        onChangeTab={setActiveTab}
+        transactionCount={monthExpenses.length}
       />
 
-      {/* 3. Three Core Financial Pillars */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Pillar 1: Budget Health & Pace */}
-        <BudgetHealthCard
-          totalSpent={summary.totalSpent}
-          monthlyBudget={summary.monthlyBudget}
-          daysElapsed={summary.daysElapsed}
-          daysInMonth={summary.daysInMonth}
-        />
+      {/* 3. TAB CONTENTS */}
 
-        {/* Pillar 2: Category Spending with Interactive Donut & Quick Log */}
-        <CategorySpendingCard
-          expenses={expenses}
-          categories={categories}
-          month={selectedMonth}
-          year={selectedYear}
-        />
+      {/* OVERVIEW TAB */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          {/* MOBILE MINIMAL VIEW (Phone screens) */}
+          <MobileMinimalOverview
+            expenses={expenses}
+            categories={categories}
+            monthlySetting={monthlySetting}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            totalSpent={summary.totalSpent}
+            remainingBudget={summary.remainingBudget}
+            safeDailyAllowance={safeDailyAllowance}
+            daysRemaining={daysRemaining}
+            onEditPlan={() => setShowSalaryModal(true)}
+          />
 
-        {/* Pillar 3: Savings Goals Vault */}
-        <GoalsPreviewCard
-          goals={goals}
-          onAddGoalClick={() => setShowGoalModal(true)}
-        />
-      </div>
+          {/* LAPTOP / DESKTOP FULL EXPANDED VIEW */}
+          <div className="hidden md:block space-y-6">
+            {/* Top Hero Layout: Financial Cash Flow Summary (Left) + Interactive Pie Chart (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              <div className="lg:col-span-7 flex flex-col justify-between">
+                <CashFlowHeroCard
+                  income={summary.income}
+                  monthlyBudget={summary.monthlyBudget}
+                  totalSpent={summary.totalSpent}
+                  savingsTarget={monthlySetting.savings_target}
+                  daysRemaining={daysRemaining}
+                  todaySpent={todaySpent}
+                  onEditPlan={() => setShowSalaryModal(true)}
+                />
+              </div>
 
-      {/* 4. Daily Spending Pulse */}
-      <DailySpendingChart
-        expenses={expenses}
-        month={selectedMonth}
-        year={selectedYear}
-      />
+              <div className="lg:col-span-5 flex flex-col justify-between">
+                <HomePagePieChart
+                  expenses={expenses}
+                  categories={categories}
+                  month={selectedMonth}
+                  year={selectedYear}
+                  income={summary.income}
+                />
+              </div>
+            </div>
 
-      {/* 5. Recent Transactions Feed */}
-      <RecentExpenses
-        expenses={expenses}
-        limit={10}
-      />
+            {/* Core Pillars Grid - Expanded Full Width */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <BudgetHealthCard
+                totalSpent={summary.totalSpent}
+                monthlyBudget={summary.monthlyBudget}
+                daysElapsed={summary.daysElapsed}
+                daysInMonth={summary.daysInMonth}
+              />
+
+              <CategorySpendingCard
+                expenses={expenses}
+                categories={categories}
+                month={selectedMonth}
+                year={selectedYear}
+              />
+
+              <GoalsPreviewCard
+                goals={goals}
+                onAddGoalClick={() => setShowGoalModal(true)}
+              />
+            </div>
+
+            {/* Daily Spending Pulse */}
+            <DailySpendingChart
+              expenses={expenses}
+              month={selectedMonth}
+              year={selectedYear}
+            />
+
+            {/* Recent Expenses Feed */}
+            <RecentExpenses expenses={expenses} limit={10} />
+          </div>
+        </div>
+      )}
+
+      {/* ANALYTICS MIX TAB */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-6">
+          <HomePagePieChart
+            expenses={expenses}
+            categories={categories}
+            month={selectedMonth}
+            year={selectedYear}
+            income={summary.income}
+          />
+
+          <DailySpendingChart
+            expenses={expenses}
+            month={selectedMonth}
+            year={selectedYear}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CategorySpendingCard
+              expenses={expenses}
+              categories={categories}
+              month={selectedMonth}
+              year={selectedYear}
+            />
+
+            <BudgetHealthCard
+              totalSpent={summary.totalSpent}
+              monthlyBudget={summary.monthlyBudget}
+              daysElapsed={summary.daysElapsed}
+              daysInMonth={summary.daysInMonth}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* TRANSACTIONS & TABLES TAB */}
+      {activeTab === 'transactions' && (
+        <div className="space-y-6">
+          <DashboardTransactionsTable
+            expenses={monthExpenses}
+            categories={categories}
+            paymentMethods={paymentMethods}
+          />
+        </div>
+      )}
+
+      {/* SALARY & BUDGET TAB */}
+      {activeTab === 'salary' && (
+        <div className="space-y-6">
+          <CashFlowHeroCard
+            income={summary.income}
+            monthlyBudget={summary.monthlyBudget}
+            totalSpent={summary.totalSpent}
+            savingsTarget={monthlySetting.savings_target}
+            daysRemaining={daysRemaining}
+            todaySpent={todaySpent}
+            onEditPlan={() => setShowSalaryModal(true)}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <BudgetHealthCard
+              totalSpent={summary.totalSpent}
+              monthlyBudget={summary.monthlyBudget}
+              daysElapsed={summary.daysElapsed}
+              daysInMonth={summary.daysInMonth}
+            />
+
+            <GoalsPreviewCard
+              goals={goals}
+              onAddGoalClick={() => setShowGoalModal(true)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <SalaryBudgetModal
