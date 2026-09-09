@@ -8,9 +8,9 @@ create extension if not exists "uuid-ossp";
 
 -- 2. Add default financial fields to profiles table
 alter table public.profiles
-add column if not exists monthly_income numeric not null default 80000,
-add column if not exists monthly_budget numeric not null default 50000,
-add column if not exists savings_target numeric not null default 30000,
+add column if not exists monthly_income numeric not null default 0,
+add column if not exists monthly_budget numeric not null default 0,
+add column if not exists savings_target numeric not null default 0,
 add column if not exists role text not null default 'member' check (role in ('admin', 'member'));
 
 -- 3. Ensure monthly_settings table exists with proper unique constraints and columns
@@ -18,10 +18,10 @@ create table if not exists public.monthly_settings (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users on delete cascade not null default auth.uid(),
   month integer not null check (month between 1 and 12),
-  year integer not null,
-  income numeric not null default 80000,
-  monthly_budget numeric not null default 50000,
-  savings_target numeric not null default 30000,
+  year integer not null check (year >= 2020),
+  income numeric not null default 0,
+  monthly_budget numeric not null default 0,
+  savings_target numeric not null default 0,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique (user_id, month, year)
@@ -142,18 +142,18 @@ begin
   if not exists (select 1 from public.categories where user_id = target_user_id) then
     insert into public.categories (user_id, name, icon, color, budget_amount, is_default)
     values
-      (target_user_id, 'Food', '🍔', '#f97316', 10000, true),
-      (target_user_id, 'Transport', '🚗', '#06b6d4', 5000, true),
-      (target_user_id, 'Shopping', '🛍', '#ec4899', 8000, true),
-      (target_user_id, 'Bills & Utilities', '🏠', '#ef4444', 12000, true),
-      (target_user_id, 'Entertainment', '🎬', '#8b5cf6', 3000, true),
-      (target_user_id, 'Health & Medical', '🏥', '#10b981', 4000, true),
-      (target_user_id, 'Education & Books', '📚', '#3b82f6', 5000, true),
-      (target_user_id, 'Travel & Trips', '✈️', '#f59e0b', 6000, true),
-      (target_user_id, 'Subscriptions', '🔄', '#6366f1', 2000, true),
-      (target_user_id, 'Personal Care', '❤️', '#f43f5e', 3000, true),
-      (target_user_id, 'Investments', '📈', '#14b8a6', 10000, true),
-      (target_user_id, 'General / Other', '💰', '#94a3b8', 2000, true);
+      (target_user_id, 'Food', '🍔', '#f97316', 0, true),
+      (target_user_id, 'Transport', '🚗', '#06b6d4', 0, true),
+      (target_user_id, 'Shopping', '🛍', '#ec4899', 0, true),
+      (target_user_id, 'Bills & Utilities', '🏠', '#ef4444', 0, true),
+      (target_user_id, 'Entertainment', '🎬', '#8b5cf6', 0, true),
+      (target_user_id, 'Health & Medical', '🏥', '#10b981', 0, true),
+      (target_user_id, 'Education & Books', '📚', '#3b82f6', 0, true),
+      (target_user_id, 'Travel & Trips', '✈️', '#f59e0b', 0, true),
+      (target_user_id, 'Subscriptions', '🔄', '#6366f1', 0, true),
+      (target_user_id, 'Personal Care', '❤️', '#f43f5e', 0, true),
+      (target_user_id, 'Investments', '📈', '#14b8a6', 0, true),
+      (target_user_id, 'General / Other', '💰', '#94a3b8', 0, true);
   end if;
 
   -- 2. Ensure Payment Methods exist
@@ -167,10 +167,10 @@ begin
       (target_user_id, 'Net Banking', 'bank', false);
   end if;
 
-  -- 3. Ensure Current Monthly Setting exists
+  -- 3. Ensure Current Monthly Setting exists (zeroed out until user sets their real salary/budget)
   if not exists (select 1 from public.monthly_settings where user_id = target_user_id and month = curr_month and year = curr_year) then
     insert into public.monthly_settings (user_id, month, year, income, monthly_budget, savings_target)
-    values (target_user_id, curr_month, curr_year, 80000, 50000, 30000);
+    values (target_user_id, curr_month, curr_year, 0, 0, 0);
   end if;
 end;
 $$ language plpgsql security definer;

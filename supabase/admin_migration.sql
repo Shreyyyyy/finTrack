@@ -69,22 +69,22 @@ begin
     avatar_url = coalesce(excluded.avatar_url, profiles.avatar_url),
     updated_at = now();
 
-  -- Seed Default Categories
+  -- Seed Default Categories (zero dummy budget)
   insert into public.categories (user_id, name, icon, color, budget_amount, is_default)
   values
-    (new.id, 'Food', '🍔', '#f97316', 10000, true),
-    (new.id, 'Transport', '🚗', '#06b6d4', 5000, true),
-    (new.id, 'Shopping', '🛍', '#ec4899', 8000, true),
-    (new.id, 'Bills', '🏠', '#ef4444', 12000, true),
-    (new.id, 'Entertainment', '🎬', '#8b5cf6', 3000, true),
-    (new.id, 'Health', '🏥', '#10b981', 4000, true),
-    (new.id, 'Education', '📚', '#3b82f6', 5000, true),
-    (new.id, 'Travel', '✈️', '#f59e0b', 6000, true),
-    (new.id, 'Subscriptions', '🔄', '#6366f1', 2000, true),
-    (new.id, 'Work', '💻', '#64748b', 3000, true),
-    (new.id, 'Personal', '❤️', '#f43f5e', 3000, true),
-    (new.id, 'Investment', '📈', '#14b8a6', 10000, true),
-    (new.id, 'Other', '💰', '#94a3b8', 2000, true)
+    (new.id, 'Food', '🍔', '#f97316', 0, true),
+    (new.id, 'Transport', '🚗', '#06b6d4', 0, true),
+    (new.id, 'Shopping', '🛍', '#ec4899', 0, true),
+    (new.id, 'Bills', '🏠', '#ef4444', 0, true),
+    (new.id, 'Entertainment', '🎬', '#8b5cf6', 0, true),
+    (new.id, 'Health', '🏥', '#10b981', 0, true),
+    (new.id, 'Education', '📚', '#3b82f6', 0, true),
+    (new.id, 'Travel', '✈️', '#f59e0b', 0, true),
+    (new.id, 'Subscriptions', '🔄', '#6366f1', 0, true),
+    (new.id, 'Work', '💻', '#64748b', 0, true),
+    (new.id, 'Personal', '❤️', '#f43f5e', 0, true),
+    (new.id, 'Investment', '📈', '#14b8a6', 0, true),
+    (new.id, 'Other', '💰', '#94a3b8', 0, true)
   on conflict do nothing;
 
   -- Seed Default Payment Methods
@@ -98,15 +98,15 @@ begin
     (new.id, 'Other', 'other', false)
   on conflict do nothing;
 
-  -- Seed Current Month Settings
+  -- Seed Current Month Settings (all 0 until user sets their salary)
   insert into public.monthly_settings (user_id, month, year, income, monthly_budget, savings_target)
   values (
     new.id,
     extract(month from current_date)::integer,
     extract(year from current_date)::integer,
-    54000,
-    35000,
-    19000
+    0,
+    0,
+    0
   )
   on conflict do nothing;
 

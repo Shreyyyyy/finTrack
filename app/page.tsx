@@ -62,9 +62,9 @@ export default function DashboardPage() {
     id: `ms-${currentMonth}-${currentYear}`,
     month: currentMonth,
     year: currentYear,
-    income: 80000,
-    monthly_budget: 50000,
-    savings_target: 30000,
+    income: 0,
+    monthly_budget: 0,
+    savings_target: 0,
   });
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

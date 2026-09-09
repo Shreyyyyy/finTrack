@@ -52,9 +52,9 @@ export default function AnalyticsPage() {
     id: 'ms-9-2026',
     month: 9,
     year: 2026,
-    income: 80000,
-    monthly_budget: 50000,
-    savings_target: 30000,
+    income: 0,
+    monthly_budget: 0,
+    savings_target: 0,
   });
 
   useEffect(() => {

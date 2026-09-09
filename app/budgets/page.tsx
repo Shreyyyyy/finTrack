@@ -22,16 +22,16 @@ export default function BudgetsPage() {
     id: 'ms-9-2026',
     month: 9,
     year: 2026,
-    income: 80000,
-    monthly_budget: 50000,
-    savings_target: 30000,
+    income: 0,
+    monthly_budget: 0,
+    savings_target: 0,
   });
 
   // Editing state for overall monthly budget
   const [editingOverall, setEditingOverall] = useState(false);
-  const [incomeInput, setIncomeInput] = useState('80000');
-  const [budgetInput, setBudgetInput] = useState('50000');
-  const [savingsTargetInput, setSavingsTargetInput] = useState('30000');
+  const [incomeInput, setIncomeInput] = useState('0');
+  const [budgetInput, setBudgetInput] = useState('0');
+  const [savingsTargetInput, setSavingsTargetInput] = useState('0');
 
   // Editing state for individual category budget
   const [editingCatId, setEditingCatId] = useState<string | null>(null);

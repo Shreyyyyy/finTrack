@@ -203,22 +203,22 @@ begin
     coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture', null)
   );
 
-  -- 2. Seed Default Categories
+  -- 2. Seed Default Categories (zero dummy budget)
   insert into public.categories (user_id, name, icon, color, budget_amount, is_default)
   values
-    (new.id, 'Food', '🍔', '#f97316', 10000, true),
-    (new.id, 'Transport', '🚗', '#06b6d4', 5000, true),
-    (new.id, 'Shopping', '🛍', '#ec4899', 8000, true),
-    (new.id, 'Bills', '🏠', '#ef4444', 12000, true),
-    (new.id, 'Entertainment', '🎬', '#8b5cf6', 3000, true),
-    (new.id, 'Health', '🏥', '#10b981', 4000, true),
-    (new.id, 'Education', '📚', '#3b82f6', 5000, true),
-    (new.id, 'Travel', '✈️', '#f59e0b', 6000, true),
-    (new.id, 'Subscriptions', '🔄', '#6366f1', 2000, true),
-    (new.id, 'Work', '💻', '#64748b', 3000, true),
-    (new.id, 'Personal', '❤️', '#f43f5e', 3000, true),
-    (new.id, 'Investment', '📈', '#14b8a6', 10000, true),
-    (new.id, 'Other', '💰', '#94a3b8', 2000, true);
+    (new.id, 'Food', '🍔', '#f97316', 0, true),
+    (new.id, 'Transport', '🚗', '#06b6d4', 0, true),
+    (new.id, 'Shopping', '🛍', '#ec4899', 0, true),
+    (new.id, 'Bills', '🏠', '#ef4444', 0, true),
+    (new.id, 'Entertainment', '🎬', '#8b5cf6', 0, true),
+    (new.id, 'Health', '🏥', '#10b981', 0, true),
+    (new.id, 'Education', '📚', '#3b82f6', 0, true),
+    (new.id, 'Travel', '✈️', '#f59e0b', 0, true),
+    (new.id, 'Subscriptions', '🔄', '#6366f1', 0, true),
+    (new.id, 'Work', '💻', '#64748b', 0, true),
+    (new.id, 'Personal', '❤️', '#f43f5e', 0, true),
+    (new.id, 'Investment', '📈', '#14b8a6', 0, true),
+    (new.id, 'Other', '💰', '#94a3b8', 0, true);
 
   -- 3. Seed Default Payment Methods
   insert into public.payment_methods (user_id, name, type, is_default)
@@ -230,15 +230,15 @@ begin
     (new.id, 'Bank Transfer', 'bank', false),
     (new.id, 'Other', 'other', false);
 
-  -- 4. Seed Current Month Settings
+  -- 4. Seed Current Month Settings (all 0 until user sets real income/budget)
   insert into public.monthly_settings (user_id, month, year, income, monthly_budget, savings_target)
   values (
     new.id,
     extract(month from current_date)::integer,
     extract(year from current_date)::integer,
-    80000,
-    50000,
-    30000
+    0,
+    0,
+    0
   );
 
   return new;

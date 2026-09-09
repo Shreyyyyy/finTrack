@@ -64,9 +64,9 @@ export default function SettingsPage() {
   // Month selector for monthly income configuration
   const [selectedMonth, setSelectedMonth] = useState(9);
   const [selectedYear, setSelectedYear] = useState(2026);
-  const [monthIncome, setMonthIncome] = useState('80000');
-  const [monthBudget, setMonthBudget] = useState('50000');
-  const [monthSavings, setMonthSavings] = useState('30000');
+  const [monthIncome, setMonthIncome] = useState('0');
+  const [monthBudget, setMonthBudget] = useState('0');
+  const [monthSavings, setMonthSavings] = useState('0');
 
   // New Category State
   const [newCatName, setNewCatName] = useState('');

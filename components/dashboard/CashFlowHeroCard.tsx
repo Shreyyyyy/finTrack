@@ -40,6 +40,36 @@ export function CashFlowHeroCard({
   const savingsPct = Math.max(0, 100 - spentPct - remainingPct);
   const budgetUsedPct = monthlyBudget > 0 ? Math.min(100, (totalSpent / monthlyBudget) * 100) : 0;
 
+  // Clean Zero State: If no salary or budget is configured yet
+  if (income === 0 && monthlyBudget === 0) {
+    return (
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white border border-slate-800 shadow-2xl p-6 sm:p-8">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Clean Slate • Ready For Your Plan</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Set Your Monthly Salary & Budget
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-xl leading-relaxed">
+              No plan configured yet. Enter your real monthly take-home salary and spending limit to calculate your safe daily allowance and track your net savings.
+            </p>
+          </div>
+          <button
+            onClick={onEditPlan}
+            className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm shadow-xl shadow-emerald-600/30 active:scale-98 transition-all shrink-0"
+          >
+            <Sliders className="w-4 h-4" />
+            <span>Set Salary & Budget</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white border border-slate-800 shadow-2xl p-5 sm:p-7 space-y-6">
       {/* Subtle background glow accents */}

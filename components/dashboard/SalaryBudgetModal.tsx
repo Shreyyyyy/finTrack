@@ -26,16 +26,16 @@ export function SalaryBudgetModal({
   year,
   onSaved,
 }: SalaryBudgetModalProps) {
-  const [income, setIncome] = useState<string>('80000');
-  const [budget, setBudget] = useState<string>('50000');
-  const [savingsTarget, setSavingsTarget] = useState<string>('30000');
+  const [income, setIncome] = useState<string>('');
+  const [budget, setBudget] = useState<string>('');
+  const [savingsTarget, setSavingsTarget] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
     if (monthlySetting) {
-      setIncome(String(monthlySetting.income || 80000));
-      setBudget(String(monthlySetting.monthly_budget || 50000));
-      setSavingsTarget(String(monthlySetting.savings_target || 30000));
+      setIncome(monthlySetting.income > 0 ? String(monthlySetting.income) : '');
+      setBudget(monthlySetting.monthly_budget > 0 ? String(monthlySetting.monthly_budget) : '');
+      setSavingsTarget(monthlySetting.savings_target > 0 ? String(monthlySetting.savings_target) : '');
     }
   }, [monthlySetting, isOpen]);
 

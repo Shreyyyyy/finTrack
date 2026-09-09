@@ -138,9 +138,9 @@ export async function saveProfile(profile: Partial<Profile> & { id: string }): P
       avatar_url: profile.avatar_url,
       currency: profile.currency || 'INR',
       default_payment_method: profile.default_payment_method || 'UPI',
-      monthly_income: profile.monthly_income || 80000,
-      monthly_budget: profile.monthly_budget || 50000,
-      savings_target: profile.savings_target || 30000,
+      monthly_income: profile.monthly_income || 0,
+      monthly_budget: profile.monthly_budget || 0,
+      savings_target: profile.savings_target || 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -354,16 +354,16 @@ export async function getCategories(): Promise<Category[]> {
       const userId = session?.user?.id;
       if (userId && (!data || data.length === 0)) {
         const seedCategories = [
-          { user_id: userId, name: 'Food & Dining', icon: '🍔', color: '#f97316', budget_amount: 10000, is_default: true },
-          { user_id: userId, name: 'Transportation', icon: '🚗', color: '#06b6d4', budget_amount: 5000, is_default: true },
-          { user_id: userId, name: 'Shopping & Clothes', icon: '🛍', color: '#ec4899', budget_amount: 8000, is_default: true },
-          { user_id: userId, name: 'Bills & Utilities', icon: '🏠', color: '#ef4444', budget_amount: 12000, is_default: true },
-          { user_id: userId, name: 'Entertainment & Fun', icon: '🎬', color: '#8b5cf6', budget_amount: 3000, is_default: true },
-          { user_id: userId, name: 'Health & Medical', icon: '🏥', color: '#10b981', budget_amount: 4000, is_default: true },
-          { user_id: userId, name: 'Groceries & Mart', icon: '🛒', color: '#14b8a6', budget_amount: 8000, is_default: true },
-          { user_id: userId, name: 'Subscriptions', icon: '🔄', color: '#6366f1', budget_amount: 2000, is_default: true },
-          { user_id: userId, name: 'Personal Care', icon: '❤️', color: '#f43f5e', budget_amount: 3000, is_default: true },
-          { user_id: userId, name: 'General / Other', icon: '💰', color: '#94a3b8', budget_amount: 2000, is_default: true },
+          { user_id: userId, name: 'Food & Dining', icon: '🍔', color: '#f97316', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'Transportation', icon: '🚗', color: '#06b6d4', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'Shopping & Clothes', icon: '🛍', color: '#ec4899', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'Bills & Utilities', icon: '🏠', color: '#ef4444', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'Entertainment & Fun', icon: '🎬', color: '#8b5cf6', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'Health & Medical', icon: '🏥', color: '#10b981', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'Groceries & Mart', icon: '🛒', color: '#14b8a6', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'Subscriptions', icon: '🔄', color: '#6366f1', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'Personal Care', icon: '❤️', color: '#f43f5e', budget_amount: 0, is_default: true },
+          { user_id: userId, name: 'General / Other', icon: '💰', color: '#94a3b8', budget_amount: 0, is_default: true },
         ];
         const { data: seeded } = await supabase.from('categories').insert(seedCategories).select();
         if (seeded && seeded.length > 0) {
@@ -672,8 +672,8 @@ export async function getMonthlySetting(month: number, year: number): Promise<Mo
           .eq('id', userId)
           .maybeSingle();
 
-        const defaultIncome = Number(profile?.monthly_income) || 80000;
-        const defaultBudget = Number(profile?.monthly_budget) || 50000;
+        const defaultIncome = Number(profile?.monthly_income) || 0;
+        const defaultBudget = Number(profile?.monthly_budget) || 0;
         const defaultSavings = Number(profile?.savings_target) || Math.max(0, defaultIncome - defaultBudget);
 
         const initial: MonthlySetting = {
@@ -686,14 +686,16 @@ export async function getMonthlySetting(month: number, year: number): Promise<Mo
           savings_target: defaultSavings,
         };
 
-        await supabase.from('monthly_settings').upsert({
-          user_id: userId,
-          month,
-          year,
-          income: initial.income,
-          monthly_budget: initial.monthly_budget,
-          savings_target: initial.savings_target,
-        }, { onConflict: 'user_id,month,year' });
+        if (defaultIncome > 0 || defaultBudget > 0) {
+          await supabase.from('monthly_settings').upsert({
+            user_id: userId,
+            month,
+            year,
+            income: initial.income,
+            monthly_budget: initial.monthly_budget,
+            savings_target: initial.savings_target,
+          }, { onConflict: 'user_id,month,year' });
+        }
 
         return initial;
       }
@@ -711,9 +713,9 @@ export async function getMonthlySetting(month: number, year: number): Promise<Mo
     id: `ms-${month}-${year}`,
     month,
     year,
-    income: 80000,
-    monthly_budget: 50000,
-    savings_target: 30000,
+    income: 0,
+    monthly_budget: 0,
+    savings_target: 0,
   };
 }
 
