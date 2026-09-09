@@ -47,8 +47,14 @@ export function MobileMinimalOverview({
         income={monthlySetting.income}
       />
 
-      {/* 1.2 Dedicated Savings & Investments Portfolio (Travel, Investments, Emergency Reserve) */}
-      <SavingsInvestmentsSection goals={goals} monthlyBurnRate={totalSpent} />
+      {/* 1.2 Unified Cash, Savings & Investments Wealth Breakdown */}
+      <SavingsInvestmentsSection
+        goals={goals}
+        income={monthlySetting.income}
+        totalSpent={totalSpent}
+        monthlyBudget={remainingBudget + totalSpent}
+        monthlyBurnRate={totalSpent}
+      />
 
       {/* 1.5 Live Financial Vitality & Habits Pulse */}
       <FinancialPulseWidget

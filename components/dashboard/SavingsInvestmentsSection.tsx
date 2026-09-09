@@ -19,11 +19,16 @@ import {
   Layers,
   Edit3,
   Trash2,
+  PieChart,
+  DollarSign,
+  Info,
+  Scale,
 } from 'lucide-react';
 import { Goal, GoalCategoryType } from '@/types';
 import { formatINR, formatPercentage } from '@/lib/formatting/formatters';
 import {
   computeSavingsPortfolio,
+  computeCashSavingsInvestmentBreakdown,
   getCategoryBadge,
   getGoalCategoryType,
 } from '@/lib/formatting/savingsHelpers';
@@ -40,6 +45,9 @@ import { showToast } from '@/components/ui/Toast';
 
 interface SavingsInvestmentsSectionProps {
   goals: Goal[];
+  income?: number;
+  totalSpent?: number;
+  monthlyBudget?: number;
   monthlyBurnRate?: number;
   onRefresh?: () => void;
 }
@@ -51,6 +59,13 @@ const VAULT_PRESETS: Array<{
   suggestedTarget: number;
   institution: string;
 }> = [
+  {
+    name: 'Cash in Hand / Wallet',
+    category: 'cash',
+    icon: '💵',
+    suggestedTarget: 25000,
+    institution: 'Liquid Cash / Physical Wallet',
+  },
   {
     name: '6-Month Emergency Runway',
     category: 'emergency',
@@ -79,17 +94,13 @@ const VAULT_PRESETS: Array<{
     suggestedTarget: 150000,
     institution: 'RBI Gold Bonds',
   },
-  {
-    name: 'Japan & Euro Dream Trip',
-    category: 'travel',
-    icon: '🌸',
-    suggestedTarget: 300000,
-    institution: 'Travel Vault',
-  },
 ];
 
 export function SavingsInvestmentsSection({
   goals,
+  income = 0,
+  totalSpent = 0,
+  monthlyBudget = 0,
   monthlyBurnRate = 0,
   onRefresh,
 }: SavingsInvestmentsSectionProps) {
@@ -106,10 +117,16 @@ export function SavingsInvestmentsSection({
   const [contributeNote, setContributeNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Compute portfolio metrics
-  const portfolio = useMemo(
-    () => computeSavingsPortfolio(goals, monthlyBurnRate),
-    [goals, monthlyBurnRate]
+  // Compute unified Cash, Savings & Investments breakdown
+  const breakdown = useMemo(
+    () =>
+      computeCashSavingsInvestmentBreakdown({
+        goals,
+        income,
+        totalSpent,
+        monthlyBurnRate: monthlyBurnRate > 0 ? monthlyBurnRate : totalSpent,
+      }),
+    [goals, income, totalSpent, monthlyBurnRate]
   );
 
   // Filtered list
@@ -174,24 +191,24 @@ export function SavingsInvestmentsSection({
   };
 
   return (
-    <div className="w-full bg-[#f0f7ff] dark:bg-slate-900/60 rounded-3xl p-5 sm:p-7 border border-sky-200 dark:border-slate-800 shadow-sm space-y-6">
-      {/* 1. SECTION HEADER */}
+    <div className="w-full bg-[#f0f7ff] dark:bg-slate-900/70 rounded-3xl p-5 sm:p-7 border border-sky-200 dark:border-slate-800 shadow-sm space-y-6">
+      {/* 1. MASTER HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/25">
-            <Coins className="w-5 h-5 stroke-[2.2]" />
+          <div className="w-11 h-11 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/25 shrink-0">
+            <Coins className="w-6 h-6 stroke-[2.2]" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-lg sm:text-xl font-black text-black dark:text-white tracking-tight">
-                Savings & Wealth Hub
+                Cash, Savings & Investments Hub
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-200 text-sky-950 dark:bg-sky-950 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
-                Live Portfolio
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-200 text-sky-950 dark:bg-sky-950 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
+                Full Wealth Breakdown
               </span>
             </div>
-            <p className="text-xs text-slate-700 dark:text-slate-400 font-semibold">
-              Track investments, emergency runway, travel funds, and auto-calculated compound returns.
+            <p className="text-xs text-slate-700 dark:text-slate-400 font-semibold mt-0.5">
+              Live breakdown of your liquid cash, safety savings, and compounded investments.
             </p>
           </div>
         </div>
@@ -210,38 +227,78 @@ export function SavingsInvestmentsSection({
             href="/goals"
             className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-black dark:text-slate-200 text-xs font-bold hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors"
           >
-            <span>Manage All</span>
+            <span>Command Center</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </div>
 
-      {/* 2. TOP 4 PORTFOLIO KPI METRIC CARDS */}
+      {/* 2. TOP 4 MASTER METRIC CARDS (Total Wealth, Cash, Savings, Investments) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Net Saved */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-sky-100 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+        {/* Card 1: Total Net Capital */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-sky-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
-              Total Net Saved
+              Total Net Wealth
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-950/60 flex items-center justify-center text-sky-700 dark:text-sky-300">
+              <Layers className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <div className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
+              {formatINR(breakdown.totalNetWealth)}
+            </div>
+            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
+              100% Capital • Cash + Savings + Invested
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Liquid Cash */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-sky-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-sky-800 dark:text-sky-400">
+              Liquid Cash
             </span>
             <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 flex items-center justify-center text-sky-600 dark:text-sky-400">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-2.5">
-            <div className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
-              {formatINR(portfolio.totalSavedAndInvested)}
+            <div className="text-xl sm:text-2xl font-black text-sky-700 dark:text-sky-300 tracking-tight">
+              {formatINR(breakdown.liquidCash)}
             </div>
             <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
-              Across {goals.length} portfolio vaults
+              {breakdown.cashPercentage.toFixed(1)}% of wealth • Ready in hand
             </div>
           </div>
         </div>
 
-        {/* Invested Assets */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-emerald-100 dark:border-emerald-950/40 shadow-xs flex flex-col justify-between">
+        {/* Card 3: Dedicated Savings */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-blue-200/90 dark:border-blue-950/40 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
+            <span className="text-[11px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-400">
+              Dedicated Savings
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 tracking-tight">
+              {formatINR(breakdown.totalSavings)}
+            </div>
+            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
+              {breakdown.savingsPercentage.toFixed(1)}% of wealth • Emergency & Travel
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Invested Assets */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-emerald-200/90 dark:border-emerald-950/40 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
               Invested Assets
             </span>
             <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -250,125 +307,230 @@ export function SavingsInvestmentsSection({
           </div>
           <div className="mt-2.5">
             <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-              {formatINR(portfolio.totalInvested)}
+              {formatINR(breakdown.totalInvestments)}
             </div>
             <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
-              {portfolio.investmentPercentage.toFixed(1)}% of total wealth • {portfolio.investmentCount} assets
-            </div>
-          </div>
-        </div>
-
-        {/* Emergency Funds */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-blue-100 dark:border-blue-950/40 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
-              Emergency Funds
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 tracking-tight">
-              {formatINR(portfolio.totalEmergency)}
-            </div>
-            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
-              {portfolio.emergencyRunwayMonths > 0
-                ? `${portfolio.emergencyRunwayMonths.toFixed(1)} months expense runway`
-                : `${portfolio.emergencyPercentage.toFixed(1)}% of total wealth`}
-            </div>
-          </div>
-        </div>
-
-        {/* Saved for Travel */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-cyan-100 dark:border-cyan-950/40 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
-              Travel & Trips
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
-              <Plane className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <div className="text-xl sm:text-2xl font-black text-cyan-700 dark:text-cyan-300 tracking-tight">
-              {formatINR(portfolio.totalTravel)}
-            </div>
-            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
-              {portfolio.travelPercentage.toFixed(1)}% of total wealth • {portfolio.travelCount} trips
+              {breakdown.investmentsPercentage.toFixed(1)}% of wealth • Mutual Funds & Gold
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. ALLOCATION PERCENTAGE BAR */}
-      {portfolio.totalSavedAndInvested > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-sky-100 dark:border-slate-800 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-            <span className="font-black text-black dark:text-white flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-sky-600" />
-              <span>Wealth Allocation Distribution</span>
-            </span>
-            <span className="text-[11px] text-slate-600 dark:text-slate-400">
-              Total: {formatINR(portfolio.totalSavedAndInvested)}
+      {/* 3. TRI-PILLAR WEALTH RATIO SPECTRUM BAR */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-sky-100 dark:border-slate-800 shadow-xs space-y-3">
+        <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+          <span className="font-black text-black dark:text-white flex items-center gap-1.5">
+            <Scale className="w-4 h-4 text-sky-600" />
+            <span>Asset Allocation: Cash vs Savings vs Investments</span>
+          </span>
+          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+            Total Capital: {formatINR(breakdown.totalNetWealth)}
+          </span>
+        </div>
+
+        {/* The Multi-Segment Spectrum Bar */}
+        <div className="h-4 w-full rounded-full bg-slate-100 dark:bg-slate-800 p-0.5 overflow-hidden flex gap-1 shadow-inner">
+          {breakdown.cashPercentage > 0 && (
+            <div
+              style={{ width: `${breakdown.cashPercentage}%` }}
+              className="bg-sky-500 h-full rounded-full transition-all duration-500"
+              title={`Cash: ${formatINR(breakdown.liquidCash)} (${breakdown.cashPercentage.toFixed(1)}%)`}
+            />
+          )}
+          {breakdown.savingsPercentage > 0 && (
+            <div
+              style={{ width: `${breakdown.savingsPercentage}%` }}
+              className="bg-blue-600 h-full rounded-full transition-all duration-500"
+              title={`Savings: ${formatINR(breakdown.totalSavings)} (${breakdown.savingsPercentage.toFixed(1)}%)`}
+            />
+          )}
+          {breakdown.investmentsPercentage > 0 && (
+            <div
+              style={{ width: `${breakdown.investmentsPercentage}%` }}
+              className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+              title={`Investments: ${formatINR(breakdown.totalInvestments)} (${breakdown.investmentsPercentage.toFixed(1)}%)`}
+            />
+          )}
+        </div>
+
+        {/* Legend beneath the spectrum bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs font-bold">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-sky-500 inline-block shrink-0" />
+            <span className="text-slate-700 dark:text-slate-300">
+              💵 Liquid Cash: <strong className="text-black dark:text-white">{formatINR(breakdown.liquidCash)}</strong> ({breakdown.cashPercentage.toFixed(1)}%)
             </span>
           </div>
 
-          <div className="h-3 w-full rounded-full bg-sky-100 dark:bg-slate-800 overflow-hidden flex">
-            {portfolio.investmentPercentage > 0 && (
-              <div
-                style={{ width: `${portfolio.investmentPercentage}%` }}
-                className="bg-emerald-500 h-full transition-all duration-500"
-                title={`Invested: ${portfolio.investmentPercentage.toFixed(1)}%`}
-              />
-            )}
-            {portfolio.emergencyPercentage > 0 && (
-              <div
-                style={{ width: `${portfolio.emergencyPercentage}%` }}
-                className="bg-blue-600 h-full transition-all duration-500"
-                title={`Emergency: ${portfolio.emergencyPercentage.toFixed(1)}%`}
-              />
-            )}
-            {portfolio.travelPercentage > 0 && (
-              <div
-                style={{ width: `${portfolio.travelPercentage}%` }}
-                className="bg-cyan-500 h-full transition-all duration-500"
-                title={`Travel: ${portfolio.travelPercentage.toFixed(1)}%`}
-              />
-            )}
-            {portfolio.otherPercentage > 0 && (
-              <div
-                style={{ width: `${portfolio.otherPercentage}%` }}
-                className="bg-amber-500 h-full transition-all duration-500"
-                title={`Goals & Purchases: ${portfolio.otherPercentage.toFixed(1)}%`}
-              />
-            )}
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-blue-600 inline-block shrink-0" />
+            <span className="text-slate-700 dark:text-slate-300">
+              🛡️ Dedicated Savings: <strong className="text-black dark:text-white">{formatINR(breakdown.totalSavings)}</strong> ({breakdown.savingsPercentage.toFixed(1)}%)
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] font-bold text-slate-700 dark:text-slate-400">
-            <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-              <span>Invested: {portfolio.investmentPercentage.toFixed(0)}%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-              <span>Emergency: {portfolio.emergencyPercentage.toFixed(0)}%</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block" />
-              <span>Travel: {portfolio.travelPercentage.toFixed(0)}%</span>
-            </div>
-            {portfolio.otherPercentage > 0 && (
-              <div className="flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                <span>Goals: {portfolio.otherPercentage.toFixed(0)}%</span>
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block shrink-0" />
+            <span className="text-slate-700 dark:text-slate-300">
+              📈 Invested Assets: <strong className="text-black dark:text-white">{formatINR(breakdown.totalInvestments)}</strong> ({breakdown.investmentsPercentage.toFixed(1)}%)
+            </span>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* 4. FILTER TABS & PRESET SHORTCUTS */}
+      {/* 4. THE 3 DEEP-DIVE PILLAR BREAKDOWN CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Pillar 1: 💵 Cash & Liquidity Deep Dive */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-sky-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">💵</span>
+                <h3 className="font-black text-sm text-black dark:text-white">Liquid Cash Position</h3>
+              </div>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+                {breakdown.cashPercentage.toFixed(0)}% Ratio
+              </span>
+            </div>
+
+            <div className="text-2xl font-black text-sky-700 dark:text-sky-300">
+              {formatINR(breakdown.liquidCash)}
+            </div>
+
+            <div className="space-y-1.5 text-xs pt-1 border-t border-sky-100 dark:border-slate-800">
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>Monthly Income (Inflow):</span>
+                <span className="font-bold text-black dark:text-white">{formatINR(income)}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>Month Spent (Outflow):</span>
+                <span className="font-bold text-rose-600">{formatINR(totalSpent)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-black dark:text-white pt-1 border-t border-sky-50 dark:border-slate-800">
+                <span>Unspent Cash Surplus:</span>
+                <span className="font-black text-emerald-600 dark:text-emerald-400">
+                  {formatINR(breakdown.operationalCashSurplus)}
+                </span>
+              </div>
+              {breakdown.cashVaults > 0 && (
+                <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                  <span>Cash in Hand Vaults:</span>
+                  <span className="font-bold text-black dark:text-white">{formatINR(breakdown.cashVaults)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleOpenAddModal('cash')}
+            className="w-full py-2 rounded-xl text-xs font-black bg-sky-50 hover:bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800 transition-colors flex items-center justify-center gap-1 active:scale-95"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Add Cash / Bank Vault</span>
+          </button>
+        </div>
+
+        {/* Pillar 2: 🛡️ Dedicated Savings Reserves Deep Dive */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-blue-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🛡️</span>
+                <h3 className="font-black text-sm text-black dark:text-white">Savings & Reserves</h3>
+              </div>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                {breakdown.savingsPercentage.toFixed(0)}% Ratio
+              </span>
+            </div>
+
+            <div className="text-2xl font-black text-blue-600 dark:text-blue-400">
+              {formatINR(breakdown.totalSavings)}
+            </div>
+
+            <div className="space-y-1.5 text-xs pt-1 border-t border-blue-100 dark:border-slate-800">
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>Emergency Safety Net:</span>
+                <span className="font-bold text-black dark:text-white">{formatINR(breakdown.emergencyFunds)}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>Living Runway Coverage:</span>
+                <span className="font-black text-blue-600 dark:text-blue-400">
+                  {breakdown.emergencyRunwayMonths > 0 ? `${breakdown.emergencyRunwayMonths.toFixed(1)} months` : '0 months'}
+                </span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>Travel & Vacation Saved:</span>
+                <span className="font-bold text-cyan-600 dark:text-cyan-400">{formatINR(breakdown.travelSavings)}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>Goal & Purchase Reserves:</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">{formatINR(breakdown.goalPurchases)}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleOpenAddModal('emergency')}
+            className="w-full py-2 rounded-xl text-xs font-black bg-blue-50 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors flex items-center justify-center gap-1 active:scale-95"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Add Emergency / Trip Fund</span>
+          </button>
+        </div>
+
+        {/* Pillar 3: 📈 Investments & Mutual Funds Deep Dive */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-emerald-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📈</span>
+                <h3 className="font-black text-sm text-black dark:text-white">Investments & Growth</h3>
+              </div>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                {breakdown.investmentsPercentage.toFixed(0)}% Ratio
+              </span>
+            </div>
+
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+              {formatINR(breakdown.totalInvestments)}
+            </div>
+
+            <div className="space-y-1.5 text-xs pt-1 border-t border-emerald-100 dark:border-slate-800">
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>Invested Capital:</span>
+                <span className="font-bold text-black dark:text-white">{formatINR(breakdown.totalInvestments)}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>Active Portfolios:</span>
+                <span className="font-bold text-black dark:text-white">{breakdown.investmentCount} vaults</span>
+              </div>
+              <div className="flex justify-between font-bold text-black dark:text-white pt-1 border-t border-emerald-50 dark:border-slate-800">
+                <span>Committed Monthly SIP:</span>
+                <span className="font-black text-emerald-600 dark:text-emerald-400">
+                  +{formatINR(breakdown.totalMonthlySIP)}/mo
+                </span>
+              </div>
+              <div className="flex justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                <span>Auto-compounded returns:</span>
+                <span className="font-bold text-emerald-600">Calculated till 2036+</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleOpenAddModal('investment')}
+            className="w-full py-2 rounded-xl text-xs font-black bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors flex items-center justify-center gap-1 active:scale-95"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Add Mutual Fund / SIP</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 5. FILTER TABS & VAULT CARDS */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/80 dark:border-slate-800 pb-2">
         <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
           <button
@@ -381,6 +543,17 @@ export function SavingsInvestmentsSection({
             }`}
           >
             All Vaults ({goals.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedFilter('cash')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
+              selectedFilter === 'cash'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white border border-sky-100 dark:border-slate-700'
+            }`}
+          >
+            <span>💵 Cash Vaults</span>
           </button>
           <button
             type="button"
@@ -433,7 +606,7 @@ export function SavingsInvestmentsSection({
         </div>
       </div>
 
-      {/* 5. PORTFOLIO VAULT CARDS GRID */}
+      {/* 6. INDIVIDUAL VAULT CARDS GRID */}
       {filteredGoals.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-sky-100 dark:border-slate-800 text-center space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-slate-800 flex items-center justify-center text-sky-600 dark:text-sky-400 mx-auto">
@@ -446,10 +619,17 @@ export function SavingsInvestmentsSection({
                 : `No ${selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1)} Vaults Found`}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto font-medium mt-1">
-              Create a vault to start auto-calculating mutual funds till 2036, emergency runway, or vacation savings.
+              Add a vault for your cash in hand, 6-month emergency runway, or mutual fund SIP.
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal('cash')}
+              className="px-3.5 py-1.5 rounded-xl bg-sky-50 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-900 text-xs font-black hover:bg-sky-100 transition-colors"
+            >
+              + Cash in Hand
+            </button>
             <button
               type="button"
               onClick={() => handleOpenAddModal('emergency')}
@@ -585,7 +765,9 @@ export function SavingsInvestmentsSection({
                   <div className="w-full bg-sky-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden mt-2.5">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
-                        catType === 'investment'
+                        catType === 'cash'
+                          ? 'bg-sky-500'
+                          : catType === 'investment'
                           ? 'bg-emerald-500'
                           : catType === 'emergency'
                           ? 'bg-blue-600'
@@ -696,7 +878,7 @@ export function SavingsInvestmentsSection({
         </div>
       )}
 
-      {/* 6. MODAL: Create or Edit Vault with Deterministic Financial Calculator */}
+      {/* 7. MODAL: Create or Edit Vault with Deterministic Financial Calculator */}
       <GoalModalWithCalculator
         isOpen={showAddModal}
         onClose={() => {
@@ -706,10 +888,10 @@ export function SavingsInvestmentsSection({
         onSaved={onRefresh}
         initialGoal={editingGoal}
         presetCategory={activePresetCategory}
-        monthlyBurnRate={monthlyBurnRate}
+        monthlyBurnRate={monthlyBurnRate > 0 ? monthlyBurnRate : totalSpent}
       />
 
-      {/* 7. MODAL: Deposit / Withdraw Log */}
+      {/* 8. MODAL: Deposit / Withdraw Log */}
       {contributeGoal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
           <div

@@ -81,7 +81,7 @@ export interface CategoryBudget {
   budget_amount: number;
 }
 
-export type GoalCategoryType = 'emergency' | 'investment' | 'travel' | 'purchase' | 'other';
+export type GoalCategoryType = 'cash' | 'emergency' | 'investment' | 'travel' | 'purchase' | 'other';
 
 export interface Goal {
   id: string;

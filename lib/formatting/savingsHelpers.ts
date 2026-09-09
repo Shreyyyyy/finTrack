@@ -4,6 +4,17 @@ export function getGoalCategoryType(goal: Goal): GoalCategoryType {
   if (goal.category_type) return goal.category_type;
 
   const text = (goal.name || '').toLowerCase();
+
+  if (
+    text.includes('cash in hand') ||
+    text.includes('wallet') ||
+    text.includes('petty cash') ||
+    text.includes('bank account') ||
+    text.includes('checking')
+  ) {
+    return 'cash';
+  }
+
   if (
     text.includes('travel') ||
     text.includes('trip') ||
@@ -72,29 +83,37 @@ export function getCategoryBadge(type: GoalCategoryType): {
   borderBg: string;
 } {
   switch (type) {
+    case 'cash':
+      return {
+        label: 'Liquid Cash',
+        icon: '💵',
+        accentColor: 'text-sky-700 dark:text-sky-400',
+        badgeBg: 'bg-sky-50 text-sky-900 dark:bg-sky-950/60 dark:text-sky-300',
+        borderBg: 'border-sky-200 dark:border-sky-900',
+      };
     case 'investment':
       return {
         label: 'Investment',
         icon: '📈',
-        accentColor: 'text-blue-600 dark:text-blue-400',
-        badgeBg: 'bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
-        borderBg: 'border-blue-200 dark:border-blue-900',
+        accentColor: 'text-emerald-700 dark:text-emerald-400',
+        badgeBg: 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300',
+        borderBg: 'border-emerald-200 dark:border-emerald-900',
       };
     case 'emergency':
       return {
         label: 'Emergency Fund',
         icon: '🛡️',
-        accentColor: 'text-emerald-700 dark:text-emerald-400',
-        badgeBg: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
-        borderBg: 'border-emerald-200 dark:border-emerald-900',
+        accentColor: 'text-blue-700 dark:text-blue-400',
+        badgeBg: 'bg-blue-50 text-blue-900 dark:bg-blue-950/60 dark:text-blue-300',
+        borderBg: 'border-blue-200 dark:border-blue-900',
       };
     case 'travel':
       return {
         label: 'Travel Savings',
         icon: '✈️',
-        accentColor: 'text-sky-700 dark:text-sky-400',
-        badgeBg: 'bg-sky-50 text-sky-900 dark:bg-sky-950/60 dark:text-sky-300',
-        borderBg: 'border-sky-200 dark:border-sky-900',
+        accentColor: 'text-cyan-700 dark:text-cyan-400',
+        badgeBg: 'bg-cyan-50 text-cyan-900 dark:bg-cyan-950/60 dark:text-cyan-300',
+        borderBg: 'border-cyan-200 dark:border-cyan-900',
       };
     case 'purchase':
       return {
@@ -117,6 +136,7 @@ export function getCategoryBadge(type: GoalCategoryType): {
 
 export interface SavingsPortfolioMetrics {
   totalSavedAndInvested: number;
+  totalCash: number;
   totalInvested: number;
   totalEmergency: number;
   totalTravel: number;
@@ -138,6 +158,7 @@ export function computeSavingsPortfolio(
   monthlyBurnRate: number = 0
 ): SavingsPortfolioMetrics {
   let totalSavedAndInvested = 0;
+  let totalCash = 0;
   let totalInvested = 0;
   let totalEmergency = 0;
   let totalTravel = 0;
@@ -154,6 +175,9 @@ export function computeSavingsPortfolio(
     totalSavedAndInvested += amount;
 
     switch (type) {
+      case 'cash':
+        totalCash += amount;
+        break;
       case 'investment':
         totalInvested += amount;
         investmentCount += 1;
@@ -183,6 +207,7 @@ export function computeSavingsPortfolio(
 
   return {
     totalSavedAndInvested,
+    totalCash,
     totalInvested,
     totalEmergency,
     totalTravel,
@@ -197,6 +222,102 @@ export function computeSavingsPortfolio(
     emergencyPercentage: totalSavedAndInvested > 0 ? (totalEmergency / total) * 100 : 0,
     travelPercentage: totalSavedAndInvested > 0 ? (totalTravel / total) * 100 : 0,
     otherPercentage:
-      totalSavedAndInvested > 0 ? ((totalPurchases + totalOther) / total) * 100 : 0,
+      totalSavedAndInvested > 0 ? ((totalPurchases + totalOther + totalCash) / total) * 100 : 0,
+  };
+}
+
+export interface UnifiedCashSavingsInvestBreakdown {
+  // Cash
+  liquidCash: number;
+  operationalCashSurplus: number;
+  cashVaults: number;
+  cashPercentage: number;
+
+  // Savings
+  totalSavings: number;
+  emergencyFunds: number;
+  emergencyRunwayMonths: number;
+  travelSavings: number;
+  goalPurchases: number;
+  otherSavings: number;
+  savingsPercentage: number;
+
+  // Investments
+  totalInvestments: number;
+  totalMonthlySIP: number;
+  investmentCount: number;
+  investmentsPercentage: number;
+
+  // Total
+  totalNetWealth: number;
+}
+
+/**
+ * Calculates complete unified breakdown of Cash, Savings, and Investments
+ */
+export function computeCashSavingsInvestmentBreakdown({
+  goals,
+  income = 0,
+  totalSpent = 0,
+  monthlyBurnRate = 0,
+}: {
+  goals: Goal[];
+  income?: number;
+  totalSpent?: number;
+  monthlyBurnRate?: number;
+}): UnifiedCashSavingsInvestBreakdown {
+  const portfolio = computeSavingsPortfolio(goals, monthlyBurnRate);
+
+  // Operational cash left from monthly salary
+  const operationalCashSurplus = Math.max(0, income - totalSpent);
+  const cashVaults = portfolio.totalCash;
+  const liquidCash = operationalCashSurplus + cashVaults;
+
+  // Dedicated savings = emergency + travel + purchases + other
+  const totalSavings =
+    portfolio.totalEmergency +
+    portfolio.totalTravel +
+    portfolio.totalPurchases +
+    portfolio.totalOther;
+
+  // Investments = stocks, mutual funds, gold
+  const totalInvestments = portfolio.totalInvested;
+
+  // Total committed monthly SIP
+  const totalMonthlySIP = goals.reduce((sum, g) => {
+    if (getGoalCategoryType(g) === 'investment') {
+      return sum + (Number(g.monthly_contribution) || 0);
+    }
+    return sum;
+  }, 0);
+
+  // Total Net Wealth
+  const totalNetWealth = liquidCash + totalSavings + totalInvestments;
+  const divisor = totalNetWealth > 0 ? totalNetWealth : 1;
+
+  const cashPercentage = totalNetWealth > 0 ? (liquidCash / divisor) * 100 : 0;
+  const savingsPercentage = totalNetWealth > 0 ? (totalSavings / divisor) * 100 : 0;
+  const investmentsPercentage = totalNetWealth > 0 ? (totalInvestments / divisor) * 100 : 0;
+
+  return {
+    liquidCash,
+    operationalCashSurplus,
+    cashVaults,
+    cashPercentage,
+
+    totalSavings,
+    emergencyFunds: portfolio.totalEmergency,
+    emergencyRunwayMonths: portfolio.emergencyRunwayMonths,
+    travelSavings: portfolio.totalTravel,
+    goalPurchases: portfolio.totalPurchases,
+    otherSavings: portfolio.totalOther,
+    savingsPercentage,
+
+    totalInvestments,
+    totalMonthlySIP,
+    investmentCount: portfolio.investmentCount,
+    investmentsPercentage,
+
+    totalNetWealth,
   };
 }

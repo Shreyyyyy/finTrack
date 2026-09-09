@@ -46,6 +46,7 @@ const CATEGORIES: Array<{
   icon: string;
   tagline: string;
 }> = [
+  { id: 'cash', label: 'Cash in Hand', icon: '💵', tagline: 'Liquid cash, Wallet, Bank accounts' },
   { id: 'investment', label: 'Investments & MF', icon: '📈', tagline: 'SIP, Mutual Funds, Stocks, Gold' },
   { id: 'emergency', label: 'Emergency Fund', icon: '🛡️', tagline: '3-12 months living expense runway' },
   { id: 'travel', label: 'Travel & Trips', icon: '✈️', tagline: 'Vacations, flights, hotel savings' },

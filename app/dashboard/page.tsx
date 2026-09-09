@@ -317,9 +317,12 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Savings & Investments Portfolio Command Section */}
+            {/* Cash, Savings & Investments Full Breakdown Section */}
             <SavingsInvestmentsSection
               goals={goals}
+              income={summary.income}
+              totalSpent={summary.totalSpent}
+              monthlyBudget={summary.monthlyBudget}
               monthlyBurnRate={summary.totalSpent}
               onRefresh={loadData}
             />
