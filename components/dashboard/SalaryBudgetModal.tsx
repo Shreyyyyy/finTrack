@@ -121,10 +121,10 @@ export function SalaryBudgetModal({
               <input
                 type="number"
                 min="0"
-                step="1000"
+                step="any"
                 value={income}
                 onChange={(e) => setIncome(e.target.value)}
-                placeholder="80000"
+                placeholder="76827"
                 className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 required
               />
@@ -160,7 +160,7 @@ export function SalaryBudgetModal({
               <input
                 type="number"
                 min="0"
-                step="1000"
+                step="any"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 placeholder="50000"
@@ -205,7 +205,7 @@ export function SalaryBudgetModal({
               <input
                 type="number"
                 min="0"
-                step="1000"
+                step="any"
                 value={savingsTarget}
                 onChange={(e) => setSavingsTarget(e.target.value)}
                 placeholder="30000"
