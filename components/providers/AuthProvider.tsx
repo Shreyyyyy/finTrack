@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const redirectUrl =
         typeof window !== 'undefined'
           ? `${window.location.origin}/auth/callback`
-          : 'http://localhost:3000/auth/callback';
+          : 'https://shrey-fintrack.vercel.app/auth/callback';
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
