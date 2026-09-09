@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Settings,
   CreditCard,
   Tag,
   Key,
   Smartphone,
+  ChevronRight,
   Copy,
   Check,
   Trash2,
@@ -355,6 +357,34 @@ export default function SettingsPage() {
 
       {/* Household & Family Members Directory */}
       <MembersList />
+
+      {/* Database & Admin Console */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 text-white rounded-3xl p-6 border border-slate-800 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-white flex items-center gap-2">
+              <span>Database Admin Console</span>
+              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                Master View
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Inspect all registered people, cross-user expenses, and global database metrics.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/admin"
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0 transition-all active:scale-95 shadow-sm shadow-emerald-600/20"
+        >
+          <span>Open Admin Portal</span>
+          <ChevronRight className="w-4 h-4" />
+        </Link>
+      </div>
 
       {/* 1. Appearance / Theme */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">

@@ -3,24 +3,33 @@ import { Category, PaymentMethod, Expense, MonthlySetting, Goal, ApiKey, Profile
 export const DEFAULT_PROFILES: Profile[] = [
   {
     id: 'usr-1',
-    email: 'you@fintrack.local',
-    display_name: 'You (Owner)',
+    email: 'shrey@fintrack.local',
+    display_name: 'Shrey (Admin)',
+    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     currency: 'INR',
     default_payment_method: 'UPI',
+    role: 'admin',
+    created_at: '2026-08-01T00:00:00Z',
   },
   {
     id: 'usr-2',
     email: 'sarah@fintrack.local',
     display_name: 'Sarah',
+    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
     currency: 'INR',
     default_payment_method: 'UPI',
+    role: 'member',
+    created_at: '2026-08-15T00:00:00Z',
   },
   {
     id: 'usr-3',
     email: 'alex@fintrack.local',
     display_name: 'Alex',
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     currency: 'INR',
     default_payment_method: 'Credit Card',
+    role: 'member',
+    created_at: '2026-08-20T00:00:00Z',
   },
 ];
 

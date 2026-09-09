@@ -5,8 +5,19 @@ export interface Profile {
   avatar_url?: string;
   currency: string;
   default_payment_method: string;
+  role?: 'admin' | 'member';
   created_at?: string;
   updated_at?: string;
+}
+
+export interface UserSummary {
+  profile: Profile;
+  expenseCount: number;
+  totalSpent: number;
+  monthlyBudget: number;
+  savingsTarget: number;
+  goalsCount: number;
+  lastActiveDate?: string;
 }
 
 export interface Category {

@@ -9,6 +9,7 @@ import {
   GoalTransaction,
   ApiKey,
   Profile,
+  UserSummary,
 } from '@/types';
 import {
   DEFAULT_CATEGORIES,
@@ -583,3 +584,89 @@ export async function wipeAllData(): Promise<boolean> {
   }
   return true;
 }
+
+// -------------------------------------------------------------
+// DATABASE ADMIN & MULTI-ACCOUNT MANAGEMENT
+// -------------------------------------------------------------
+export async function getAllUsersSummary(): Promise<UserSummary[]> {
+  const profiles = await getProfiles();
+  const allExpenses = await getExpenses('all');
+  const allGoals = await getGoals();
+
+  const summaries: UserSummary[] = await Promise.all(
+    profiles.map(async (prof) => {
+      const userExpenses = allExpenses.filter((e) => e.user_id === prof.id);
+      const userGoals = allGoals.filter((g) => g.user_id === prof.id);
+      const setting = await getMonthlySetting(9, 2026);
+
+      const totalSpent = userExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+      const latestExpense = userExpenses[0];
+
+      return {
+        profile: prof,
+        expenseCount: userExpenses.length,
+        totalSpent,
+        monthlyBudget: setting.monthly_budget,
+        savingsTarget: setting.savings_target,
+        goalsCount: userGoals.length,
+        lastActiveDate: latestExpense ? latestExpense.expense_date : prof.created_at?.split('T')[0],
+      };
+    })
+  );
+
+  return summaries;
+}
+
+export async function updateUserRole(userId: string, role: 'admin' | 'member'): Promise<boolean> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+      if (!error) {
+        emitChange();
+        return true;
+      }
+    } catch (err) {
+      console.error('Failed to update user role in Supabase:', err);
+    }
+  }
+
+  const profiles = getLocalItem<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
+  const target = profiles.find((p) => p.id === userId);
+  if (target) {
+    target.role = role;
+    setLocalItem(STORAGE_KEYS.PROFILES, [...profiles]);
+    return true;
+  }
+  return false;
+}
+
+export async function deleteUserAccount(userId: string): Promise<boolean> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      await supabase.from('profiles').delete().eq('id', userId);
+      emitChange();
+      return true;
+    } catch (err) {
+      console.error('Failed to delete user in Supabase:', err);
+    }
+  }
+
+  const profiles = getLocalItem<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
+  setLocalItem(STORAGE_KEYS.PROFILES, profiles.filter((p) => p.id !== userId));
+
+  // Also purge expenses
+  const expenses = getLocalItem<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_EXPENSES);
+  setLocalItem(STORAGE_KEYS.EXPENSES, expenses.filter((e) => e.user_id !== userId));
+
+  return true;
+}
+
+export async function getAllExpensesMaster(): Promise<Expense[]> {
+  return getExpenses('all');
+}
+
