@@ -138,10 +138,16 @@ alter table public.goal_transactions enable row level security;
 alter table public.api_keys enable row level security;
 
 -- Profiles Policies
-create policy "Users can view own profile" on public.profiles
-  for select using (auth.uid() = id);
+drop policy if exists "Users can view own profile" on public.profiles;
+drop policy if exists "Users can view all profiles" on public.profiles;
+create policy "Users can view all profiles" on public.profiles
+  for select using (auth.role() = 'authenticated');
+
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile" on public.profiles
   for update using (auth.uid() = id);
+
+drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile" on public.profiles
   for insert with check (auth.uid() = id);
 
@@ -152,8 +158,20 @@ create policy "Users can manage categories" on public.categories
 create policy "Users can manage payment methods" on public.payment_methods
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create policy "Users can manage expenses" on public.expenses
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- Household Shared Expenses
+drop policy if exists "Users can manage expenses" on public.expenses;
+drop policy if exists "Users can view all expenses" on public.expenses;
+create policy "Users can view all expenses" on public.expenses
+  for select using (auth.role() = 'authenticated');
+
+create policy "Users can insert own expenses" on public.expenses
+  for insert with check (auth.uid() = user_id);
+
+create policy "Users can update own expenses" on public.expenses
+  for update using (auth.uid() = user_id);
+
+create policy "Users can delete own expenses" on public.expenses
+  for delete using (auth.uid() = user_id);
 
 create policy "Users can manage monthly settings" on public.monthly_settings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

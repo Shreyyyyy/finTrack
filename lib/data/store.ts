@@ -83,6 +83,63 @@ export async function getProfiles(): Promise<Profile[]> {
   return getLocalItem<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
 }
 
+export async function saveProfile(profile: Partial<Profile> & { id: string }): Promise<Profile> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          ...profile,
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        const local = getLocalItem<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
+        const idx = local.findIndex((p) => p.id === profile.id);
+        if (idx >= 0) {
+          local[idx] = { ...local[idx], ...data };
+        } else {
+          local.push(data as Profile);
+        }
+        setLocalItem(STORAGE_KEYS.PROFILES, local);
+        return data as Profile;
+      }
+    } catch (err) {
+      console.error('Failed to save profile to Supabase:', err);
+    }
+  }
+
+  // Local fallback
+  const local = getLocalItem<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
+  const idx = local.findIndex((p) => p.id === profile.id);
+  let updated: Profile;
+  if (idx >= 0) {
+    updated = {
+      ...local[idx],
+      ...profile,
+      updated_at: new Date().toISOString(),
+    };
+    local[idx] = updated;
+  } else {
+    updated = {
+      id: profile.id,
+      email: profile.email || 'user@fintrack.local',
+      display_name: profile.display_name || 'Member',
+      avatar_url: profile.avatar_url,
+      currency: profile.currency || 'INR',
+      default_payment_method: profile.default_payment_method || 'UPI',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    local.push(updated);
+  }
+  setLocalItem(STORAGE_KEYS.PROFILES, local);
+  return updated;
+}
+
 // -------------------------------------------------------------
 // EXPENSES
 // -------------------------------------------------------------

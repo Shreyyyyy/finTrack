@@ -389,8 +389,18 @@ export default function TransactionsPage() {
                             {exp.profile?.display_name && (
                               <>
                                 <span>·</span>
-                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                  👤 {exp.profile.display_name}
+                                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                                  {exp.profile.avatar_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={exp.profile.avatar_url}
+                                      alt={exp.profile.display_name}
+                                      className="w-3.5 h-3.5 rounded-full object-cover border border-emerald-500/40"
+                                    />
+                                  ) : (
+                                    <span>👤</span>
+                                  )}
+                                  <span>{exp.profile.display_name}</span>
                                 </span>
                               </>
                             )}

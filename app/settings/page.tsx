@@ -45,10 +45,14 @@ import {
 import { formatINR, MONTH_NAMES } from '@/lib/formatting/formatters';
 import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
+import { ProfileModal } from '@/components/profile/ProfileModal';
+import { MembersList } from '@/components/profile/MembersList';
+import { Camera } from 'lucide-react';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { user, profile, signInWithGoogle, signOut, isConfigured } = useAuth();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -247,15 +251,15 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* 0. Account & Google Login */}
+      {/* 0. Account & Profile */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Account & Sync
+              My Profile & Account
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Multi-user authentication via Google & Supabase
+              Personal display name, photo, and authentication status
             </p>
           </div>
           {user && (
@@ -265,48 +269,71 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {user ? (
+        {profile ? (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              {profile?.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.avatar_url}
-                  alt={profile.display_name}
-                  className="w-12 h-12 rounded-full border-2 border-emerald-500/50 shadow-sm"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                  {profile?.display_name?.charAt(0) || 'U'}
-                </div>
-              )}
+              <div className="relative">
+                {profile?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.display_name}
+                    className="w-14 h-14 rounded-full border-2 border-emerald-500/50 object-cover shadow-sm"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-xl shadow-sm">
+                    {profile?.display_name?.charAt(0) || 'U'}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-emerald-600 text-white shadow-md hover:bg-emerald-500 active:scale-95 transition-transform"
+                  title="Change Picture"
+                >
+                  <Camera className="w-3 h-3" />
+                </button>
+              </div>
+
               <div>
                 <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                   <span>{profile?.display_name || 'Personal User'}</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                    Google
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
+                    {user ? 'Google' : 'Active Profile'}
                   </span>
                 </div>
-                <div className="text-xs text-slate-500">{user.email}</div>
+                <div className="text-xs text-slate-500">{profile?.email}</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  Default Payment: <span className="font-semibold text-slate-700 dark:text-slate-300">{profile?.default_payment_method || 'UPI'}</span>
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={signOut}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Edit Photo & Profile</span>
+              </button>
+
+              <button
+                onClick={signOut}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="font-bold text-sm text-slate-900 dark:text-white">
-                Not signed in with Google
+                Not signed in
               </div>
               <p className="text-xs text-slate-500">
-                Sign in to isolate and sync your personal data securely with your Google account.
+                Sign in to isolate and sync your personal data securely with your Google or Email account.
               </p>
             </div>
 
@@ -325,6 +352,9 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+
+      {/* Household & Family Members Directory */}
+      <MembersList />
 
       {/* 1. Appearance / Theme */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
@@ -747,6 +777,12 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Profile & Photo Modal */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
     </div>
   );
 }

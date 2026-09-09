@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -23,11 +23,13 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { exportToExcel } from '@/lib/excel/exporter';
 import { getExpenses, getCategories, getPaymentMethods, getMonthlySetting, getGoals } from '@/lib/data/store';
 import { showToast } from '@/components/ui/Toast';
+import { ProfileModal } from '@/components/profile/ProfileModal';
 
 export function DesktopSidebar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { user, profile, signOut } = useAuth();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const navLinks = [
     { label: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -151,32 +153,42 @@ export function DesktopSidebar() {
           </button>
         </div>
 
-        {/* User Profile Card / Google Login */}
+        {/* User Profile Card */}
         <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
-          {user ? (
+          {profile ? (
             <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-2.5 min-w-0">
-                {profile?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.display_name}
-                    className="w-8 h-8 rounded-full border border-emerald-500/40 shrink-0"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                    {profile?.display_name?.charAt(0) || 'U'}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                    {profile?.display_name || 'User'}
-                  </div>
-                  <div className="text-[10px] text-slate-500 truncate">
-                    {user.email}
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center gap-2.5 min-w-0 text-left hover:opacity-80 transition-opacity"
+                title="Edit profile & photo"
+              >
+                <div className="relative shrink-0">
+                  {profile.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={profile.avatar_url}
+                      alt={profile.display_name}
+                      className="w-8 h-8 rounded-full border border-emerald-500/40 object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+                      {profile.display_name?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center text-[7px] shadow-sm">
+                    📷
                   </div>
                 </div>
-              </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {profile.display_name}
+                  </div>
+                  <div className="text-[10px] text-slate-500 truncate">
+                    {profile.email}
+                  </div>
+                </div>
+              </button>
 
               <button
                 onClick={signOut}
@@ -203,6 +215,11 @@ export function DesktopSidebar() {
           <span>Private & secure ($0/mo)</span>
         </div>
       </div>
+
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
     </aside>
   );
 }
