@@ -20,6 +20,43 @@ function getAdminSupabaseClient() {
   return null;
 }
 
+function parseNaturalExpense(text: string) {
+  const amountMatch = text.match(/(?:₹|rs\.?|inr)?\s*(\d+(?:[.,]\d+)?)/i);
+  const parsedAmount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : NaN;
+  const cleanText = text.replace(amountMatch ? amountMatch[0] : '', '').trim();
+  const lower = cleanText.toLowerCase();
+
+  let category = 'Other';
+  if (/food|lunch|dinner|breakfast|snack|coffee|tea|cafe|burger|pizza|zomato|swiggy|chai|starbucks|mcdonalds|subway|restaurant|eat/i.test(lower)) {
+    category = 'Food';
+  } else if (/uber|ola|cab|auto|metro|petrol|diesel|fuel|bus|train|flight|transport|taxi|rapido/i.test(lower)) {
+    category = 'Transport';
+  } else if (/amazon|flipkart|shopping|clothes|shoes|myntra|zara|h&m/i.test(lower)) {
+    category = 'Shopping';
+  } else if (/electricity|wifi|internet|bill|recharge|water|gas|rent|maintenance|jio|airtel/i.test(lower)) {
+    category = 'Bills';
+  } else if (/grocery|groceries|blinkit|zepto|instamart|milk|vegetables|fruits|supermarket/i.test(lower)) {
+    category = 'Groceries';
+  } else if (/movie|cinema|netflix|spotify|game|party|club|prime/i.test(lower)) {
+    category = 'Entertainment';
+  } else if (/doctor|medicine|pharmacy|hospital|gym|health|fitness/i.test(lower)) {
+    category = 'Health';
+  } else if (/invest|stocks|mutual fund|sip|crypto|gold/i.test(lower)) {
+    category = 'Investment';
+  }
+
+  let paymentMethod = 'UPI';
+  if (/cash/i.test(lower)) paymentMethod = 'Cash';
+  else if (/card|credit|debit/i.test(lower)) paymentMethod = 'Credit Card';
+
+  return {
+    amount: parsedAmount,
+    category,
+    paymentMethod,
+    note: cleanText || category,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const apiKeyParam = searchParams.get('api_key') || searchParams.get('key');
@@ -38,14 +75,19 @@ export async function POST(request: NextRequest) {
   };
 
   const body = await request.json().catch(() => ({}));
-  const rawAmount = body.amount;
+
+  // Support smart single-string inputs like "250 lunch" or "₹150 coffee starbucks"
+  const naturalInput = body.text || body.query || body.input || (typeof body.amount === 'string' && /[a-zA-Z]/.test(body.amount) ? body.amount : null);
+  const parsed = naturalInput ? parseNaturalExpense(String(naturalInput)) : null;
+
+  const rawAmount = parsed && !isNaN(parsed.amount) ? parsed.amount : body.amount;
   const amount = typeof rawAmount === 'number' ? rawAmount : parseFloat(String(rawAmount || '0'));
-  const categoryInput = String(body.category_id || body.category || 'Other').trim();
-  const paymentInput = String(body.payment_method_id || body.payment_method || 'UPI').trim();
+  const categoryInput = String(body.category_id || body.category || (parsed ? parsed.category : 'Other')).trim();
+  const paymentInput = String(body.payment_method_id || body.payment_method || (parsed ? parsed.paymentMethod : 'UPI')).trim();
   const todayStr = new Date().toISOString().split('T')[0];
   const expenseDate = body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : todayStr;
   const merchant = body.merchant ? String(body.merchant).substring(0, 100) : null;
-  const note = body.note ? String(body.note).substring(0, 200) : null;
+  const note = body.note ? String(body.note).substring(0, 200) : (parsed ? parsed.note : null);
 
   const logFinish = (statusCode: number, success: boolean, message?: string, error?: string) => {
     addShortcutLog({
