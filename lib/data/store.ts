@@ -495,35 +495,54 @@ export async function deleteCategory(id: string): Promise<boolean> {
 // PAYMENT METHODS
 // -------------------------------------------------------------
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
+  let result: PaymentMethod[] = [];
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient();
       const { data, error } = await supabase.from('payment_methods').select('*').order('created_at');
       if (!error && data && data.length > 0) {
-        return data as PaymentMethod[];
-      }
-
-      // Auto-seed default payment methods in Supabase if user has none
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
-      if (userId && (!data || data.length === 0)) {
-        const seedMethods = [
-          { user_id: userId, name: 'UPI', type: 'upi', is_default: true },
-          { user_id: userId, name: 'Credit Card', type: 'card', is_default: false },
-          { user_id: userId, name: 'Debit Card', type: 'card', is_default: false },
-          { user_id: userId, name: 'Cash', type: 'cash', is_default: false },
-          { user_id: userId, name: 'Net Banking', type: 'bank', is_default: false },
-        ];
-        const { data: seeded } = await supabase.from('payment_methods').insert(seedMethods).select();
-        if (seeded && seeded.length > 0) {
-          return seeded as PaymentMethod[];
+        result = data as PaymentMethod[];
+      } else {
+        // Auto-seed default payment methods in Supabase if user has none
+        const { data: { session } } = await supabase.auth.getSession();
+        const userId = session?.user?.id;
+        if (userId && (!data || data.length === 0)) {
+          const seedMethods = [
+            { user_id: userId, name: 'UPI', type: 'upi', is_default: true },
+            { user_id: userId, name: 'Credit Card', type: 'card', is_default: false },
+            { user_id: userId, name: 'Debit Card', type: 'card', is_default: false },
+            { user_id: userId, name: 'Cash', type: 'cash', is_default: false },
+            { user_id: userId, name: 'Net Banking', type: 'bank', is_default: false },
+          ];
+          const { data: seeded } = await supabase.from('payment_methods').insert(seedMethods).select();
+          if (seeded && seeded.length > 0) {
+            result = seeded as PaymentMethod[];
+          }
         }
       }
     } catch (err) {
       console.warn('Supabase getPaymentMethods error:', err);
     }
   }
-  return getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
+  if (result.length === 0) {
+    result = getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
+  }
+
+  // Guarantee 'Credit Card' option exists in the payment methods list
+  const hasCreditCard = result.some((p) => p.name.toLowerCase().includes('credit card'));
+  if (!hasCreditCard) {
+    const ccItem: PaymentMethod = {
+      id: 'pm-credit-card',
+      name: 'Credit Card',
+      type: 'card',
+      is_default: false,
+      created_at: new Date().toISOString(),
+    };
+    result.splice(1, 0, ccItem);
+    setLocalItem(STORAGE_KEYS.PAYMENT_METHODS, result);
+  }
+
+  return result;
 }
 
 export async function savePaymentMethod(method: Partial<PaymentMethod> & { name: string }): Promise<PaymentMethod> {
