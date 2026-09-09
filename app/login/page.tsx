@@ -91,7 +91,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-8 sm:py-12">
+    <div className="min-h-screen w-full flex items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-9 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">

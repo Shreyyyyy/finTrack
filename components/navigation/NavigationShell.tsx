@@ -5,10 +5,9 @@ import { usePathname } from 'next/navigation';
 import { DesktopSidebar } from '@/components/navigation/DesktopSidebar';
 import { MobileTopHeader } from '@/components/navigation/MobileTopHeader';
 import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
-
 export function NavigationShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname === '/login' || pathname?.startsWith('/auth');
+  const isAuthPage = pathname?.startsWith('/login') || pathname?.startsWith('/auth');
 
   // Completely hide all navigation on login / auth callback screens
   if (isAuthPage) {
