@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   TrendingUp,
@@ -14,10 +14,11 @@ import {
   Sparkles,
   Wallet,
   X,
-  Check,
   Building2,
   Calendar,
   Layers,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { Goal, GoalCategoryType } from '@/types';
 import { formatINR, formatPercentage } from '@/lib/formatting/formatters';
@@ -27,11 +28,14 @@ import {
   getGoalCategoryType,
 } from '@/lib/formatting/savingsHelpers';
 import {
-  saveGoal,
-  addGoalTransaction,
-  deleteGoal,
-  DATA_CHANGE_EVENT,
-} from '@/lib/data/store';
+  calculateMonthsRemaining,
+  calculateSIPFutureValue,
+  calculateEmergencyRunway,
+  calculateLinearRequiredMonthly,
+  formatMonthsDuration,
+} from '@/lib/calculations/wealthCalculator';
+import { addGoalTransaction, deleteGoal } from '@/lib/data/store';
+import { GoalModalWithCalculator } from './GoalModalWithCalculator';
 import { showToast } from '@/components/ui/Toast';
 
 interface SavingsInvestmentsSectionProps {
@@ -48,17 +52,17 @@ const VAULT_PRESETS: Array<{
   institution: string;
 }> = [
   {
-    name: '6-Month Emergency Cash',
+    name: '6-Month Emergency Runway',
     category: 'emergency',
     icon: '🛡️',
-    suggestedTarget: 180000,
+    suggestedTarget: 240000,
     institution: 'Bank FD / Liquid Cash',
   },
   {
     name: 'Index & Mutual Funds SIP',
     category: 'investment',
     icon: '📈',
-    suggestedTarget: 300000,
+    suggestedTarget: 500000,
     institution: 'Zerodha / Groww',
   },
   {
@@ -66,20 +70,20 @@ const VAULT_PRESETS: Array<{
     category: 'travel',
     icon: '✈️',
     suggestedTarget: 75000,
-    institution: 'Savings Account',
+    institution: 'Travel Vault',
   },
   {
     name: 'Digital Gold / SGB',
     category: 'investment',
     icon: '🪙',
-    suggestedTarget: 100000,
+    suggestedTarget: 150000,
     institution: 'RBI Gold Bonds',
   },
   {
     name: 'Japan & Euro Dream Trip',
     category: 'travel',
     icon: '🌸',
-    suggestedTarget: 250000,
+    suggestedTarget: 300000,
     institution: 'Travel Vault',
   },
 ];
@@ -91,20 +95,16 @@ export function SavingsInvestmentsSection({
 }: SavingsInvestmentsSectionProps) {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<GoalCategoryType | 'all'>('all');
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [activePresetCategory, setActivePresetCategory] = useState<GoalCategoryType>('investment');
+  const [selectedFilter, setSelectedFilter] = useState<GoalCategoryType | 'all'>('all');
+
+  // Contribution / Withdrawal modal
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
   const [contributeType, setContributeType] = useState<'deposit' | 'withdraw'>('deposit');
   const [contributeAmount, setContributeAmount] = useState('');
   const [contributeNote, setContributeNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Form State for New Vault
-  const [vaultName, setVaultName] = useState('');
-  const [vaultCategory, setVaultCategory] = useState<GoalCategoryType>('investment');
-  const [currentAmount, setCurrentAmount] = useState('');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [institution, setInstitution] = useState('');
-  const [monthlyDeposit, setMonthlyDeposit] = useState('');
 
   // Compute portfolio metrics
   const portfolio = useMemo(
@@ -114,58 +114,27 @@ export function SavingsInvestmentsSection({
 
   // Filtered list
   const filteredGoals = useMemo(() => {
-    if (selectedPreset === 'all') return goals;
-    return goals.filter((g) => getGoalCategoryType(g) === selectedPreset);
-  }, [goals, selectedPreset]);
+    if (selectedFilter === 'all') return goals;
+    return goals.filter((g) => getGoalCategoryType(g) === selectedFilter);
+  }, [goals, selectedFilter]);
 
-  const handleOpenAddModal = (defaultCat?: GoalCategoryType) => {
-    setVaultName('');
-    setVaultCategory(defaultCat || 'investment');
-    setCurrentAmount('');
-    setTargetAmount('');
-    setInstitution('');
-    setMonthlyDeposit('');
+  const handleOpenAddModal = (defaultCat: GoalCategoryType = 'investment') => {
+    setEditingGoal(null);
+    setActivePresetCategory(defaultCat);
     setShowAddModal(true);
   };
 
-  const handleApplyPreset = (preset: (typeof VAULT_PRESETS)[0]) => {
-    setVaultName(preset.name);
-    setVaultCategory(preset.category);
-    setTargetAmount(String(preset.suggestedTarget));
-    setInstitution(preset.institution);
+  const handleOpenEditModal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setActivePresetCategory(getGoalCategoryType(goal));
+    setShowAddModal(true);
   };
 
-  const handleSaveVault = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!vaultName.trim()) {
-      showToast('Please enter a vault name', 'error');
-      return;
-    }
-
-    const current = parseFloat(currentAmount) || 0;
-    const target = parseFloat(targetAmount) || current || 10000;
-    const monthly = parseFloat(monthlyDeposit) || 0;
-
-    setIsSubmitting(true);
-    try {
-      await saveGoal({
-        name: vaultName.trim(),
-        category_type: vaultCategory,
-        institution: institution.trim() || undefined,
-        current_amount: current,
-        target_amount: target,
-        monthly_contribution: monthly,
-        status: current >= target && target > 0 ? 'completed' : 'in_progress',
-      });
-
-      showToast(`Added ${vaultName} to portfolio ✓`, 'success');
-      setShowAddModal(false);
+  const handleDeleteGoal = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      await deleteGoal(id);
+      showToast(`Deleted ${name} ✓`, 'info');
       onRefresh?.();
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to save vault', 'error');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -186,11 +155,10 @@ export function SavingsInvestmentsSection({
         contributeType,
         contributeNote.trim() || undefined
       );
-
       showToast(
         contributeType === 'deposit'
-          ? `Deposited ${formatINR(amt)} into ${contributeGoal.name} ✓`
-          : `Withdrew ${formatINR(amt)} from ${contributeGoal.name} ✓`,
+          ? `Added +${formatINR(amt)} to ${contributeGoal.name} ✓`
+          : `Withdrew -${formatINR(amt)} from ${contributeGoal.name} ✓`,
         'success'
       );
       setContributeGoal(null);
@@ -199,37 +167,40 @@ export function SavingsInvestmentsSection({
       onRefresh?.();
     } catch (err) {
       console.error(err);
-      showToast('Failed to log transaction', 'error');
+      showToast('Transaction failed', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-6">
-      {/* 1. Header with Title & Quick Add CTA */}
+    <div className="w-full bg-[#f0f7ff] dark:bg-slate-900/60 rounded-3xl p-5 sm:p-7 border border-sky-200 dark:border-slate-800 shadow-sm space-y-6">
+      {/* 1. SECTION HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center shadow-2xs">
-              <TrendingUp className="w-4 h-4 stroke-[2.5]" />
-            </div>
-            <div>
-              <h2 className="text-base font-black text-black dark:text-white tracking-tight uppercase">
-                Savings & Investments Portfolio
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/25">
+            <Coins className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-black text-black dark:text-white tracking-tight">
+                Savings & Wealth Hub
               </h2>
-              <p className="text-xs text-slate-700 dark:text-slate-400 font-bold">
-                Live balances for investments, emergency reserve, and travel funds
-              </p>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-200 text-sky-950 dark:bg-sky-950 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
+                Live Portfolio
+              </span>
             </div>
+            <p className="text-xs text-slate-700 dark:text-slate-400 font-semibold">
+              Track investments, emergency runway, travel funds, and auto-calculated compound returns.
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => handleOpenAddModal('investment')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-black shadow-md shadow-sky-600/20 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-black shadow-md shadow-sky-600/20 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Add Asset / Fund</span>
@@ -237,233 +208,273 @@ export function SavingsInvestmentsSection({
 
           <Link
             href="/goals"
-            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-sky-200 dark:border-slate-700 text-xs font-bold text-black dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-black dark:text-slate-200 text-xs font-bold hover:bg-sky-50 dark:hover:bg-slate-700 transition-colors"
           >
-            <span>All Vaults</span>
+            <span>Manage All</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </div>
 
-      {/* 2. Key Portfolio KPI Cards (The Exact 3 Pillars + Total) */}
+      {/* 2. TOP 4 PORTFOLIO KPI METRIC CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Wealth / Saved */}
-        <div className="p-4 rounded-2xl bg-gradient-to-br from-white via-sky-50/50 to-blue-50/40 dark:from-slate-800/80 dark:to-slate-900 border border-sky-200/90 dark:border-slate-700 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
-            <span>Total Net Saved</span>
-            <Coins className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+        {/* Total Net Saved */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-sky-100 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
+              Total Net Saved
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-950/60 flex items-center justify-center text-sky-600 dark:text-sky-400">
+              <Wallet className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-black dark:text-white">
-            {formatINR(portfolio.totalSavedAndInvested)}
-          </div>
-          <div className="text-[10px] text-slate-600 dark:text-slate-400 font-bold">
-            Across {portfolio.totalVaultsCount} active accounts
+          <div className="mt-2.5">
+            <div className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
+              {formatINR(portfolio.totalSavedAndInvested)}
+            </div>
+            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
+              Across {goals.length} portfolio vaults
+            </div>
           </div>
         </div>
 
-        {/* Invested Amount */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-blue-200/80 dark:border-blue-900/60 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-400">
-            <span>Invested Assets</span>
-            <span className="text-base">📈</span>
+        {/* Invested Assets */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-emerald-100 dark:border-emerald-950/40 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
+              Invested Assets
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-black dark:text-white">
-            {formatINR(portfolio.totalInvested)}
-          </div>
-          <div className="text-[10px] text-blue-700 dark:text-blue-300 font-bold flex items-center justify-between">
-            <span>{portfolio.investmentCount} investments</span>
-            <span>{portfolio.investmentPercentage.toFixed(0)}% share</span>
+          <div className="mt-2.5">
+            <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+              {formatINR(portfolio.totalInvested)}
+            </div>
+            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
+              {portfolio.investmentPercentage.toFixed(1)}% of total wealth • {portfolio.investmentCount} assets
+            </div>
           </div>
         </div>
 
         {/* Emergency Funds */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200/80 dark:border-emerald-900/60 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
-            <span>Emergency Fund</span>
-            <span className="text-base">🛡️</span>
-          </div>
-          <div className="text-xl sm:text-2xl font-black text-black dark:text-white">
-            {formatINR(portfolio.totalEmergency)}
-          </div>
-          <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-between">
-            <span>
-              {portfolio.emergencyRunwayMonths > 0
-                ? `${portfolio.emergencyRunwayMonths} mo runway`
-                : 'Liquid buffer'}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-blue-100 dark:border-blue-950/40 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
+              Emergency Funds
             </span>
-            <span>{portfolio.emergencyPercentage.toFixed(0)}% share</span>
+            <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 tracking-tight">
+              {formatINR(portfolio.totalEmergency)}
+            </div>
+            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
+              {portfolio.emergencyRunwayMonths > 0
+                ? `${portfolio.emergencyRunwayMonths.toFixed(1)} months expense runway`
+                : `${portfolio.emergencyPercentage.toFixed(1)}% of total wealth`}
+            </div>
           </div>
         </div>
 
-        {/* Travel Savings */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-sky-200/80 dark:border-sky-900/60 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-sky-800 dark:text-sky-400">
-            <span>Saved for Travel</span>
-            <span className="text-base">✈️</span>
+        {/* Saved for Travel */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-cyan-100 dark:border-cyan-950/40 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
+              Travel & Trips
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+              <Plane className="w-4 h-4" />
+            </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-black dark:text-white">
-            {formatINR(portfolio.totalTravel)}
-          </div>
-          <div className="text-[10px] text-sky-700 dark:text-sky-300 font-bold flex items-center justify-between">
-            <span>{portfolio.travelCount} trip funds</span>
-            <span>{portfolio.travelPercentage.toFixed(0)}% share</span>
+          <div className="mt-2.5">
+            <div className="text-xl sm:text-2xl font-black text-cyan-700 dark:text-cyan-300 tracking-tight">
+              {formatINR(portfolio.totalTravel)}
+            </div>
+            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
+              {portfolio.travelPercentage.toFixed(1)}% of total wealth • {portfolio.travelCount} trips
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Wealth Allocation Progress Distribution Bar */}
+      {/* 3. ALLOCATION PERCENTAGE BAR */}
       {portfolio.totalSavedAndInvested > 0 && (
-        <div className="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-slate-800/40 border border-sky-100 dark:border-slate-800 space-y-2">
-          <div className="flex items-center justify-between text-xs font-black text-slate-800 dark:text-slate-300">
-            <span>Wealth Allocation Distribution</span>
-            <span className="text-slate-600 dark:text-slate-400 font-bold text-[11px]">
-              100% of Saved Net Worth
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-sky-100 dark:border-slate-800 shadow-xs space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+            <span className="font-black text-black dark:text-white flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-sky-600" />
+              <span>Wealth Allocation Distribution</span>
+            </span>
+            <span className="text-[11px] text-slate-600 dark:text-slate-400">
+              Total: {formatINR(portfolio.totalSavedAndInvested)}
             </span>
           </div>
 
-          <div className="w-full h-3 rounded-full bg-sky-200/50 dark:bg-slate-700 overflow-hidden flex">
-            {portfolio.totalInvested > 0 && (
+          <div className="h-3 w-full rounded-full bg-sky-100 dark:bg-slate-800 overflow-hidden flex">
+            {portfolio.investmentPercentage > 0 && (
               <div
                 style={{ width: `${portfolio.investmentPercentage}%` }}
-                className="h-full bg-blue-600 dark:bg-blue-500 transition-all duration-500"
-                title={`Investments: ${formatINR(portfolio.totalInvested)} (${portfolio.investmentPercentage.toFixed(1)}%)`}
+                className="bg-emerald-500 h-full transition-all duration-500"
+                title={`Invested: ${portfolio.investmentPercentage.toFixed(1)}%`}
               />
             )}
-            {portfolio.totalEmergency > 0 && (
+            {portfolio.emergencyPercentage > 0 && (
               <div
                 style={{ width: `${portfolio.emergencyPercentage}%` }}
-                className="h-full bg-emerald-500 transition-all duration-500"
-                title={`Emergency: ${formatINR(portfolio.totalEmergency)} (${portfolio.emergencyPercentage.toFixed(1)}%)`}
+                className="bg-blue-600 h-full transition-all duration-500"
+                title={`Emergency: ${portfolio.emergencyPercentage.toFixed(1)}%`}
               />
             )}
-            {portfolio.totalTravel > 0 && (
+            {portfolio.travelPercentage > 0 && (
               <div
                 style={{ width: `${portfolio.travelPercentage}%` }}
-                className="h-full bg-sky-500 transition-all duration-500"
-                title={`Travel: ${formatINR(portfolio.totalTravel)} (${portfolio.travelPercentage.toFixed(1)}%)`}
+                className="bg-cyan-500 h-full transition-all duration-500"
+                title={`Travel: ${portfolio.travelPercentage.toFixed(1)}%`}
               />
             )}
             {portfolio.otherPercentage > 0 && (
               <div
                 style={{ width: `${portfolio.otherPercentage}%` }}
-                className="h-full bg-amber-500 transition-all duration-500"
-                title={`Other: ${portfolio.otherPercentage.toFixed(1)}%`}
+                className="bg-amber-500 h-full transition-all duration-500"
+                title={`Goals & Purchases: ${portfolio.otherPercentage.toFixed(1)}%`}
               />
             )}
           </div>
 
-          {/* Legend row */}
-          <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] font-bold">
-            <div className="flex items-center gap-1.5 text-blue-900 dark:text-blue-300">
-              <span className="w-2 h-2 rounded-full bg-blue-600" />
-              <span>Invested: {formatINR(portfolio.totalInvested)}</span>
+          <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] font-bold text-slate-700 dark:text-slate-400">
+            <div className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+              <span>Invested: {portfolio.investmentPercentage.toFixed(0)}%</span>
             </div>
-            <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Emergency: {formatINR(portfolio.totalEmergency)}</span>
+            <div className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
+              <span>Emergency: {portfolio.emergencyPercentage.toFixed(0)}%</span>
             </div>
-            <div className="flex items-center gap-1.5 text-sky-900 dark:text-sky-300">
-              <span className="w-2 h-2 rounded-full bg-sky-500" />
-              <span>Travel: {formatINR(portfolio.totalTravel)}</span>
+            <div className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block" />
+              <span>Travel: {portfolio.travelPercentage.toFixed(0)}%</span>
             </div>
-            {portfolio.totalPurchases + portfolio.totalOther > 0 && (
-              <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-300">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span>Other: {formatINR(portfolio.totalPurchases + portfolio.totalOther)}</span>
+            {portfolio.otherPercentage > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                <span>Goals: {portfolio.otherPercentage.toFixed(0)}%</span>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* 4. Vault Category Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {(
-          [
-            { id: 'all', label: 'All Vaults', icon: '💎' },
-            { id: 'investment', label: 'Investments', icon: '📈' },
-            { id: 'emergency', label: 'Emergency Fund', icon: '🛡️' },
-            { id: 'travel', label: 'Travel & Trips', icon: '✈️' },
-            { id: 'purchase', label: 'Goals & Purchases', icon: '🎯' },
-          ] as const
-        ).map((tab) => (
+      {/* 4. FILTER TABS & PRESET SHORTCUTS */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200/80 dark:border-slate-800 pb-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
           <button
-            key={tab.id}
             type="button"
-            onClick={() => setSelectedPreset(tab.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-              selectedPreset === tab.id
-                ? 'bg-sky-600 text-white shadow-xs font-black'
-                : 'bg-sky-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-sky-100 border border-sky-100 dark:border-slate-700'
+            onClick={() => setSelectedFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+              selectedFilter === 'all'
+                ? 'bg-black dark:bg-white text-white dark:text-black shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white border border-sky-100 dark:border-slate-700'
             }`}
           >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
+            All Vaults ({goals.length})
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => setSelectedFilter('investment')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
+              selectedFilter === 'investment'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white border border-sky-100 dark:border-slate-700'
+            }`}
+          >
+            <span>📈 Investments</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedFilter('emergency')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
+              selectedFilter === 'emergency'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white border border-sky-100 dark:border-slate-700'
+            }`}
+          >
+            <span>🛡️ Emergency</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedFilter('travel')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
+              selectedFilter === 'travel'
+                ? 'bg-cyan-600 text-white shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white border border-sky-100 dark:border-slate-700'
+            }`}
+          >
+            <span>✈️ Travel</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedFilter('purchase')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
+              selectedFilter === 'purchase'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white border border-sky-100 dark:border-slate-700'
+            }`}
+          >
+            <span>🎯 Goals & Purchases</span>
+          </button>
+        </div>
+
+        <div className="text-xs font-bold text-slate-700 dark:text-slate-400">
+          Showing {filteredGoals.length} of {goals.length} vaults
+        </div>
       </div>
 
-      {/* 5. Vaults Cards Grid or Clean Empty Starter */}
+      {/* 5. PORTFOLIO VAULT CARDS GRID */}
       {filteredGoals.length === 0 ? (
-        <div className="py-8 px-4 rounded-3xl bg-sky-50/40 dark:bg-slate-800/30 border border-dashed border-sky-200 dark:border-slate-800 text-center space-y-4">
-          <div className="max-w-sm mx-auto space-y-1">
-            <h4 className="text-sm font-black text-black dark:text-white">
-              No vaults found in this category
-            </h4>
-            <p className="text-xs text-slate-700 dark:text-slate-400 font-medium">
-              Start tracking your savings and investments with 1 click:
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-sky-100 dark:border-slate-800 text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-slate-800 flex items-center justify-center text-sky-600 dark:text-sky-400 mx-auto">
+            <Coins className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-black text-sm text-black dark:text-white">
+              {selectedFilter === 'all'
+                ? 'No Savings or Investment Vaults Yet'
+                : `No ${selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1)} Vaults Found`}
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto font-medium mt-1">
+              Create a vault to start auto-calculating mutual funds till 2036, emergency runway, or vacation savings.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-xl mx-auto pt-1">
+          <div className="flex flex-wrap justify-center gap-2 pt-1">
             <button
               type="button"
-              onClick={() => {
-                handleApplyPreset(VAULT_PRESETS[0]);
-                setShowAddModal(true);
-              }}
-              className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 hover:border-emerald-400 text-left transition-all active:scale-95 shadow-2xs space-y-1"
+              onClick={() => handleOpenAddModal('emergency')}
+              className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-900 text-xs font-black hover:bg-blue-100 transition-colors"
             >
-              <span className="text-lg">🛡️</span>
-              <div className="text-xs font-black text-black dark:text-white">Emergency Fund</div>
-              <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
-                6-Month Reserve
-              </div>
+              + Emergency Runway
             </button>
-
             <button
               type="button"
-              onClick={() => {
-                handleApplyPreset(VAULT_PRESETS[1]);
-                setShowAddModal(true);
-              }}
-              className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 hover:border-blue-400 text-left transition-all active:scale-95 shadow-2xs space-y-1"
+              onClick={() => handleOpenAddModal('investment')}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 text-xs font-black hover:bg-emerald-100 transition-colors"
             >
-              <span className="text-lg">📈</span>
-              <div className="text-xs font-black text-black dark:text-white">Investments</div>
-              <div className="text-[10px] text-blue-700 dark:text-blue-400 font-bold">
-                Mutual Funds & Stocks
-              </div>
+              + Mutual Funds / SIP
             </button>
-
             <button
               type="button"
-              onClick={() => {
-                handleApplyPreset(VAULT_PRESETS[2]);
-                setShowAddModal(true);
-              }}
-              className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 hover:border-sky-400 text-left transition-all active:scale-95 shadow-2xs space-y-1"
+              onClick={() => handleOpenAddModal('travel')}
+              className="px-3.5 py-1.5 rounded-xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-900 text-xs font-black hover:bg-cyan-100 transition-colors"
             >
-              <span className="text-lg">✈️</span>
-              <div className="text-xs font-black text-black dark:text-white">Travel Savings</div>
-              <div className="text-[10px] text-sky-700 dark:text-sky-400 font-bold">
-                Goa & Vacations
-              </div>
+              + Travel Fund
             </button>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredGoals.map((goal) => {
             const catType = getGoalCategoryType(goal);
             const badge = getCategoryBadge(catType);
@@ -471,27 +482,77 @@ export function SavingsInvestmentsSection({
               goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
             const isCompleted = goal.status === 'completed' || pct >= 100;
 
+            // Calculations
+            const monthsLeft = calculateMonthsRemaining(goal.deadline);
+            const sipProjection =
+              catType === 'investment' && goal.deadline
+                ? calculateSIPFutureValue({
+                    monthlyInvestment: goal.monthly_contribution || 0,
+                    months: monthsLeft,
+                    annualRatePct: goal.expected_cagr || 12,
+                    currentAmount: goal.current_amount || 0,
+                  })
+                : null;
+
+            const runwayCoverage =
+              catType === 'emergency'
+                ? calculateEmergencyRunway({
+                    currentAmount: goal.current_amount || 0,
+                    monthlyBurn: monthlyBurnRate > 0 ? monthlyBurnRate : 40000,
+                  })
+                : 0;
+
+            const linearNeeded =
+              (catType === 'travel' || catType === 'purchase') && goal.deadline
+                ? calculateLinearRequiredMonthly({
+                    targetAmount: goal.target_amount,
+                    currentAmount: goal.current_amount,
+                    months: monthsLeft,
+                  })
+                : 0;
+
             return (
               <div
                 key={goal.id}
-                className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 shadow-2xs flex flex-col justify-between space-y-3.5 hover:border-sky-200 transition-colors"
+                className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3.5 hover:border-sky-300 transition-all"
               >
                 <div>
-                  {/* Top line badge and institution */}
+                  {/* Top line: Badge, institution, Edit & Delete */}
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${badge.badgeBg} ${badge.borderBg}`}
-                    >
-                      <span>{badge.icon}</span>
-                      <span>{badge.label}</span>
-                    </span>
-
-                    {goal.institution && (
-                      <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                        <Building2 className="w-3 h-3" />
-                        <span>{goal.institution}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${badge.badgeBg} ${badge.borderBg}`}
+                      >
+                        <span>{badge.icon}</span>
+                        <span>{badge.label}</span>
                       </span>
-                    )}
+
+                      {goal.institution && (
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                          <Building2 className="w-3 h-3" />
+                          <span>{goal.institution}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(goal)}
+                        title="Edit Vault & Calculations"
+                        className="p-1 rounded-lg text-slate-400 hover:text-black dark:hover:text-white hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteGoal(goal.id, goal.name)}
+                        title="Delete Vault"
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   <h3 className="font-black text-sm text-black dark:text-white truncate">
@@ -501,7 +562,7 @@ export function SavingsInvestmentsSection({
                   {/* Current Balance */}
                   <div className="mt-2 flex items-baseline justify-between">
                     <div>
-                      <div className="text-lg font-black text-black dark:text-white">
+                      <div className="text-lg sm:text-xl font-black text-black dark:text-white tracking-tight">
                         {formatINR(goal.current_amount)}
                       </div>
                       <div className="text-[11px] text-slate-700 dark:text-slate-400 font-bold">
@@ -525,16 +586,80 @@ export function SavingsInvestmentsSection({
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
                         catType === 'investment'
-                          ? 'bg-blue-600'
-                          : catType === 'emergency'
                           ? 'bg-emerald-500'
+                          : catType === 'emergency'
+                          ? 'bg-blue-600'
                           : catType === 'travel'
-                          ? 'bg-sky-500'
+                          ? 'bg-cyan-500'
                           : 'bg-amber-500'
                       }`}
                       style={{ width: `${Math.min(100, Math.max(3, pct))}%` }}
                     />
                   </div>
+
+                  {/* DYNAMIC FINANCIAL INTELLIGENCE AUTO-CALCULATION BLOCK */}
+                  {catType === 'investment' && goal.deadline && sipProjection && (
+                    <div className="mt-3 p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 space-y-1 text-[11px]">
+                      <div className="flex items-center justify-between font-bold text-slate-700 dark:text-slate-300">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-emerald-600" />
+                          <span>Horizon: {goal.deadline}</span>
+                        </span>
+                        <span className="font-black text-emerald-700 dark:text-emerald-400">
+                          {formatMonthsDuration(monthsLeft)} ({monthsLeft} mos)
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between font-black text-black dark:text-white">
+                        <span>Projected @ {goal.expected_cagr || 12}% CAGR</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                          ~{formatINR(sipProjection.estimatedMaturity)}
+                        </span>
+                      </div>
+                      {goal.monthly_contribution > 0 && (
+                        <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 flex items-center justify-between pt-0.5">
+                          <span>Monthly SIP: {formatINR(goal.monthly_contribution)}/mo</span>
+                          <span>Gain: +{formatINR(sipProjection.wealthGain)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {catType === 'emergency' && (
+                    <div className="mt-3 p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 space-y-1 text-[11px]">
+                      <div className="flex items-center justify-between font-bold text-blue-900 dark:text-blue-300">
+                        <span className="flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-blue-600" />
+                          <span>Runway Coverage:</span>
+                        </span>
+                        <span className="font-black text-blue-700 dark:text-blue-400">
+                          {runwayCoverage.toFixed(1)} months saved
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                        Based on {formatINR(monthlyBurnRate > 0 ? monthlyBurnRate : 40000)}/mo living expense
+                      </div>
+                    </div>
+                  )}
+
+                  {(catType === 'travel' || catType === 'purchase') && goal.deadline && (
+                    <div className="mt-3 p-2.5 rounded-xl bg-cyan-50/70 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-900/50 space-y-1 text-[11px]">
+                      <div className="flex items-center justify-between font-bold text-cyan-900 dark:text-cyan-300">
+                        <span className="flex items-center gap-1">
+                          <Plane className="w-3 h-3 text-cyan-600" />
+                          <span>Trip Date: {goal.deadline}</span>
+                        </span>
+                        <span className="font-black text-cyan-700 dark:text-cyan-400">
+                          {monthsLeft} mos left
+                        </span>
+                      </div>
+                      {linearNeeded > 0 && (
+                        <div className="text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between pt-0.5">
+                          <span>Needed: {formatINR(linearNeeded)}/mo</span>
+                          <span>Plan: {formatINR(goal.monthly_contribution)}/mo</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Bottom Quick Action Deposit / Withdraw */}
@@ -546,7 +671,7 @@ export function SavingsInvestmentsSection({
                       setContributeType('deposit');
                       setContributeAmount('');
                     }}
-                    className="flex-1 py-1.5 px-2 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-black dark:text-white text-[11px] font-black border border-sky-200/70 dark:border-slate-700 flex items-center justify-center gap-1 active:scale-95 transition-all"
+                    className="flex-1 py-2 px-2 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-black dark:text-white text-xs font-black border border-sky-200/70 dark:border-slate-700 flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
                     <ArrowDownRight className="w-3.5 h-3.5 text-emerald-600" />
                     <span>+ Deposit</span>
@@ -559,7 +684,7 @@ export function SavingsInvestmentsSection({
                       setContributeType('withdraw');
                       setContributeAmount('');
                     }}
-                    className="flex-1 py-1.5 px-2 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-black dark:text-white text-[11px] font-black border border-sky-200/70 dark:border-slate-700 flex items-center justify-center gap-1 active:scale-95 transition-all"
+                    className="flex-1 py-2 px-2 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-black dark:text-white text-xs font-black border border-sky-200/70 dark:border-slate-700 flex items-center justify-center gap-1 active:scale-95 transition-all"
                   >
                     <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" />
                     <span>- Withdraw</span>
@@ -571,287 +696,99 @@ export function SavingsInvestmentsSection({
         </div>
       )}
 
-      {/* 6. MODAL: Add New Savings Vault / Investment Fund */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div
-            className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-sky-100 dark:border-slate-800 shadow-2xl p-6 space-y-5 max-h-[92vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-sky-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-                  <Plus className="w-4 h-4 stroke-[2.5]" />
-                </div>
-                <div>
-                  <h3 className="font-black text-sm text-black dark:text-white">
-                    Add Savings or Investment Fund
-                  </h3>
-                  <p className="text-[11px] text-slate-700 dark:text-slate-400 font-medium">
-                    Create a dedicated vault for travel, investments, or safety reserves
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-black dark:hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* 6. MODAL: Create or Edit Vault with Deterministic Financial Calculator */}
+      <GoalModalWithCalculator
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          setEditingGoal(null);
+        }}
+        onSaved={onRefresh}
+        initialGoal={editingGoal}
+        presetCategory={activePresetCategory}
+        monthlyBurnRate={monthlyBurnRate}
+      />
 
-            <form onSubmit={handleSaveVault} className="space-y-4">
-              {/* Category / Vault Type Selection */}
-              <div>
-                <label className="block text-xs font-black text-black dark:text-slate-300 mb-1.5">
-                  Fund Purpose / Category
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(
-                    [
-                      { id: 'investment', label: 'Investment', icon: '📈' },
-                      { id: 'emergency', label: 'Emergency', icon: '🛡️' },
-                      { id: 'travel', label: 'Travel', icon: '✈️' },
-                      { id: 'purchase', label: 'Dream Goal', icon: '🎯' },
-                    ] as const
-                  ).map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setVaultCategory(item.id)}
-                      className={`p-2.5 rounded-xl border text-left transition-all active:scale-95 flex items-center gap-2 ${
-                        vaultCategory === item.id
-                          ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                          : 'bg-sky-50/70 dark:bg-slate-800 border-sky-200 dark:border-slate-700 text-black dark:text-slate-300'
-                      }`}
-                    >
-                      <span className="text-base">{item.icon}</span>
-                      <span className="text-xs font-black">{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Presets Strip */}
-              <div className="space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400">
-                  Quick Ideas:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {VAULT_PRESETS.map((p) => (
-                    <button
-                      key={p.name}
-                      type="button"
-                      onClick={() => handleApplyPreset(p)}
-                      className="px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-slate-800/80 border border-sky-200 dark:border-slate-700 text-[11px] font-bold text-black dark:text-slate-300 hover:border-sky-500 transition-colors"
-                    >
-                      {p.icon} {p.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Fund Name */}
-              <div>
-                <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                  Vault Name / Fund Title
-                </label>
-                <input
-                  type="text"
-                  value={vaultName}
-                  onChange={(e) => setVaultName(e.target.value)}
-                  placeholder="e.g. Zerodha Index SIP, Goa Vacation, Emergency Cash"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-xs font-bold text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  required
-                />
-              </div>
-
-              {/* Balances */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Current Saved / Invested Amount (₹)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-xs font-black text-slate-500">₹</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={currentAmount}
-                      onChange={(e) => setCurrentAmount(e.target.value)}
-                      placeholder="50000"
-                      className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-xs font-black text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Target Goal Amount (₹)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-xs font-black text-slate-500">₹</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={targetAmount}
-                      onChange={(e) => setTargetAmount(e.target.value)}
-                      placeholder="150000"
-                      className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-xs font-black text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Institution and Monthly SIP */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Platform / Bank / Location
-                  </label>
-                  <input
-                    type="text"
-                    value={institution}
-                    onChange={(e) => setInstitution(e.target.value)}
-                    placeholder="e.g. Zerodha, Groww, HDFC, Cash"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-xs font-bold text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Monthly Contribution / SIP (₹)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-xs font-black text-slate-500">₹</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={monthlyDeposit}
-                      onChange={(e) => setMonthlyDeposit(e.target.value)}
-                      placeholder="5000"
-                      className="w-full pl-7 pr-3 py-2.5 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-xs font-black text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-sky-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl border border-sky-200 dark:border-slate-700 text-xs font-bold text-black dark:text-slate-300 hover:bg-sky-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-black shadow-md shadow-sky-600/20 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Saving...' : 'Create Vault'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 7. MODAL: Instant Deposit / Withdraw */}
+      {/* 7. MODAL: Deposit / Withdraw Log */}
       {contributeGoal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
           <div
-            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-sky-100 dark:border-slate-800 shadow-2xl p-6 space-y-4"
+            className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-sky-100 dark:border-slate-800 shadow-2xl p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-sky-100 dark:border-slate-800 pb-3">
-              <div>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                    contributeType === 'deposit'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                  }`}
+                >
+                  {contributeType === 'deposit' ? (
+                    <ArrowDownRight className="w-4 h-4" />
+                  ) : (
+                    <ArrowUpRight className="w-4 h-4" />
+                  )}
+                </div>
                 <h3 className="font-black text-sm text-black dark:text-white">
-                  {contributeType === 'deposit' ? 'Add Funds to Vault' : 'Withdraw from Vault'}
+                  {contributeType === 'deposit' ? 'Add Deposit' : 'Withdraw Funds'}
                 </h3>
-                <p className="text-[11px] text-slate-700 dark:text-slate-400 font-medium">
-                  {contributeGoal.name} · Current: {formatINR(contributeGoal.current_amount)}
-                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setContributeGoal(null)}
                 className="p-1 rounded-lg text-slate-400 hover:text-black dark:hover:text-white"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleLogTransaction} className="space-y-4">
-              {/* Type Switcher */}
-              <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-sky-100/70 dark:bg-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setContributeType('deposit')}
-                  className={`py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
-                    contributeType === 'deposit'
-                      ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-xs'
-                      : 'text-slate-700 dark:text-slate-400'
-                  }`}
-                >
-                  <ArrowDownRight className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Deposit (+)</span>
-                </button>
+            <div>
+              <p className="text-xs text-slate-700 dark:text-slate-400 font-bold">
+                Target Vault:{' '}
+                <span className="font-black text-black dark:text-white">{contributeGoal.name}</span>
+              </p>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold mt-0.5">
+                Current Balance: {formatINR(contributeGoal.current_amount)}
+              </p>
+            </div>
 
-                <button
-                  type="button"
-                  onClick={() => setContributeType('withdraw')}
-                  className={`py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
-                    contributeType === 'withdraw'
-                      ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-xs'
-                      : 'text-slate-700 dark:text-slate-400'
-                  }`}
-                >
-                  <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" />
-                  <span>Withdraw (-)</span>
-                </button>
-              </div>
-
-              {/* Amount */}
+            <form onSubmit={handleLogTransaction} className="space-y-3">
               <div>
                 <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                  Amount (₹)
+                  Amount (₹) *
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-sm font-black text-slate-500">₹</span>
+                  <span className="absolute left-3 top-2.5 text-xs font-black text-slate-500">₹</span>
                   <input
                     type="number"
+                    autoFocus
+                    required
                     min="1"
                     step="any"
                     value={contributeAmount}
                     onChange={(e) => setContributeAmount(e.target.value)}
-                    placeholder="10000"
-                    className="w-full pl-8 pr-3 py-2.5 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-base font-black text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    required
-                    autoFocus
+                    placeholder="5000"
+                    className="w-full pl-7 pr-3 py-2 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-xs font-black text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
               </div>
 
-              {/* Note */}
               <div>
                 <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                  Note / Reason (Optional)
+                  Note / Memo (Optional)
                 </label>
                 <input
                   type="text"
                   value={contributeNote}
                   onChange={(e) => setContributeNote(e.target.value)}
-                  placeholder="e.g. Monthly SIP, Ticket booking, Emergency clinic"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-xs font-bold text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="e.g. Monthly SIP transfer, Bonus, Flight tickets"
+                  className="w-full px-3 py-2 rounded-xl bg-sky-50/50 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 text-xs font-bold text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
 
-              {/* Footer */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-sky-100 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setContributeGoal(null)}

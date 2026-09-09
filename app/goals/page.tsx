@@ -22,7 +22,6 @@ import {
 import { Goal, GoalCategoryType } from '@/types';
 import {
   getGoals,
-  saveGoal,
   deleteGoal,
   addGoalTransaction,
   DATA_CHANGE_EVENT,
@@ -33,20 +32,15 @@ import {
   getCategoryBadge,
   getGoalCategoryType,
 } from '@/lib/formatting/savingsHelpers';
+import {
+  calculateMonthsRemaining,
+  calculateSIPFutureValue,
+  calculateEmergencyRunway,
+  calculateLinearRequiredMonthly,
+  formatMonthsDuration,
+} from '@/lib/calculations/wealthCalculator';
+import { GoalModalWithCalculator } from '@/components/dashboard/GoalModalWithCalculator';
 import { showToast } from '@/components/ui/Toast';
-
-const CATEGORY_OPTIONS: Array<{
-  value: GoalCategoryType;
-  label: string;
-  icon: string;
-  desc: string;
-}> = [
-  { value: 'investment', label: 'Investments', icon: '📈', desc: 'Stocks, Mutual Funds, SIP, Gold' },
-  { value: 'emergency', label: 'Emergency Fund', icon: '🛡️', desc: '3-6 month safety cash runway' },
-  { value: 'travel', label: 'Travel & Trips', icon: '✈️', desc: 'Vacation, flights, hotel savings' },
-  { value: 'purchase', label: 'Dream Purchase', icon: '🎯', desc: 'Gadgets, car, home down payment' },
-  { value: 'other', label: 'General Savings', icon: '💰', desc: 'Other custom savings vaults' },
-];
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -54,21 +48,16 @@ export default function GoalsPage() {
   const [filterCategory, setFilterCategory] = useState<'all' | GoalCategoryType>('all');
 
   // Modals
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showGoalModal, setShowGoalModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [activePresetCategory, setActivePresetCategory] = useState<GoalCategoryType>('investment');
+
+  // Contribution / Withdrawal modal
   const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
   const [contributeType, setContributeType] = useState<'deposit' | 'withdraw'>('deposit');
   const [contributeAmount, setContributeAmount] = useState('');
   const [contributeNote, setContributeNote] = useState('');
-
-  // Form State for Create/Edit
-  const [name, setName] = useState('');
-  const [categoryType, setCategoryType] = useState<GoalCategoryType>('investment');
-  const [institution, setInstitution] = useState('');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [currentAmount, setCurrentAmount] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [monthlyContrib, setMonthlyContrib] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadData = async () => {
     try {
@@ -96,61 +85,23 @@ export default function GoalsPage() {
     return goals.filter((g) => getGoalCategoryType(g) === filterCategory);
   }, [goals, filterCategory]);
 
-  const openCreateModal = (presetCategory?: GoalCategoryType) => {
-    setName('');
-    setCategoryType(presetCategory || 'investment');
-    setInstitution('');
-    setTargetAmount('');
-    setCurrentAmount('0');
-    setDeadline('');
-    setMonthlyContrib('');
+  const openCreateModal = (presetCategory: GoalCategoryType = 'investment') => {
     setEditingGoal(null);
-    setShowCreateModal(true);
+    setActivePresetCategory(presetCategory);
+    setShowGoalModal(true);
   };
 
   const openEditModal = (goal: Goal) => {
-    setName(goal.name);
-    setCategoryType(getGoalCategoryType(goal));
-    setInstitution(goal.institution || '');
-    setTargetAmount(String(goal.target_amount));
-    setCurrentAmount(String(goal.current_amount));
-    setDeadline(goal.deadline || '');
-    setMonthlyContrib(String(goal.monthly_contribution || 0));
     setEditingGoal(goal);
-    setShowCreateModal(true);
+    setActivePresetCategory(getGoalCategoryType(goal));
+    setShowGoalModal(true);
   };
 
-  const handleSaveGoal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const target = parseFloat(targetAmount);
-    if (isNaN(target) || target <= 0) {
-      showToast('Please enter a valid target amount', 'error');
-      return;
-    }
-
-    const current = parseFloat(currentAmount) || 0;
-    const contrib = parseFloat(monthlyContrib) || 0;
-
-    await saveGoal({
-      id: editingGoal?.id,
-      name: name.trim(),
-      category_type: categoryType,
-      institution: institution.trim() || null,
-      target_amount: target,
-      current_amount: current,
-      deadline: deadline || null,
-      monthly_contribution: contrib,
-      status: current >= target ? 'completed' : 'in_progress',
-    });
-
-    setShowCreateModal(false);
-    showToast(editingGoal ? 'Goal updated ✓' : 'Goal & Asset added ✓', 'success');
-  };
-
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this asset/goal?')) {
+  const handleDelete = async (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
       await deleteGoal(id);
-      showToast('Deleted ✓', 'info');
+      showToast(`Deleted ${name} ✓`, 'info');
+      loadData();
     }
   };
 
@@ -163,19 +114,30 @@ export default function GoalsPage() {
       return;
     }
 
-    await addGoalTransaction(
-      contributeGoal.id,
-      amount,
-      contributeType,
-      contributeNote.trim() || undefined
-    );
-    setContributeGoal(null);
-    setContributeAmount('');
-    setContributeNote('');
-    showToast(
-      contributeType === 'deposit' ? 'Deposit logged ✓' : 'Withdrawal logged ✓',
-      'success'
-    );
+    setIsSubmitting(true);
+    try {
+      await addGoalTransaction(
+        contributeGoal.id,
+        amount,
+        contributeType,
+        contributeNote.trim() || undefined
+      );
+      setContributeGoal(null);
+      setContributeAmount('');
+      setContributeNote('');
+      showToast(
+        contributeType === 'deposit'
+          ? `Deposit of ${formatINR(amount)} added ✓`
+          : `Withdrawal of ${formatINR(amount)} logged ✓`,
+        'success'
+      );
+      loadData();
+    } catch (err) {
+      console.error(err);
+      showToast('Transaction failed', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -188,17 +150,17 @@ export default function GoalsPage() {
               Savings & Investments
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-              Wealth Hub
+              Auto-Calculator Hub
             </span>
           </div>
           <p className="text-xs text-slate-700 dark:text-slate-400 font-semibold mt-0.5">
-            Real-time tracking of your investments, travel funds, emergency cash reserves, and goals.
+            Auto-calculate SIP compounding till 2036, emergency runway targets, and trip milestones.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => openCreateModal()}
+            onClick={() => openCreateModal('investment')}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/20 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -244,7 +206,7 @@ export default function GoalsPage() {
               {formatINR(portfolio.totalInvested)}
             </div>
             <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
-              {portfolio.investmentPercentage.toFixed(1)}% of total wealth
+              {portfolio.investmentPercentage.toFixed(1)}% of total wealth • {portfolio.investmentCount} assets
             </div>
           </div>
         </div>
@@ -396,6 +358,35 @@ export default function GoalsPage() {
             const isDone = goal.status === 'completed' || pct >= 100;
             const remaining = Math.max(0, goal.target_amount - goal.current_amount);
 
+            // Horizon & Compound Calculations
+            const monthsLeft = calculateMonthsRemaining(goal.deadline);
+            const sipProjection =
+              catType === 'investment' && goal.deadline
+                ? calculateSIPFutureValue({
+                    monthlyInvestment: goal.monthly_contribution || 0,
+                    months: monthsLeft,
+                    annualRatePct: goal.expected_cagr || 12,
+                    currentAmount: goal.current_amount || 0,
+                  })
+                : null;
+
+            const runwayCoverage =
+              catType === 'emergency'
+                ? calculateEmergencyRunway({
+                    currentAmount: goal.current_amount || 0,
+                    monthlyBurn: 40000,
+                  })
+                : 0;
+
+            const linearNeeded =
+              (catType === 'travel' || catType === 'purchase') && goal.deadline
+                ? calculateLinearRequiredMonthly({
+                    targetAmount: goal.target_amount,
+                    currentAmount: goal.current_amount,
+                    months: monthsLeft,
+                  })
+                : 0;
+
             return (
               <div
                 key={goal.id}
@@ -442,7 +433,7 @@ export default function GoalsPage() {
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDelete(goal.id)}
+                        onClick={() => handleDelete(goal.id, goal.name)}
                         aria-label="Delete goal"
                         className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                       >
@@ -483,13 +474,68 @@ export default function GoalsPage() {
                           ? 'bg-blue-600'
                           : catType === 'travel'
                           ? 'bg-cyan-500'
-                          : 'bg-sky-600'
+                          : 'bg-emerald-600'
                       }`}
                       style={{ width: `${Math.min(100, Math.max(2, pct))}%` }}
                     />
                   </div>
 
-                  <div className="flex justify-between text-[11px] font-semibold text-slate-700 dark:text-slate-400 mt-1.5">
+                  {/* Dynamic Financial Intelligence Box */}
+                  {catType === 'investment' && goal.deadline && sipProjection && (
+                    <div className="mt-3 p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 space-y-1 text-xs">
+                      <div className="flex items-center justify-between font-bold text-slate-700 dark:text-slate-300">
+                        <span>Horizon: {goal.deadline}</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-black">
+                          {formatMonthsDuration(monthsLeft)} ({monthsLeft} mos)
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between font-black text-black dark:text-white">
+                        <span>Projected @ {goal.expected_cagr || 12}% CAGR</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                          ~{formatINR(sipProjection.estimatedMaturity)}
+                        </span>
+                      </div>
+                      {goal.monthly_contribution > 0 && (
+                        <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center justify-between pt-0.5">
+                          <span>Monthly SIP: {formatINR(goal.monthly_contribution)}/mo</span>
+                          <span>Gain: +{formatINR(sipProjection.wealthGain)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {catType === 'emergency' && (
+                    <div className="mt-3 p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 space-y-1 text-xs">
+                      <div className="flex items-center justify-between font-bold text-blue-900 dark:text-blue-300">
+                        <span>Runway Coverage:</span>
+                        <span className="font-black text-blue-700 dark:text-blue-400">
+                          {runwayCoverage.toFixed(1)} months saved
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                        Target: {formatINR(goal.target_amount)} reserve
+                      </div>
+                    </div>
+                  )}
+
+                  {(catType === 'travel' || catType === 'purchase') && goal.deadline && (
+                    <div className="mt-3 p-3 rounded-xl bg-cyan-50/70 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-900/50 space-y-1 text-xs">
+                      <div className="flex items-center justify-between font-bold text-cyan-900 dark:text-cyan-300">
+                        <span>Target Date: {goal.deadline}</span>
+                        <span className="font-black text-cyan-700 dark:text-cyan-400">
+                          {monthsLeft} mos left
+                        </span>
+                      </div>
+                      {linearNeeded > 0 && (
+                        <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between pt-0.5">
+                          <span>Required: {formatINR(linearNeeded)}/mo</span>
+                          <span>Plan: {formatINR(goal.monthly_contribution)}/mo</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-[11px] font-semibold text-slate-700 dark:text-slate-400 mt-2">
                     <span>{isDone ? 'Milestone Achieved ✓' : `${formatINR(remaining)} to target`}</span>
                     {goal.monthly_contribution > 0 && (
                       <span className="font-bold text-sky-700 dark:text-sky-400">
@@ -531,164 +577,17 @@ export default function GoalsPage() {
         </div>
       )}
 
-      {/* Create / Edit Goal Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-sky-100 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-black text-black dark:text-white">
-                  {editingGoal ? 'Edit Savings / Asset Vault' : 'Create Savings or Investment Vault'}
-                </h3>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
-                  Track travel, investments, emergency runway, and milestones.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-black dark:hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveGoal} className="space-y-4">
-              {/* Category Selector */}
-              <div>
-                <label className="block text-xs font-black text-black dark:text-slate-300 mb-1.5">
-                  Portfolio Type
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setCategoryType(opt.value)}
-                      className={`p-2.5 rounded-xl text-left border transition-all ${
-                        categoryType === opt.value
-                          ? 'bg-sky-50 border-sky-600 dark:bg-sky-950 dark:border-sky-500 shadow-sm'
-                          : 'bg-white dark:bg-slate-800 border-sky-100 dark:border-slate-700 hover:bg-sky-50/50'
-                      }`}
-                    >
-                      <div className="text-base">{opt.icon}</div>
-                      <div className="text-xs font-black text-black dark:text-white mt-1">
-                        {opt.label}
-                      </div>
-                      <div className="text-[10px] text-slate-600 dark:text-slate-400 font-medium leading-tight mt-0.5">
-                        {opt.desc}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Goal Name & Institution */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Vault / Asset Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Nifty 50 Index Fund, 6M Runway, Bali 2026"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-medium text-black dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Platform / Bank (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Zerodha, Groww, HDFC, Cash"
-                    value={institution}
-                    onChange={(e) => setInstitution(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-medium text-black dark:text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Target & Current Amount */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Target Goal (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="150000"
-                    value={targetAmount}
-                    onChange={(e) => setTargetAmount(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Current Balance / Saved (₹)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="75000"
-                    value={currentAmount}
-                    onChange={(e) => setCurrentAmount(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Deadline & Monthly Plan */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Target Deadline
-                  </label>
-                  <input
-                    type="date"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-medium text-black dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-black dark:text-slate-300 mb-1">
-                    Monthly SIP / Plan (₹)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="10000"
-                    value={monthlyContrib}
-                    onChange={(e) => setMonthlyContrib(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-sky-100 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-sky-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-black shadow-md shadow-sky-600/20 active:scale-95 transition-all"
-                >
-                  {editingGoal ? 'Update Vault' : 'Save Vault'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Goal Modal with Deterministic Financial Calculator */}
+      <GoalModalWithCalculator
+        isOpen={showGoalModal}
+        onClose={() => {
+          setShowGoalModal(false);
+          setEditingGoal(null);
+        }}
+        onSaved={loadData}
+        initialGoal={editingGoal}
+        presetCategory={activePresetCategory}
+      />
 
       {/* Contribution / Withdrawal Modal */}
       {contributeGoal && (
@@ -749,7 +648,8 @@ export default function GoalsPage() {
                 </button>
                 <button
                   type="submit"
-                  className={`flex-1 py-2.5 rounded-xl text-white text-xs font-black shadow-md transition-all active:scale-95 ${
+                  disabled={isSubmitting}
+                  className={`flex-1 py-2.5 rounded-xl text-white text-xs font-black shadow-md transition-all active:scale-95 disabled:opacity-50 ${
                     contributeType === 'deposit'
                       ? 'bg-sky-600 hover:bg-sky-500 shadow-sky-600/20'
                       : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'

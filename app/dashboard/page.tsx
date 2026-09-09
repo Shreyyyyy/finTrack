@@ -29,7 +29,7 @@ import { GoalsPreviewCard } from '@/components/dashboard/GoalsPreviewCard';
 import { DailySpendingChart } from '@/components/dashboard/DailySpendingChart';
 import { RecentExpenses } from '@/components/dashboard/RecentExpenses';
 import { SalaryBudgetModal } from '@/components/dashboard/SalaryBudgetModal';
-import { QuickGoalModal } from '@/components/dashboard/QuickGoalModal';
+import { GoalModalWithCalculator } from '@/components/dashboard/GoalModalWithCalculator';
 import { BackTapSetupModal } from '@/components/shortcuts/BackTapSetupModal';
 import { HomePagePieChart } from '@/components/dashboard/HomePagePieChart';
 import { DashboardTabs, DashboardTabType } from '@/components/dashboard/DashboardTabs';
@@ -464,13 +464,14 @@ export default function DashboardPage() {
         }}
       />
 
-      <QuickGoalModal
+      <GoalModalWithCalculator
         isOpen={showGoalModal}
         onClose={() => setShowGoalModal(false)}
-        onGoalSaved={() => {
+        onSaved={() => {
           setShowGoalModal(false);
           loadData();
         }}
+        monthlyBurnRate={summary.totalSpent}
       />
 
       <BackTapSetupModal

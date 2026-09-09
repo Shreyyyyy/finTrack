@@ -94,6 +94,7 @@ export interface Goal {
   monthly_contribution: number;
   status: 'in_progress' | 'completed' | 'paused';
   institution?: string | null;
+  expected_cagr?: number;
   created_at?: string;
   updated_at?: string;
 }
