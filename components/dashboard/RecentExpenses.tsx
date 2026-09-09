@@ -42,32 +42,32 @@ export function RecentExpenses({ expenses, limit = 8 }: RecentExpensesProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
           Recent Expenses
         </h3>
-        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+        <span className="text-xs font-bold text-slate-600 dark:text-slate-500">
           Showing latest {displayList.length}
         </span>
       </div>
 
       {displayList.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm text-slate-500">No expenses recorded yet.</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No expenses recorded yet.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(grouped).map(([dateLabel, items]) => (
             <div key={dateLabel} className="space-y-2">
-              <div className="text-[11px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase px-1">
+              <div className="text-[11px] font-bold tracking-wider text-slate-600 dark:text-slate-500 uppercase px-1">
                 {dateLabel}
               </div>
               <div className="space-y-1.5">
                 {items.map((exp) => (
                   <div
                     key={exp.id}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-sky-50/70 dark:bg-slate-800/40 hover:bg-sky-100/70 dark:hover:bg-slate-800 transition-colors group shadow-2xs"
                   >
                     {/* Left: Icon & Details */}
                     <div className="flex items-center gap-3 min-w-0">
@@ -76,16 +76,16 @@ export function RecentExpenses({ expenses, limit = 8 }: RecentExpensesProps) {
                         style={{
                           backgroundColor: exp.category?.color
                             ? `${exp.category.color}20`
-                            : '#f1f5f9',
+                            : '#e0f2fe',
                         }}
                       >
                         {exp.category?.icon || '💰'}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                        <div className="font-bold text-sm text-black dark:text-white truncate">
                           {exp.merchant || exp.category?.name || 'General Expense'}
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
+                        <div className="text-xs text-slate-700 dark:text-slate-400 truncate flex items-center gap-1.5 font-medium">
                           <span>{exp.category?.name || 'Other'}</span>
                           <span>·</span>
                           <span className="flex items-center gap-1">
@@ -104,7 +104,7 @@ export function RecentExpenses({ expenses, limit = 8 }: RecentExpensesProps) {
 
                     {/* Right: Amount & Action buttons */}
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">
+                      <span className="text-sm font-black text-black dark:text-white">
                         {formatINR(exp.amount)}
                       </span>
 
@@ -137,8 +137,8 @@ export function RecentExpenses({ expenses, limit = 8 }: RecentExpensesProps) {
       {/* Edit Modal */}
       {editingExpense && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-sky-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-black text-black dark:text-white mb-4">
               Edit Expense
             </h3>
             <ExpenseForm

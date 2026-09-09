@@ -186,18 +186,18 @@ export default function TransactionsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white">
             Transactions
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            {filteredExpenses.length} transactions · Total: <span className="font-bold text-slate-900 dark:text-white">{formatINR(totalFilteredAmount)}</span>
+          <p className="text-xs text-slate-700 dark:text-slate-400 mt-0.5">
+            {filteredExpenses.length} transactions · Total: <span className="font-bold text-black dark:text-white">{formatINR(totalFilteredAmount)}</span>
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportFiltered}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-sky-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-black dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-800 shadow-sm"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Export</span>
@@ -205,7 +205,7 @@ export default function TransactionsPage() {
 
           <Link
             href="/add"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/20 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Add Expense</span>
@@ -214,7 +214,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* Search & Filter Toolbar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-sky-100 dark:border-slate-800 shadow-sm space-y-3">
         <div className="flex items-center gap-2">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -224,7 +224,7 @@ export default function TransactionsPage() {
               placeholder="Search merchant, category, note..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-900 dark:text-white"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-sky-50/70 dark:bg-slate-800/60 border border-sky-100 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500 text-black dark:text-white"
             />
             {searchQuery && (
               <button
@@ -241,30 +241,30 @@ export default function TransactionsPage() {
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-colors ${
               showFilters || hasActiveFilters
-                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                : 'bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                ? 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-800 font-bold'
+                : 'bg-white dark:bg-slate-850 text-black dark:text-slate-300 border-sky-100 dark:border-slate-700'
             }`}
           >
             <Filter className="w-3.5 h-3.5" />
             <span>Filters</span>
             {hasActiveFilters && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-0.5" />
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 ml-0.5" />
             )}
           </button>
         </div>
 
         {/* Collapsible Filter Controls */}
         {showFilters && (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="pt-2 border-t border-sky-100 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {/* Category Select */}
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
+              <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">
                 Category
               </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none"
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 text-black dark:text-slate-200 focus:outline-none font-medium"
               >
                 <option value="all">All Categories</option>
                 {categories.map((c) => (
@@ -277,13 +277,13 @@ export default function TransactionsPage() {
 
             {/* Payment Method Select */}
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
+              <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">
                 Payment
               </label>
               <select
                 value={selectedPaymentMethod}
                 onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none"
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 text-black dark:text-slate-200 focus:outline-none font-medium"
               >
                 <option value="all">All Methods</option>
                 {paymentMethods.map((p) => (
@@ -296,13 +296,13 @@ export default function TransactionsPage() {
 
             {/* Sort Order */}
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
+              <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">
                 Sort
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none"
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 text-black dark:text-slate-200 focus:outline-none font-medium"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -328,11 +328,11 @@ export default function TransactionsPage() {
 
       {/* Grouped Transaction List */}
       {filteredExpenses.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-slate-200 dark:border-slate-800 text-center space-y-3">
-          <p className="text-sm text-slate-500">No transactions match your current filters.</p>
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-sky-100 dark:border-slate-800 text-center space-y-3">
+          <p className="text-sm text-slate-600 dark:text-slate-400">No transactions match your current filters.</p>
           <button
             onClick={clearFilters}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-sky-50 dark:bg-slate-800 text-black dark:text-slate-200 border border-sky-100 dark:border-slate-700"
           >
             Reset Filters
           </button>
@@ -344,19 +344,19 @@ export default function TransactionsPage() {
             return (
               <div key={dateStr} className="space-y-2">
                 {/* Date Header with Daily Total */}
-                <div className="flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <div className="flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
                   <span>{formatRelativeDate(dateStr)} · {formatDateIndian(dateStr)}</span>
-                  <span className="text-slate-700 dark:text-slate-300 font-semibold">
+                  <span className="text-black dark:text-slate-300 font-bold">
                     Total: {formatINR(dayTotal)}
                   </span>
                 </div>
 
                 {/* Items in this date */}
-                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/80 overflow-hidden shadow-sm">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-sky-100 dark:border-slate-800 divide-y divide-sky-100/80 dark:divide-slate-800/80 overflow-hidden shadow-sm">
                   {items.map((exp) => (
                     <div
                       key={exp.id}
-                      className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors group"
+                      className="flex items-center justify-between p-3.5 hover:bg-sky-50/60 dark:hover:bg-slate-850 transition-colors group"
                     >
                       {/* Details */}
                       <div className="flex items-center gap-3 min-w-0">
@@ -365,16 +365,16 @@ export default function TransactionsPage() {
                           style={{
                             backgroundColor: exp.category?.color
                               ? `${exp.category.color}20`
-                              : '#f1f5f9',
+                              : '#e0f2fe',
                           }}
                         >
                           {exp.category?.icon || '💰'}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                          <div className="font-bold text-sm text-black dark:text-white truncate">
                             {exp.merchant || exp.category?.name || 'Expense'}
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
+                          <div className="text-xs text-slate-700 dark:text-slate-400 truncate flex items-center gap-1.5 font-medium">
                             <span>{exp.category?.name || 'Other'}</span>
                             <span>·</span>
                             <span className="flex items-center gap-1">
@@ -384,7 +384,7 @@ export default function TransactionsPage() {
                             {exp.note && (
                               <>
                                 <span>·</span>
-                                <span className="truncate max-w-[160px] text-slate-400">{exp.note}</span>
+                                <span className="truncate max-w-[160px] text-slate-500">{exp.note}</span>
                               </>
                             )}
                           </div>
@@ -393,14 +393,14 @@ export default function TransactionsPage() {
 
                       {/* Right Amount & Actions */}
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">
+                        <span className="font-black text-sm text-black dark:text-white">
                           {formatINR(exp.amount)}
                         </span>
 
                         <div className="flex items-center gap-1 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => setEditingExpense(exp)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-black dark:hover:text-white hover:bg-sky-50 dark:hover:bg-slate-800"
                             title="Edit"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -408,7 +408,7 @@ export default function TransactionsPage() {
                           <button
                             onClick={() => handleDelete(exp.id)}
                             disabled={deletingId === exp.id}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -427,8 +427,8 @@ export default function TransactionsPage() {
       {/* Edit Modal */}
       {editingExpense && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-sky-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-black text-black dark:text-white mb-4">
               Edit Transaction
             </h3>
             <ExpenseForm

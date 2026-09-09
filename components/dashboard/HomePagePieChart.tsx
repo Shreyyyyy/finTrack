@@ -87,19 +87,19 @@ export function HomePagePieChart({
   const topCategory = isPlaceholderState ? null : categoryData[0];
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4 h-full flex flex-col justify-between">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4 h-full flex flex-col justify-between">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-emerald-500/10 text-sky-700 dark:text-emerald-400 flex items-center justify-center">
               <PieIcon className="w-4 h-4" />
             </div>
-            <h2 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
+            <h2 className="text-xs font-black uppercase tracking-wider text-black dark:text-white">
               Spending Breakdown Pie
             </h2>
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-[11px] text-slate-700 dark:text-slate-400 mt-0.5 font-medium">
             {isPlaceholderState
               ? 'Category layout preview • Log expenses to see live %'
               : `${categoryData.length} active spending ${categoryData.length === 1 ? 'category' : 'categories'}`}
@@ -107,33 +107,33 @@ export function HomePagePieChart({
         </div>
 
         {/* View Mode Toggle Switch */}
-        <div className="flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 p-1 border border-slate-200/60 dark:border-slate-700/60">
+        <div className="flex items-center gap-1 rounded-xl bg-sky-50 dark:bg-slate-800/80 p-1 border border-sky-100 dark:border-slate-700/60">
           <button
             onClick={() => setViewMode('donut')}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all ${
+            className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all ${
               viewMode === 'donut'
-                ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-slate-900 text-black dark:text-emerald-400 shadow-xs'
+                : 'text-slate-700 hover:text-black dark:text-slate-400 dark:hover:text-white'
             }`}
           >
             Donut
           </button>
           <button
             onClick={() => setViewMode('pie')}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all ${
+            className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all ${
               viewMode === 'pie'
-                ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-slate-900 text-black dark:text-emerald-400 shadow-xs'
+                : 'text-slate-700 hover:text-black dark:text-slate-400 dark:hover:text-white'
             }`}
           >
             Pie
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all ${
+            className={`px-2 py-0.5 rounded-lg text-[11px] font-black transition-all ${
               viewMode === 'list'
-                ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-slate-900 text-black dark:text-emerald-400 shadow-xs'
+                : 'text-slate-700 hover:text-black dark:text-slate-400 dark:hover:text-white'
             }`}
           >
             List
@@ -202,10 +202,10 @@ export function HomePagePieChart({
             {/* Center Label for Donut View */}
             {viewMode === 'donut' && (
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                <div className="text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400">
                   {isPlaceholderState ? 'Total Spent' : 'Spent'}
                 </div>
-                <div className="text-base sm:text-lg font-black text-slate-900 dark:text-white mt-0.5">
+                <div className="text-base sm:text-lg font-black text-black dark:text-white mt-0.5">
                   {formatINR(totalSpent)}
                 </div>
               </div>
@@ -216,7 +216,7 @@ export function HomePagePieChart({
             {categoryData.map((cat) => (
               <div
                 key={cat.id}
-                className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs"
+                className="p-2 rounded-xl bg-sky-50/70 dark:bg-slate-800/40 border border-sky-100 dark:border-slate-800 flex items-center justify-between text-xs"
               >
                 <div className="flex items-center gap-2">
                   <span
@@ -224,11 +224,11 @@ export function HomePagePieChart({
                     style={{ backgroundColor: cat.color }}
                   />
                   <span>{cat.icon}</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                  <span className="font-bold text-black dark:text-slate-200">
                     {cat.name}
                   </span>
                 </div>
-                <div className="font-extrabold text-slate-900 dark:text-white">
+                <div className="font-black text-black dark:text-white">
                   {isPlaceholderState ? '₹0' : formatINR(cat.value)}
                 </div>
               </div>
@@ -238,11 +238,11 @@ export function HomePagePieChart({
       </div>
 
       {/* Quick Category Log Chips */}
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+      <div className="pt-2 border-t border-sky-100 dark:border-slate-800">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400 mb-1.5 flex items-center justify-between">
           <span>Quick Category Log</span>
           {isPlaceholderState && (
-            <span className="text-emerald-500 font-semibold">+ Tap to add</span>
+            <span className="text-sky-700 dark:text-emerald-500 font-bold">+ Tap to add</span>
           )}
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -250,7 +250,7 @@ export function HomePagePieChart({
             <Link
               key={cat.id}
               href={`/add?category=${encodeURIComponent(cat.id)}`}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-50 hover:bg-emerald-50 dark:bg-slate-800/80 dark:hover:bg-emerald-950/60 border border-slate-200/70 dark:border-slate-700/70 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-emerald-600 transition-all active:scale-95 shadow-2xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-slate-800/80 dark:hover:bg-emerald-950/60 border border-sky-100 dark:border-slate-700/70 text-[11px] font-bold text-black dark:text-slate-300 transition-all active:scale-95 shadow-2xs"
             >
               <span>{cat.icon}</span>
               <span>{cat.name}</span>

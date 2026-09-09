@@ -55,20 +55,20 @@ export function CategorySpendingCard({
   }));
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
           Category Spending
         </h3>
 
         {sortedCategories.length > 0 && (
-          <div className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5">
+          <div className="flex items-center gap-1 rounded-lg bg-sky-50 dark:bg-slate-800 p-0.5 border border-sky-100 dark:border-transparent">
             <button
               onClick={() => setViewMode('bars')}
               className={`p-1 rounded-md text-xs transition-colors ${
                 viewMode === 'bars'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-400'
+                  ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500'
               }`}
               title="List View"
             >
@@ -78,8 +78,8 @@ export function CategorySpendingCard({
               onClick={() => setViewMode('donut')}
               className={`p-1 rounded-md text-xs transition-colors ${
                 viewMode === 'donut'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-400'
+                  ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-xs font-bold'
+                  : 'text-slate-500'
               }`}
               title="Donut Chart View"
             >
@@ -91,11 +91,11 @@ export function CategorySpendingCard({
 
       {sortedCategories.length === 0 ? (
         <div className="py-4 text-center space-y-3">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-700 dark:text-slate-400 font-medium">
             No spending recorded for this month yet.
           </p>
           <div className="space-y-1.5">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
               Quick Log by Category:
             </span>
             <div className="flex flex-wrap items-center justify-center gap-1.5">
@@ -103,7 +103,7 @@ export function CategorySpendingCard({
                 <Link
                   key={cat.id}
                   href={`/add?category=${encodeURIComponent(cat.id)}`}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/40 border border-slate-200/80 dark:border-slate-700/80 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all active:scale-95"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-emerald-950/40 border border-sky-100 dark:border-slate-700/80 text-xs font-bold text-black dark:text-slate-300 transition-all active:scale-95 shadow-2xs"
                 >
                   <span>{cat.icon}</span>
                   <span>{cat.name}</span>
@@ -154,7 +154,7 @@ export function CategorySpendingCard({
             {sortedCategories.slice(0, 4).map((cat) => (
               <div
                 key={cat.id}
-                className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400 font-medium"
+                className="flex items-center gap-1 text-[11px] text-slate-800 dark:text-slate-400 font-semibold"
               >
                 <span
                   className="w-2 h-2 rounded-full"
@@ -172,18 +172,18 @@ export function CategorySpendingCard({
               <div className="flex items-center justify-between text-xs font-semibold">
                 <div className="flex items-center gap-2">
                   <span>{cat.icon}</span>
-                  <span className="text-slate-800 dark:text-slate-200">{cat.name}</span>
+                  <span className="text-black dark:text-slate-200 font-bold">{cat.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-900 dark:text-white font-bold">
+                  <span className="text-black dark:text-white font-black">
                     {formatINR(cat.spent)}
                   </span>
-                  <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">
+                  <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-500">
                     ({formatPercentage(cat.percentage)})
                   </span>
                 </div>
               </div>
-              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-sky-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-300"
                   style={{

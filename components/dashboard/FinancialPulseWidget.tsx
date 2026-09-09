@@ -182,45 +182,45 @@ export function FinancialPulseWidget({
     : 0;
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 text-white border border-slate-800/90 shadow-2xl p-5 sm:p-6 transition-all">
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-sky-50/70 to-blue-50/50 dark:from-slate-900 dark:via-slate-900/95 dark:to-slate-950 text-black dark:text-white border border-sky-200/90 dark:border-slate-800/90 shadow-xl shadow-sky-950/5 p-5 sm:p-6 transition-all">
       {/* Dynamic ambient backdrop glows */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
+      <div className="absolute top-0 right-0 w-80 h-80 bg-sky-400/10 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/10 dark:bg-teal-500/5 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
 
       <div className="relative space-y-5">
         {/* Top Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-emerald-500/25 shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-500 dark:from-emerald-500 dark:to-teal-400 text-white dark:text-slate-950 flex items-center justify-center font-black shadow-lg shadow-sky-600/25 dark:shadow-emerald-500/25 shrink-0">
               <Zap className="w-5 h-5 fill-current" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-black tracking-tight text-white">
+                <h3 className="text-sm sm:text-base font-black tracking-tight text-black dark:text-white">
                   Live Financial Vitality & Insights
                 </h3>
-                <span className="flex items-center gap-1.5 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="flex items-center gap-1.5 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-100 dark:bg-emerald-500/20 text-sky-900 dark:text-emerald-300 border border-sky-200 dark:border-emerald-500/30">
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-500 dark:bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-sky-600 dark:bg-emerald-500"></span>
                   </span>
                   <span>Live</span>
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-700 dark:text-slate-400 font-medium">
                 Actionable health metrics, habit tracking & spending velocity
               </p>
             </div>
           </div>
 
           {/* Interactive Navigation Pills */}
-          <div className="flex items-center p-1 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs font-semibold self-start sm:self-auto shadow-inner">
+          <div className="flex items-center p-1 rounded-xl bg-sky-100/90 dark:bg-slate-800/80 border border-sky-200 dark:border-slate-700/60 text-xs font-semibold self-start sm:self-auto shadow-inner">
             <button
               onClick={() => setActiveTab('vitality')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                 activeTab === 'vitality'
-                  ? 'bg-emerald-600 text-white shadow font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-sky-600 dark:bg-emerald-600 text-white shadow font-bold'
+                  : 'text-slate-700 dark:text-slate-400 hover:text-black dark:hover:text-white'
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
@@ -230,8 +230,8 @@ export function FinancialPulseWidget({
               onClick={() => setActiveTab('radar')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                 activeTab === 'radar'
-                  ? 'bg-emerald-600 text-white shadow font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-sky-600 dark:bg-emerald-600 text-white shadow font-bold'
+                  : 'text-slate-700 dark:text-slate-400 hover:text-black dark:hover:text-white'
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
@@ -241,8 +241,8 @@ export function FinancialPulseWidget({
               onClick={() => setActiveTab('simulator')}
               className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                 activeTab === 'simulator'
-                  ? 'bg-emerald-600 text-white shadow font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-sky-600 dark:bg-emerald-600 text-white shadow font-bold'
+                  : 'text-slate-700 dark:text-slate-400 hover:text-black dark:hover:text-white'
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
@@ -256,11 +256,11 @@ export function FinancialPulseWidget({
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
               {/* Vitality Gauge Card */}
-              <div className="md:col-span-5 p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center gap-4">
+              <div className="md:col-span-5 p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-white/[0.03] border border-sky-100 dark:border-white/10 shadow-2xs flex items-center gap-4">
                 <div className="relative w-20 h-20 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                     <path
-                      className="text-slate-800 stroke-current"
+                      className="text-sky-100 dark:text-slate-800 stroke-current"
                       strokeWidth="3.5"
                       fill="none"
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -268,10 +268,10 @@ export function FinancialPulseWidget({
                     <path
                       className={`${
                         clampedScore >= 80
-                          ? 'text-emerald-400'
+                          ? 'text-sky-600 dark:text-emerald-400'
                           : clampedScore >= 60
-                          ? 'text-amber-400'
-                          : 'text-rose-400'
+                          ? 'text-amber-500 dark:text-amber-400'
+                          : 'text-rose-500 dark:text-rose-400'
                       } stroke-current transition-all duration-1000 ease-out`}
                       strokeWidth="3.5"
                       strokeDasharray={`${clampedScore}, 100`}
@@ -281,25 +281,25 @@ export function FinancialPulseWidget({
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-black text-white">{clampedScore}</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
+                    <span className="text-xl font-black text-black dark:text-white">{clampedScore}</span>
+                    <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
                       /100
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider">
                     Health Index
                   </div>
-                  <div className="text-sm font-black text-white">
+                  <div className="text-sm font-black text-black dark:text-white">
                     {clampedScore >= 85
                       ? 'Fortified Wealth Rhythm'
                       : clampedScore >= 70
                       ? 'Stable Financial Health'
                       : 'Pacing Alert'}
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
+                  <p className="text-[11px] text-slate-700 dark:text-slate-400 leading-snug font-medium">
                     {clampedScore >= 80
                       ? 'Spending trajectory is safely below thresholds with strong surplus.'
                       : 'Outflow is close to pace limit. Restrict discretionary spends.'}
@@ -309,33 +309,33 @@ export function FinancialPulseWidget({
 
               {/* Micro Metrics Cluster */}
               <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-emerald-400" />
+                <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-white/[0.02] border border-sky-100 dark:border-white/5 space-y-1 shadow-2xs">
+                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-sky-600 dark:text-emerald-400" />
                     <span>Zero-Spend Days</span>
                   </div>
-                  <div className="text-lg font-black text-white">{noSpendDays} Days</div>
-                  <div className="text-[10px] text-emerald-400/90 font-medium">
+                  <div className="text-lg font-black text-black dark:text-white">{noSpendDays} Days</div>
+                  <div className="text-[10px] text-sky-700 dark:text-emerald-400/90 font-semibold">
                     {currentDay > 0 ? `${Math.round((noSpendDays / currentDay) * 100)}% spend-free` : 'Start tracking'}
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3 text-teal-400" />
+                <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-white/[0.02] border border-sky-100 dark:border-white/5 space-y-1 shadow-2xs">
+                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3 text-blue-600 dark:text-teal-400" />
                     <span>Daily Burn</span>
                   </div>
-                  <div className="text-lg font-black text-white">{formatINR(avgDailyBurn)}</div>
-                  <div className="text-[10px] text-slate-400 font-medium">Over {currentDay} active days</div>
+                  <div className="text-lg font-black text-black dark:text-white">{formatINR(avgDailyBurn)}</div>
+                  <div className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">Over {currentDay} active days</div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1 col-span-2 sm:col-span-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <Flame className="w-3 h-3 text-amber-400" />
+                <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-white/[0.02] border border-sky-100 dark:border-white/5 space-y-1 col-span-2 sm:col-span-1 shadow-2xs">
+                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Flame className="w-3 h-3 text-amber-500 dark:text-amber-400" />
                     <span>Active Streak</span>
                   </div>
-                  <div className="text-lg font-black text-white">{currentLoggingStreak} Days</div>
-                  <div className="text-[10px] text-amber-400/90 font-medium">
+                  <div className="text-lg font-black text-black dark:text-white">{currentLoggingStreak} Days</div>
+                  <div className="text-[10px] text-amber-600 dark:text-amber-400/90 font-semibold">
                     {currentLoggingStreak >= 3 ? 'Consistency on fire 🔥' : 'Log daily entries'}
                   </div>
                 </div>
@@ -343,20 +343,20 @@ export function FinancialPulseWidget({
             </div>
 
             {/* Month-End Spend & Surplus Projection Bar */}
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
+            <div className="p-4 rounded-2xl bg-white/90 dark:bg-white/[0.02] border border-sky-100 dark:border-white/10 space-y-3 shadow-2xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white">Month-End Outflow Projection</span>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="font-bold text-black dark:text-white">Month-End Outflow Projection</span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
                     ({daysRemaining} days remaining in month)
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="text-slate-400">
-                    Projected: <span className="font-bold text-white">{formatINR(projectedMonthEndSpend)}</span>
+                  <span className="text-slate-700 dark:text-slate-400 font-medium">
+                    Projected: <span className="font-black text-black dark:text-white">{formatINR(projectedMonthEndSpend)}</span>
                   </span>
                   {income > 0 && (
-                    <span className="text-emerald-400 font-bold">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-bold">
                       Surplus: {formatINR(projectedMonthEndSavings)}
                     </span>
                   )}
@@ -364,32 +364,32 @@ export function FinancialPulseWidget({
               </div>
 
               {/* Progress Dual-Tone Bar */}
-              <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden flex">
+              <div className="w-full bg-sky-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden flex">
                 {/* Spent so far */}
                 <div
-                  className="bg-emerald-500 h-full transition-all duration-700"
+                  className="bg-sky-600 dark:bg-emerald-500 h-full transition-all duration-700"
                   style={{ width: `${budgetBarSpendPct}%` }}
                   title={`Spent to date: ${formatINR(totalSpent)} (${budgetBarSpendPct}%)`}
                 />
                 {/* Projected for remaining days */}
                 <div
-                  className="bg-emerald-400/35 border-l border-emerald-300/40 h-full transition-all duration-700 repeating-linear-gradient"
+                  className="bg-sky-400/50 dark:bg-emerald-400/35 border-l border-sky-300 dark:border-emerald-300/40 h-full transition-all duration-700 repeating-linear-gradient"
                   style={{ width: `${budgetBarProjectedPct}%` }}
                   title={`Projected remaining spend: ${formatINR(projectedMonthEndSpend - totalSpent)}`}
                 />
               </div>
 
-              <div className="flex items-center justify-between text-[10px] text-slate-400">
+              <div className="flex items-center justify-between text-[10px] text-slate-700 dark:text-slate-400 font-medium">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                  <span>Spent: {formatINR(totalSpent)}</span>
+                  <span className="w-2 h-2 rounded-full bg-sky-600 dark:bg-emerald-500 inline-block" />
+                  <span>Spent: <strong className="text-black dark:text-white">{formatINR(totalSpent)}</strong></span>
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400/40 inline-block" />
-                  <span>Projected pace: +{formatINR(projectedMonthEndSpend - totalSpent)}</span>
+                  <span className="w-2 h-2 rounded-full bg-sky-400/60 dark:bg-emerald-400/40 inline-block" />
+                  <span>Projected pace: <strong className="text-black dark:text-white">+{formatINR(projectedMonthEndSpend - totalSpent)}</strong></span>
                 </span>
                 {monthlyBudget > 0 && (
-                  <span>Budget Limit: {formatINR(monthlyBudget)}</span>
+                  <span>Budget Limit: <strong className="text-black dark:text-white">{formatINR(monthlyBudget)}</strong></span>
                 )}
               </div>
             </div>
@@ -400,13 +400,13 @@ export function FinancialPulseWidget({
         {activeTab === 'radar' && (
           <div className="space-y-4">
             {/* 7-Day Micro Heatmap Dots Row */}
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3">
+            <div className="p-4 rounded-2xl bg-white/90 dark:bg-white/[0.02] border border-sky-100 dark:border-white/10 space-y-3 shadow-2xs">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="text-xs font-bold text-black dark:text-white flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-emerald-400" />
                   <span>Past 7-Day Spending Radar</span>
                 </div>
-                <div className="text-[10px] text-slate-400">
+                <div className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">
                   Green = Zero Spend Day (Disciplined)
                 </div>
               </div>
@@ -417,16 +417,16 @@ export function FinancialPulseWidget({
                     key={item.dayNumber}
                     className={`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all ${
                       item.isZeroSpend
-                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                        ? 'bg-emerald-50 dark:bg-emerald-500/15 border-emerald-300 dark:border-emerald-500/30 text-emerald-950 dark:text-emerald-300'
                         : item.isHighSpend
-                        ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                        : 'bg-white/[0.03] border-white/10 text-slate-300'
+                        ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/30 text-rose-950 dark:text-rose-300'
+                        : 'bg-white dark:bg-white/[0.03] border-sky-100 dark:border-white/10 text-black dark:text-slate-300'
                     }`}
                   >
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase">
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase">
                       {item.dayName}
                     </span>
-                    <span className="text-xs font-black my-1 text-white">
+                    <span className="text-xs font-black my-1 text-black dark:text-white">
                       {item.dayNumber}
                     </span>
                     <span className="text-[10px] font-bold">
@@ -446,8 +446,8 @@ export function FinancialPulseWidget({
                     key={badge.id}
                     className={`p-4 rounded-2xl border transition-all ${
                       badge.earned
-                        ? 'bg-white/[0.03] border-white/15 shadow-sm'
-                        : 'bg-white/[0.01] border-white/5 opacity-60'
+                        ? 'bg-white/90 dark:bg-white/[0.03] border-sky-100 dark:border-white/15 shadow-2xs'
+                        : 'bg-white/50 dark:bg-white/[0.01] border-sky-100/50 dark:border-white/5 opacity-60'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -455,15 +455,15 @@ export function FinancialPulseWidget({
                         <Icon className="w-4 h-4" />
                       </div>
                       {badge.earned && (
-                        <span className="flex items-center gap-1 text-[9px] font-bold uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                        <span className="flex items-center gap-1 text-[9px] font-bold uppercase text-emerald-700 dark:text-emerald-400 bg-emerald-100/80 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-500/30">
                           <CheckCircle2 className="w-2.5 h-2.5" />
                           <span>Unlocked</span>
                         </span>
                       )}
                     </div>
                     <div className="mt-3">
-                      <div className="text-xs font-bold text-white">{badge.title}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                      <div className="text-xs font-bold text-black dark:text-white">{badge.title}</div>
+                      <div className="text-[11px] text-slate-700 dark:text-slate-400 mt-0.5 leading-snug font-medium">
                         {badge.desc}
                       </div>
                     </div>
@@ -479,55 +479,55 @@ export function FinancialPulseWidget({
           <div className="space-y-4">
             {/* Top 3 Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="p-4 rounded-2xl bg-white/90 dark:bg-white/[0.03] border border-sky-100 dark:border-white/10 space-y-1 shadow-2xs">
+                <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider">
                   Cash Surplus in Hand
                 </div>
-                <div className="text-xl font-black text-emerald-400">
+                <div className="text-xl font-black text-emerald-700 dark:text-emerald-400">
                   {formatINR(remainingCashInHand)}
                 </div>
-                <p className="text-[11px] text-slate-400 leading-snug">
+                <p className="text-[11px] text-slate-700 dark:text-slate-400 leading-snug font-medium">
                   Net liquid savings remaining from this month&apos;s income.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="p-4 rounded-2xl bg-white/90 dark:bg-white/[0.03] border border-sky-100 dark:border-white/10 space-y-1 shadow-2xs">
+                <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider">
                   Actual Daily Burn
                 </div>
-                <div className="text-xl font-black text-amber-400">
-                  {formatINR(avgDailyBurn)} <span className="text-xs font-semibold text-slate-400">/ day</span>
+                <div className="text-xl font-black text-amber-700 dark:text-amber-400">
+                  {formatINR(avgDailyBurn)} <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">/ day</span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-snug">
+                <p className="text-[11px] text-slate-700 dark:text-slate-400 leading-snug font-medium">
                   Based on {monthExpenses.length} logged transactions this month.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="p-4 rounded-2xl bg-white/90 dark:bg-white/[0.03] border border-sky-100 dark:border-white/10 space-y-1 shadow-2xs">
+                <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider">
                   Runway at Current Pace
                 </div>
-                <div className="text-xl font-black text-teal-300">
+                <div className="text-xl font-black text-sky-800 dark:text-teal-300">
                   {runwayDaysLeft > 60 ? '60+ Days' : `${runwayDaysLeft} Days`}
                 </div>
-                <p className="text-[11px] text-slate-400 leading-snug">
+                <p className="text-[11px] text-slate-700 dark:text-slate-400 leading-snug font-medium">
                   Estimated buffer before liquid savings are depleted.
                 </p>
               </div>
             </div>
 
             {/* Interactive "What-If" Spending Simulator */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-emerald-500/20 space-y-4">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-white/[0.02] border border-sky-200/90 dark:border-emerald-500/20 space-y-4 shadow-2xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                  <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-emerald-500/20 text-sky-700 dark:text-emerald-400 flex items-center justify-center font-bold">
                     <Sliders className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">
+                    <div className="text-xs font-bold text-black dark:text-white">
                       Interactive Daily Burn Simulator
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-slate-700 dark:text-slate-400 font-medium">
                       Drag to simulate: what happens if you adjust daily spend for remaining {daysRemaining} days?
                     </div>
                   </div>
@@ -536,7 +536,7 @@ export function FinancialPulseWidget({
                 {simulatedDailyBurn !== null && (
                   <button
                     onClick={() => setSimulatedDailyBurn(null)}
-                    className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 self-start sm:self-auto transition-all"
+                    className="flex items-center gap-1 text-[11px] text-slate-800 dark:text-slate-400 hover:text-black dark:hover:text-white px-2.5 py-1 rounded-lg bg-sky-100 hover:bg-sky-200 dark:bg-slate-800 border border-sky-200 dark:border-slate-700 self-start sm:self-auto transition-all font-bold"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>Reset to Actual</span>
@@ -547,9 +547,9 @@ export function FinancialPulseWidget({
               {/* Slider Control */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">Simulated Daily Outflow:</span>
-                  <span className="text-base font-black text-emerald-400">
-                    {formatINR(effectiveSimulatedBurn)} <span className="text-xs font-normal text-slate-400">/ day</span>
+                  <span className="text-slate-700 dark:text-slate-400 font-semibold">Simulated Daily Outflow:</span>
+                  <span className="text-base font-black text-sky-800 dark:text-emerald-400">
+                    {formatINR(effectiveSimulatedBurn)} <span className="text-xs font-normal text-slate-600 dark:text-slate-400">/ day</span>
                   </span>
                 </div>
                 <input
@@ -559,9 +559,9 @@ export function FinancialPulseWidget({
                   step="50"
                   value={effectiveSimulatedBurn}
                   onChange={(e) => setSimulatedDailyBurn(Number(e.target.value))}
-                  className="w-full accent-emerald-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                  className="w-full accent-sky-600 dark:accent-emerald-500 cursor-pointer h-2 bg-sky-100 dark:bg-slate-800 rounded-lg"
                 />
-                <div className="flex justify-between text-[10px] text-slate-500">
+                <div className="flex justify-between text-[10px] text-slate-600 dark:text-slate-500 font-medium">
                   <span>₹0 / day</span>
                   <span>Actual: {formatINR(avgDailyBurn)}</span>
                   <span>{formatINR(Math.max(5000, avgDailyBurn * 3, Math.round((monthlyBudget || 30000) / 10)))} / day</span>
@@ -570,39 +570,39 @@ export function FinancialPulseWidget({
 
               {/* Simulation Result Callout */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                <div className="p-3 rounded-xl bg-slate-800/70 border border-slate-700/60">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">
+                <div className="p-3 rounded-xl bg-sky-50 dark:bg-slate-800/70 border border-sky-100 dark:border-slate-700/60 shadow-2xs">
+                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase">
                     Simulated Month-End Spend
                   </div>
-                  <div className="text-sm font-black text-white mt-0.5">
+                  <div className="text-sm font-black text-black dark:text-white mt-0.5">
                     {formatINR(simulatedTotalSpend)}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-800/70 border border-slate-700/60">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">
+                <div className="p-3 rounded-xl bg-sky-50 dark:bg-slate-800/70 border border-sky-100 dark:border-slate-700/60 shadow-2xs">
+                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase">
                     Projected Savings
                   </div>
-                  <div className="text-sm font-black text-emerald-400 mt-0.5">
+                  <div className="text-sm font-black text-emerald-700 dark:text-emerald-400 mt-0.5">
                     {formatINR(simulatedSavings)}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-800/70 border border-slate-700/60">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">
+                <div className="p-3 rounded-xl bg-sky-50 dark:bg-slate-800/70 border border-sky-100 dark:border-slate-700/60 shadow-2xs">
+                  <div className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase">
                     Savings Impact
                   </div>
                   <div className="text-sm font-black mt-0.5 flex items-center gap-1">
                     {simulatedVariance > 0 ? (
-                      <span className="text-emerald-400 flex items-center gap-0.5">
+                      <span className="text-emerald-700 dark:text-emerald-400 flex items-center gap-0.5">
                         <TrendingUp className="w-3.5 h-3.5" /> +{formatINR(simulatedVariance)} saved
                       </span>
                     ) : simulatedVariance < 0 ? (
-                      <span className="text-rose-400 flex items-center gap-0.5">
+                      <span className="text-rose-700 dark:text-rose-400 flex items-center gap-0.5">
                         <TrendingDown className="w-3.5 h-3.5" /> -{formatINR(Math.abs(simulatedVariance))} surplus
                       </span>
                     ) : (
-                      <span className="text-slate-400">Neutral (Same pace)</span>
+                      <span className="text-slate-700 dark:text-slate-400 font-semibold">Neutral (Same pace)</span>
                     )}
                   </div>
                 </div>

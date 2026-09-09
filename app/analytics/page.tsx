@@ -233,24 +233,24 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white">
             Spending Analytics
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-700 dark:text-slate-400 font-semibold mt-0.5">
             Deterministic insights & mathematical breakdowns (Zero AI).
           </p>
         </div>
 
         {/* Period Selector Tabs */}
-        <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800">
           {PERIODS.map((period) => (
             <button
               key={period}
               onClick={() => setSelectedPeriod(period)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 selectedPeriod === period
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-sky-600 text-white shadow-sm'
+                  : 'text-slate-700 dark:text-slate-400 hover:text-black dark:hover:text-white'
               }`}
             >
               {period}
@@ -261,23 +261,23 @@ export default function AnalyticsPage() {
 
       {/* Custom Range Inputs */}
       {selectedPeriod === 'Custom Range' && (
-        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-sky-100 dark:border-slate-800">
           <div>
-            <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Start Date</label>
+            <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">Start Date</label>
             <input
               type="date"
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 text-black dark:text-white font-medium"
             />
           </div>
           <div>
-            <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">End Date</label>
+            <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">End Date</label>
             <input
               type="date"
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 text-black dark:text-white font-medium"
             />
           </div>
         </div>
@@ -319,12 +319,12 @@ export default function AnalyticsPage() {
       {/* Charts Section: Donut & Payment Methods */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Breakdown Donut */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-300">
               Spending by Category
             </h3>
-            <span className="text-xs text-slate-400">{categoryData.length} Categories</span>
+            <span className="text-xs text-slate-700 dark:text-slate-400 font-semibold">{categoryData.length} Categories</span>
           </div>
 
           {categoryData.length === 0 ? (
@@ -359,7 +359,7 @@ export default function AnalyticsPage() {
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value) => <span className="text-xs text-slate-600 dark:text-slate-300">{value}</span>}
+                    formatter={(value) => <span className="text-xs font-bold text-slate-800 dark:text-slate-300">{value}</span>}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -368,12 +368,12 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Payment Methods Bar Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-300">
               Spending by Payment Method
             </h3>
-            <span className="text-xs text-slate-400">{paymentData.length} Methods</span>
+            <span className="text-xs text-slate-700 dark:text-slate-400 font-semibold">{paymentData.length} Methods</span>
           </div>
 
           {paymentData.length === 0 ? (
@@ -382,11 +382,11 @@ export default function AnalyticsPage() {
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={paymentData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#000000', fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fontSize: 10, fill: '#94a3b8' }}
+                    tick={{ fontSize: 10, fill: '#000000', fontWeight: 600 }}
                     tickFormatter={(val) => `₹${val / 1000}k`}
                   />
                   <Tooltip
@@ -398,7 +398,7 @@ export default function AnalyticsPage() {
                       fontSize: '12px',
                     }}
                   />
-                  <Bar dataKey="amount" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                  <Bar dataKey="amount" fill="#0284c7" radius={[6, 6, 0, 0]} maxBarSize={32} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -406,19 +406,19 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Month-over-Month Comparison Table (Section 18) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+      {/* Month-over-Month Comparison Table */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+            <h3 className="text-sm font-black uppercase tracking-wider text-black dark:text-white">
               Month-over-Month Comparison
             </h3>
-            <p className="text-xs text-slate-500">August 2026 vs September 2026 (Pure deterministic math)</p>
+            <p className="text-xs text-slate-700 dark:text-slate-400 font-medium">August 2026 vs September 2026 (Pure deterministic math)</p>
           </div>
 
           {/* Overall Change Badge */}
           <div className="flex items-center gap-2">
-            <div className="text-xs font-semibold text-slate-500">Overall:</div>
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-400">Overall:</div>
             <div
               className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
                 monthlyComparison.overallDelta.isIncrease
@@ -444,13 +444,13 @@ export default function AnalyticsPage() {
           {monthlyComparison.categories.map(({ category, augAmount, sepAmount, delta }) => (
             <div
               key={category.id}
-              className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-between"
+              className="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-slate-800/50 border border-sky-100 dark:border-slate-800 flex items-center justify-between"
             >
               <div className="flex items-center gap-2.5">
                 <span className="text-xl">{category.icon}</span>
                 <div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{category.name}</div>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-xs font-bold text-black dark:text-slate-200">{category.name}</div>
+                  <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-400">
                     Aug: {formatINR(augAmount)} → Sep: {formatINR(sepAmount)}
                   </div>
                 </div>
@@ -471,42 +471,42 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Deterministic Mathematical Forecasting Card (Section 20) */}
-      <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-6 border border-slate-800 shadow-md space-y-4">
+      {/* Deterministic Mathematical Forecasting Card */}
+      <div className="bg-gradient-to-br from-white via-sky-50/70 to-blue-50/40 dark:from-slate-900 dark:to-slate-950 text-black dark:text-white rounded-3xl p-6 border border-sky-200/90 dark:border-slate-800 shadow-md space-y-4">
         <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-emerald-400" />
-          <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+          <Target className="w-5 h-5 text-sky-600 dark:text-emerald-400" />
+          <h3 className="text-sm font-black uppercase tracking-wider text-black dark:text-white">
             Mathematical Month-End Projection (Zero AI)
           </h3>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed">
+        <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
           Based strictly on your spending pace in September 2026:
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-          <div className="p-3 rounded-2xl bg-slate-850 border border-slate-800">
-            <div className="text-[10px] uppercase font-bold text-slate-400">Current Spend</div>
-            <div className="text-lg font-black text-white mt-1">{formatINR(forecasting.currentSpent)}</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">{forecasting.daysElapsed} days elapsed</div>
+          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-850 border border-sky-100 dark:border-slate-800 shadow-sm">
+            <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400">Current Spend</div>
+            <div className="text-lg font-black text-black dark:text-white mt-1">{formatINR(forecasting.currentSpent)}</div>
+            <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-500 mt-0.5">{forecasting.daysElapsed} days elapsed</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-850 border border-slate-800">
-            <div className="text-[10px] uppercase font-bold text-slate-400">Daily Average</div>
-            <div className="text-lg font-black text-amber-400 mt-1">{formatINR(forecasting.avgDaily)}</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">₹/day in Sep</div>
+          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-850 border border-sky-100 dark:border-slate-800 shadow-sm">
+            <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400">Daily Average</div>
+            <div className="text-lg font-black text-amber-600 dark:text-amber-400 mt-1">{formatINR(forecasting.avgDaily)}</div>
+            <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-500 mt-0.5">₹/day in Sep</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-850 border border-slate-800">
-            <div className="text-[10px] uppercase font-bold text-slate-400">Projected Total</div>
-            <div className="text-lg font-black text-emerald-400 mt-1">{formatINR(forecasting.projected)}</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">30-day projection</div>
+          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-850 border border-sky-100 dark:border-slate-800 shadow-sm">
+            <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400">Projected Total</div>
+            <div className="text-lg font-black text-sky-600 dark:text-emerald-400 mt-1">{formatINR(forecasting.projected)}</div>
+            <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-500 mt-0.5">30-day projection</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-850 border border-slate-800">
-            <div className="text-[10px] uppercase font-bold text-slate-400">Budget Limit</div>
-            <div className="text-lg font-black text-white mt-1">{formatINR(forecasting.monthlyBudget)}</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Target cap</div>
+          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-850 border border-sky-100 dark:border-slate-800 shadow-sm">
+            <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400">Budget Limit</div>
+            <div className="text-lg font-black text-black dark:text-white mt-1">{formatINR(forecasting.monthlyBudget)}</div>
+            <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-500 mt-0.5">Target cap</div>
           </div>
         </div>
       </div>

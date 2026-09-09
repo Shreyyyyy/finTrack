@@ -16,13 +16,13 @@ export function BudgetProgressBar({ spent, budget, label = 'Monthly Budget' }: B
   const isNearBudget = percentage >= 85 && percentage <= 100;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-sky-100 dark:border-slate-800 shadow-sm space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
             {label}
           </span>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+          <div className="text-xl sm:text-2xl font-black text-black dark:text-white mt-0.5">
             {formatINR(spent)}{' '}
             <span className="text-sm font-semibold text-slate-400 dark:text-slate-500">
               / {formatINR(budget)}
@@ -56,7 +56,7 @@ export function BudgetProgressBar({ spent, budget, label = 'Monthly Budget' }: B
       </div>
 
       {/* Track and Fill */}
-      <div className="w-full bg-slate-100 dark:bg-slate-800 h-3.5 rounded-full overflow-hidden p-0.5">
+      <div className="w-full bg-sky-100 dark:bg-slate-800 h-3.5 rounded-full overflow-hidden p-0.5">
         <div
           className={`h-full rounded-full transition-all duration-500 ${
             isOverBudget

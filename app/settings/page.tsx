@@ -247,34 +247,34 @@ export default function SettingsPage() {
     <div className="w-full max-w-4xl mx-auto px-4 py-5 md:py-8 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white">
           Settings & Utilities
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+        <p className="text-xs text-slate-700 dark:text-slate-400 font-semibold mt-0.5">
           Customize your preferences, categories, payment methods, and Apple Shortcut integrations.
         </p>
       </div>
 
       {/* 0. Account & Profile */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
               My Profile & Account
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-600 dark:text-slate-500 mt-0.5 font-medium">
               Personal display name, photo, and authentication status
             </p>
           </div>
           {user && (
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-900 dark:bg-emerald-950 dark:text-emerald-300">
               Active Session
             </span>
           )}
         </div>
 
         {profile ? (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-sky-50/70 dark:bg-slate-800/40 border border-sky-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <div className="relative">
                 {profile?.avatar_url ? (
@@ -282,16 +282,16 @@ export default function SettingsPage() {
                   <img
                     src={profile.avatar_url}
                     alt={profile.display_name}
-                    className="w-14 h-14 rounded-full border-2 border-emerald-500/50 object-cover shadow-sm"
+                    className="w-14 h-14 rounded-full border-2 border-sky-400 object-cover shadow-sm"
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-xl shadow-sm">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-sky-600 to-blue-500 text-white flex items-center justify-center font-black text-xl shadow-sm">
                     {profile?.display_name?.charAt(0) || 'U'}
                   </div>
                 )}
                 <button
                   onClick={() => setShowProfileModal(true)}
-                  className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-emerald-600 text-white shadow-md hover:bg-emerald-500 active:scale-95 transition-transform"
+                  className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-sky-600 text-white shadow-md hover:bg-sky-500 active:scale-95 transition-transform"
                   title="Change Picture"
                 >
                   <Camera className="w-3 h-3" />
@@ -299,15 +299,15 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <div className="font-bold text-sm text-black dark:text-white flex items-center gap-2">
                   <span>{profile?.display_name || 'Personal User'}</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-100 dark:bg-emerald-950 text-sky-800 dark:text-emerald-300 font-bold">
                     {user ? 'Google' : 'Active Profile'}
                   </span>
                 </div>
-                <div className="text-xs text-slate-500">{profile?.email}</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Default Payment: <span className="font-semibold text-slate-700 dark:text-slate-300">{profile?.default_payment_method || 'UPI'}</span>
+                <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">{profile?.email}</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Default Payment: <span className="font-bold text-black dark:text-slate-300">{profile?.default_payment_method || 'UPI'}</span>
                 </div>
               </div>
             </div>
@@ -315,7 +315,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowProfileModal(true)}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors"
+                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-sky-800 dark:text-sky-300 bg-sky-100/80 dark:bg-emerald-950/40 border border-sky-200 dark:border-emerald-800/60 hover:bg-sky-200/80 dark:hover:bg-emerald-900/60 transition-colors"
               >
                 <Camera className="w-3.5 h-3.5" />
                 <span>Edit Photo & Profile</span>
@@ -331,12 +331,12 @@ export default function SettingsPage() {
             </div>
           </div>
         ) : (
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-sky-50/70 dark:bg-slate-800/40 border border-sky-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="font-bold text-sm text-slate-900 dark:text-white">
+              <div className="font-bold text-sm text-black dark:text-white">
                 Not signed in
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-700 dark:text-slate-400 font-medium">
                 Sign in to isolate and sync your personal data securely with your Google or Email account.
               </p>
             </div>
@@ -356,7 +356,7 @@ export default function SettingsPage() {
               </button>
               <Link
                 href="/login"
-                className="flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all active:scale-95"
+                className="flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl border border-sky-100 dark:border-slate-700 hover:bg-sky-50 dark:hover:bg-slate-800 text-xs font-bold text-black dark:text-slate-200 transition-all active:scale-95"
               >
                 <span>Sign In Page</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -370,13 +370,13 @@ export default function SettingsPage() {
       {profile?.role === 'admin' && (
         <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 text-white rounded-3xl p-6 border border-slate-800 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/30 text-sky-400 flex items-center justify-center shrink-0">
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
               <div className="text-sm font-bold text-white flex items-center gap-2">
                 <span>Database Admin Console</span>
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40">
                   Master View
                 </span>
               </div>
@@ -388,7 +388,7 @@ export default function SettingsPage() {
 
           <Link
             href="/admin"
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0 transition-all active:scale-95 shadow-sm shadow-emerald-600/20"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shrink-0 transition-all active:scale-95 shadow-sm shadow-sky-600/20"
           >
             <span>Open Admin Portal</span>
             <ChevronRight className="w-4 h-4" />
@@ -397,20 +397,20 @@ export default function SettingsPage() {
       )}
 
       {/* 1. Appearance / Theme */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
           Display Theme
         </h3>
         <div className="flex gap-2">
           <button
             onClick={() => setTheme('light')}
-            className={`flex-1 py-2.5 px-3 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 ${
               theme === 'light'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-500 shadow-sm'
-                : 'bg-slate-50 dark:bg-slate-850 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                ? 'bg-sky-100 text-black border-sky-400 shadow-sm'
+                : 'bg-sky-50/60 dark:bg-slate-850 border-sky-100 dark:border-slate-700 text-slate-800 dark:text-slate-300'
             }`}
           >
-            <Sun className="w-4 h-4" />
+            <Sun className="w-4 h-4 text-amber-500" />
             <span>Light</span>
           </button>
 
@@ -418,8 +418,8 @@ export default function SettingsPage() {
             onClick={() => setTheme('dark')}
             className={`flex-1 py-2.5 px-3 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-2 ${
               theme === 'dark'
-                ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500 shadow-sm'
-                : 'bg-slate-50 dark:bg-slate-850 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                ? 'bg-sky-950/80 text-sky-300 border-sky-500 shadow-sm'
+                : 'bg-sky-50/60 dark:bg-slate-850 border-sky-100 dark:border-slate-700 text-slate-800 dark:text-slate-300'
             }`}
           >
             <Moon className="w-4 h-4" />
@@ -430,8 +430,8 @@ export default function SettingsPage() {
             onClick={() => setTheme('system')}
             className={`flex-1 py-2.5 px-3 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-2 ${
               theme === 'system'
-                ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-500 shadow-sm'
-                : 'bg-slate-50 dark:bg-slate-850 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                ? 'bg-sky-100 dark:bg-sky-950/80 text-black dark:text-sky-300 border-sky-400 font-bold shadow-sm'
+                : 'bg-sky-50/60 dark:bg-slate-850 border-sky-100 dark:border-slate-700 text-slate-800 dark:text-slate-300'
             }`}
           >
             <Laptop className="w-4 h-4" />
@@ -440,16 +440,16 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* 2. Apple Shortcut & Back Tap Setup (Section 23 & 24) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+      {/* 2. Apple Shortcut & Back Tap Setup */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Smartphone className="w-5 h-5 text-emerald-500" />
+            <Smartphone className="w-5 h-5 text-sky-600 dark:text-emerald-500" />
             <div>
-              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+              <h3 className="font-black text-base text-black dark:text-white">
                 iPhone Back Tap & Apple Shortcut API
               </h3>
-              <p className="text-xs text-slate-500">Record expenses in &lt; 5 seconds from your lock screen</p>
+              <p className="text-xs text-slate-700 dark:text-slate-400 font-medium">Record expenses in &lt; 5 seconds from your lock screen</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -457,13 +457,13 @@ export default function SettingsPage() {
               href="/api/expenses/logs"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-50 dark:bg-slate-800 text-black dark:text-slate-300 hover:bg-sky-100 border border-sky-100 dark:border-slate-700 transition-colors"
             >
               <span>Live Logs ↗</span>
             </a>
             <button
               onClick={handleGenerateApiKey}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New API Key</span>
@@ -472,36 +472,36 @@ export default function SettingsPage() {
         </div>
 
         {/* API Endpoint Box */}
-        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+        <div className="p-4 rounded-2xl bg-sky-50/70 dark:bg-slate-800/60 border border-sky-100 dark:border-slate-700 space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-black dark:text-slate-300">
             <span>Shortcut Webhook URL (POST)</span>
             <button
               onClick={() => copyToClipboard(quickApiUrl, false)}
-              className="text-emerald-600 hover:underline flex items-center gap-1"
+              className="text-sky-700 hover:underline flex items-center gap-1 font-bold"
             >
               {copiedUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedUrl ? 'Copied' : 'Copy URL'}</span>
             </button>
           </div>
-          <div className="font-mono text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 select-all overflow-x-auto">
+          <div className="font-mono text-xs text-black dark:text-slate-200 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-sky-100 dark:border-slate-700 select-all overflow-x-auto font-semibold">
             {quickApiUrl}
           </div>
         </div>
 
         {/* Active API Keys */}
         <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase">Active Shortcut Keys</label>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase">Active Shortcut Keys</label>
           {apiKeys.map((key) => (
             <div
               key={key.id}
-              className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800"
+              className="flex items-center justify-between p-3 rounded-2xl bg-sky-50/70 dark:bg-slate-800/40 border border-sky-100 dark:border-slate-800"
             >
               <div>
-                <div className="font-semibold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                <div className="font-bold text-xs text-black dark:text-white flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-amber-500" />
                   <span>{key.name}</span>
                 </div>
-                <div className="font-mono text-xs text-slate-500 mt-0.5">
+                <div className="font-mono text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-semibold">
                   {key.key_hash.substring(0, 16)}••••••••
                 </div>
               </div>
@@ -509,7 +509,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => copyToClipboard(key.key_hash, true)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                  className="p-1.5 rounded-lg text-slate-600 hover:text-black dark:hover:text-white"
                   title="Copy full key"
                 >
                   {copiedKey ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
@@ -527,17 +527,17 @@ export default function SettingsPage() {
         </div>
 
         {/* Interactive Step-by-Step Apple Shortcut Setup Guide */}
-        <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/50 space-y-2 text-xs">
-          <div className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-            <CheckCircle className="w-4 h-4 text-emerald-500" />
+        <div className="p-4 rounded-2xl bg-sky-50/80 dark:bg-emerald-950/20 border border-sky-200/80 dark:border-emerald-800/50 space-y-2 text-xs">
+          <div className="font-bold text-sky-950 dark:text-emerald-300 flex items-center gap-1.5">
+            <CheckCircle className="w-4 h-4 text-sky-600 dark:text-emerald-500" />
             <span>How to configure Apple Shortcut with iPhone Back Tap:</span>
           </div>
-          <ol className="list-decimal list-inside space-y-1 text-slate-700 dark:text-slate-300">
+          <ol className="list-decimal list-inside space-y-1 text-slate-800 dark:text-slate-300 font-medium">
             <li>Open the <strong>Shortcuts</strong> app on your iPhone and tap <strong>+</strong>.</li>
             <li>Add action: <strong>Ask for Input</strong> (Type: Number, Prompt: &quot;Amount ₹&quot;).</li>
             <li>Add action: <strong>Choose from List</strong> (Items: Food, Transport, Shopping, Bills, Other).</li>
             <li>Add action: <strong>Get Contents of URL</strong>:
-              <ul className="list-disc list-inside ml-4 mt-0.5 text-slate-600 dark:text-slate-400">
+              <ul className="list-disc list-inside ml-4 mt-0.5 text-slate-700 dark:text-slate-400">
                 <li>URL: paste the <code>/api/expenses/quick</code> URL above</li>
                 <li>Method: <strong>POST</strong></li>
                 <li>Headers: Key <code>x-api-key</code> → Value: your API key</li>
@@ -550,21 +550,21 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* 3. Monthly Income & Budget History (Section 12) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      {/* 3. Monthly Income & Budget History */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-base text-slate-900 dark:text-white">
+            <h3 className="font-black text-base text-black dark:text-white">
               Monthly Financial Settings
             </h3>
-            <p className="text-xs text-slate-500">Configure custom salary & budget per month</p>
+            <p className="text-xs text-slate-700 dark:text-slate-400 font-medium">Configure custom salary & budget per month</p>
           </div>
 
           <div className="flex items-center gap-2">
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
-              className="text-xs px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold"
+              className="text-xs px-2.5 py-1.5 rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
             >
               {MONTH_NAMES.map((m, idx) => (
                 <option key={m} value={idx + 1}>
@@ -575,7 +575,7 @@ export default function SettingsPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-              className="text-xs px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold"
+              className="text-xs px-2.5 py-1.5 rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
             >
               <option value={2025}>2025</option>
               <option value={2026}>2026</option>
@@ -586,45 +586,45 @@ export default function SettingsPage() {
 
         <form onSubmit={handleSaveMonthlySetting} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+            <label className="block text-xs font-bold text-black dark:text-slate-300 mb-1">
               Income / Salary (₹)
             </label>
             <input
               type="number"
               value={monthIncome}
               onChange={(e) => setMonthIncome(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold"
+              className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+            <label className="block text-xs font-bold text-black dark:text-slate-300 mb-1">
               Monthly Budget (₹)
             </label>
             <input
               type="number"
               value={monthBudget}
               onChange={(e) => setMonthBudget(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold"
+              className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+            <label className="block text-xs font-bold text-black dark:text-slate-300 mb-1">
               Savings Target (₹)
             </label>
             <input
               type="number"
               value={monthSavings}
               onChange={(e) => setMonthSavings(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold"
+              className="w-full px-3 py-2 text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
             />
           </div>
 
           <div className="sm:col-span-3 flex justify-end pt-1">
             <button
               type="submit"
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-500"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 text-white hover:bg-sky-500 shadow-sm"
             >
               Update {MONTH_NAMES[selectedMonth - 1]} Limits
             </button>
@@ -632,9 +632,9 @@ export default function SettingsPage() {
         </form>
       </div>
 
-      {/* 4. Category Management (Section 8) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-        <h3 className="font-bold text-base text-slate-900 dark:text-white">
+      {/* 4. Category Management */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
+        <h3 className="font-black text-base text-black dark:text-white">
           Manage Categories
         </h3>
 
@@ -643,11 +643,11 @@ export default function SettingsPage() {
           {categories.map((cat) => (
             <div
               key={cat.id}
-              className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60"
+              className="flex items-center justify-between p-2.5 rounded-2xl bg-sky-50/70 dark:bg-slate-800/50 border border-sky-100 dark:border-slate-700/60"
             >
               <div className="flex items-center gap-2 truncate">
                 <span>{cat.icon}</span>
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                <span className="text-xs font-bold text-black dark:text-slate-200 truncate">
                   {cat.name}
                 </span>
               </div>
@@ -663,13 +663,13 @@ export default function SettingsPage() {
         </div>
 
         {/* Add Category Form */}
-        <form onSubmit={handleAddCategory} className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+        <form onSubmit={handleAddCategory} className="pt-2 border-t border-sky-100 dark:border-slate-800 flex gap-2">
           <input
             type="text"
             placeholder="Icon (e.g. ☕)"
             value={newCatIcon}
             onChange={(e) => setNewCatIcon(e.target.value)}
-            className="w-16 px-2.5 py-2 text-center text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+            className="w-16 px-2.5 py-2 text-center text-sm rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
           />
           <input
             type="text"
@@ -677,27 +677,27 @@ export default function SettingsPage() {
             placeholder="Category name (e.g. Coffee)"
             value={newCatName}
             onChange={(e) => setNewCatName(e.target.value)}
-            className="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+            className="flex-1 px-3 py-2 text-xs rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
           />
           <input
             type="number"
             placeholder="Monthly cap ₹"
             value={newCatBudget}
             onChange={(e) => setNewCatBudget(e.target.value)}
-            className="w-28 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+            className="w-28 px-3 py-2 text-xs rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white"
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 text-white hover:bg-sky-500 shadow-sm"
           >
             Add
           </button>
         </form>
       </div>
 
-      {/* 5. Payment Methods (Section 9) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-        <h3 className="font-bold text-base text-slate-900 dark:text-white">
+      {/* 5. Payment Methods */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
+        <h3 className="font-black text-base text-black dark:text-white">
           Payment Methods & Defaults
         </h3>
 
@@ -707,15 +707,15 @@ export default function SettingsPage() {
               key={pm.id}
               className={`flex items-center justify-between p-2.5 rounded-2xl border ${
                 pm.is_default
-                  ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200'
-                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50'
+                  ? 'border-sky-500 bg-sky-100/90 dark:bg-sky-950/40 text-black dark:text-sky-200 font-bold'
+                  : 'border-sky-100 dark:border-slate-700 bg-sky-50/70 dark:bg-slate-800/50 text-black dark:text-slate-200'
               }`}
             >
-              <div className="text-xs font-semibold truncate flex items-center gap-1.5">
+              <div className="text-xs font-bold truncate flex items-center gap-1.5">
                 <CreditCard className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">{pm.name}</span>
                 {pm.is_default && (
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-600 text-white">Default</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-sky-600 text-white">Default</span>
                 )}
               </div>
 
@@ -723,7 +723,7 @@ export default function SettingsPage() {
                 {!pm.is_default && (
                   <button
                     onClick={() => handleSetDefaultPayment(pm.id)}
-                    className="text-[10px] text-emerald-600 hover:underline"
+                    className="text-[10px] font-bold text-sky-700 hover:underline"
                   >
                     Make Default
                   </button>
@@ -740,37 +740,37 @@ export default function SettingsPage() {
         </div>
 
         {/* Add Method */}
-        <form onSubmit={handleAddPaymentMethod} className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+        <form onSubmit={handleAddPaymentMethod} className="pt-2 border-t border-sky-100 dark:border-slate-800 flex gap-2">
           <input
             type="text"
             required
             placeholder="New payment method (e.g. Sodexo, Amex)"
             value={newPmName}
             onChange={(e) => setNewPmName(e.target.value)}
-            className="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+            className="flex-1 px-3 py-2 text-xs rounded-xl bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 font-bold text-black dark:text-white"
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white"
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 text-white hover:bg-sky-500 shadow-sm"
           >
             Add Method
           </button>
         </form>
       </div>
 
-      {/* 6. Data Management & Backup (Section 38 & 39) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-        <h3 className="font-bold text-base text-slate-900 dark:text-white">
+      {/* 6. Data Management & Backup */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
+        <h3 className="font-black text-base text-black dark:text-white">
           Data Backup & Maintenance
         </h3>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-700 dark:text-slate-400 font-medium">
           Export full multi-sheet .xlsx workbook as your personal offline backup.
         </p>
 
         <div className="flex flex-wrap gap-3">
           <button
             onClick={handleFullBackup}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-600/20"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-sky-600 text-white hover:bg-sky-500 shadow-md shadow-sky-600/20"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Download Complete Excel Backup</span>
@@ -794,11 +794,11 @@ export default function SettingsPage() {
               <AlertTriangle className="w-5 h-5" />
               <h3 className="font-bold text-base">Wipe All Local Data?</h3>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-700 dark:text-slate-400 leading-relaxed font-medium">
               This action is permanent and will delete all expenses, custom categories, goals, and settings.
             </p>
             <div>
-              <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">
+              <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">
                 Type &quot;DELETE ALL MY DATA&quot; to confirm:
               </label>
               <input
@@ -806,7 +806,7 @@ export default function SettingsPage() {
                 value={wipeConfirmText}
                 onChange={(e) => setWipeConfirmText(e.target.value)}
                 placeholder="DELETE ALL MY DATA"
-                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-rose-300 dark:border-rose-800 font-mono text-rose-600"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-sky-50 dark:bg-slate-800 border border-rose-300 dark:border-rose-800 font-mono text-rose-600 font-bold"
               />
             </div>
             <div className="flex gap-2 pt-2">

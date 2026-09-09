@@ -107,20 +107,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center px-4 py-8 sm:py-12">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-9 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-6">
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-9 border border-sky-100 dark:border-slate-800 shadow-2xl space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 text-white font-black text-2xl shadow-lg shadow-emerald-600/25 mb-1 ring-4 ring-emerald-500/10">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 via-sky-500 to-blue-400 text-white font-black text-2xl shadow-lg shadow-sky-600/25 mb-1 ring-4 ring-sky-500/10">
             {isAdminMode ? <ShieldAlert className="w-7 h-7" /> : '₹'}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white">
             {isAdminMode
               ? 'Database Admin Sign In'
               : isSignUp
               ? 'Create your Account'
               : 'Sign in to finTrack'}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
+          <p className="text-xs text-slate-700 dark:text-slate-400 max-w-xs mx-auto leading-relaxed font-semibold">
             {isAdminMode
               ? 'Restricted master database console access for system administration.'
               : 'Personal financial tracking organized cleanly in your database. Zero AI, $0/month.'}
@@ -128,7 +128,7 @@ export default function LoginPage() {
         </div>
 
         {/* Mode Switcher Tabs */}
-        <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">
+        <div className="flex p-1 rounded-2xl bg-sky-100/70 dark:bg-slate-800 text-xs font-bold">
           <button
             type="button"
             onClick={() => {
@@ -139,8 +139,8 @@ export default function LoginPage() {
             }}
             className={`flex-1 py-2 rounded-xl transition-all ${
               !isAdminMode
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm'
+                : 'text-slate-700 hover:text-black dark:hover:text-slate-200'
             }`}
           >
             Member Login
@@ -156,8 +156,8 @@ export default function LoginPage() {
             }}
             className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
               isAdminMode
-                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                ? 'bg-sky-600 text-white shadow-sm shadow-sky-600/30'
+                : 'text-slate-700 hover:text-black dark:hover:text-slate-200'
             }`}
           >
             <ShieldAlert className="w-3.5 h-3.5" />
@@ -167,35 +167,35 @@ export default function LoginPage() {
 
         {/* Current Active Session Card (if user is already logged in) */}
         {user || profile ? (
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+          <div className="p-4 rounded-2xl bg-sky-50/70 dark:bg-slate-800/50 border border-sky-100 dark:border-slate-700/80 space-y-3">
             <div className="flex items-center gap-3">
               {profile?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={profile.avatar_url}
                   alt={profile.display_name}
-                  className="w-11 h-11 rounded-full object-cover border-2 border-emerald-500/60 shadow-sm"
+                  className="w-11 h-11 rounded-full object-cover border-2 border-sky-500/60 shadow-sm"
                 />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-base shadow-sm">
+                <div className="w-11 h-11 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center text-base shadow-sm">
                   {profile?.display_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </div>
               )}
 
               <div className="min-w-0 flex-1 text-left">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                  <span className="font-bold text-sm text-black dark:text-white truncate">
                     {profile?.display_name || 'Active User'}
                   </span>
                   <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded border ${
                     profile?.role === 'admin'
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                      : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                      ? 'bg-sky-100 text-sky-900 dark:bg-emerald-950 dark:text-emerald-300 border-sky-300 dark:border-emerald-800'
+                      : 'bg-white text-black dark:bg-slate-800 dark:text-slate-300 border-sky-200 dark:border-slate-700'
                   }`}>
                     {profile?.role === 'admin' ? 'DB Admin' : 'Member'}
                   </span>
                 </div>
-                <div className="text-xs text-slate-500 truncate">{profile?.email || user?.email}</div>
+                <div className="text-xs text-slate-600 dark:text-slate-400 truncate font-medium">{profile?.email || user?.email}</div>
               </div>
             </div>
 
@@ -203,7 +203,7 @@ export default function LoginPage() {
               {profile?.role === 'admin' ? (
                 <Link
                   href="/admin"
-                  className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20 active:scale-98"
+                  className="py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-sm shadow-sky-600/20 active:scale-98"
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
                   <span>Admin Console</span>
@@ -211,7 +211,7 @@ export default function LoginPage() {
               ) : (
                 <Link
                   href="/dashboard"
-                  className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20 active:scale-98"
+                  className="py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-sm shadow-sky-600/20 active:scale-98"
                 >
                   <span>Dashboard</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -220,7 +220,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={signOut}
-                className="py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-center gap-1.5"
+                className="py-2.5 rounded-xl border border-sky-100 dark:border-slate-700 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-center gap-1.5"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Sign Out</span>
@@ -228,7 +228,7 @@ export default function LoginPage() {
             </div>
 
             {profile?.role !== 'admin' && (
-              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-center">
+              <div className="pt-2 border-t border-sky-100 dark:border-slate-700/60 text-center">
                 <button
                   type="button"
                   onClick={() => {
@@ -236,7 +236,7 @@ export default function LoginPage() {
                     setEmail(DB_ADMIN_USERNAME);
                     setPassword('');
                   }}
-                  className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center justify-center gap-1 mx-auto"
+                  className="text-xs font-bold text-sky-700 dark:text-emerald-400 hover:underline flex items-center justify-center gap-1 mx-auto"
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
                   <span>Switch to DB Admin Account</span>
@@ -261,7 +261,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs sm:text-sm shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-98 transition-all disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-sky-100 dark:border-slate-700 hover:border-sky-300 dark:hover:border-slate-600 text-black dark:text-slate-100 font-bold text-xs sm:text-sm shadow-sm hover:bg-sky-50 dark:hover:bg-slate-800 active:scale-98 transition-all disabled:opacity-50"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path
@@ -286,8 +286,8 @@ export default function LoginPage() {
 
                 {/* Divider */}
                 <div className="relative flex items-center justify-center">
-                  <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-                  <span className="bg-white dark:bg-slate-900 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="border-t border-sky-100 dark:border-slate-800 w-full" />
+                  <span className="bg-white dark:bg-slate-900 px-3 text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                     Or with email / username
                   </span>
                 </div>
@@ -298,7 +298,7 @@ export default function LoginPage() {
             <form onSubmit={handleEmailAuth} noValidate className="space-y-3.5">
               {!isAdminMode && isSignUp && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-black dark:text-slate-300 mb-1">
                     Your Name
                   </label>
                   <div className="relative">
@@ -308,7 +308,7 @@ export default function LoginPage() {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="e.g. Shrey"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-sky-100 dark:border-slate-700 bg-sky-50/70 dark:bg-slate-800/80 text-xs font-bold text-black dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
                       required={isSignUp}
                     />
                   </div>
@@ -316,12 +316,12 @@ export default function LoginPage() {
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-black dark:text-slate-300 mb-1">
                   {isAdminMode ? 'Admin Username' : 'Email Address or Username'}
                 </label>
                 <div className="relative">
                   {isAdminMode ? (
-                    <ShieldAlert className="w-4 h-4 text-emerald-500 absolute left-3.5 top-3" />
+                    <ShieldAlert className="w-4 h-4 text-sky-600 absolute left-3.5 top-3" />
                   ) : (
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                   )}
@@ -330,7 +330,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={isAdminMode ? 'dbadmin' : 'name@example.com or dbadmin'}
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-sky-100 dark:border-slate-700 bg-sky-50/70 dark:bg-slate-800/80 text-xs font-bold text-black dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
                     required
                     autoCapitalize="none"
                     autoCorrect="off"
@@ -339,7 +339,7 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-black dark:text-slate-300 mb-1">
                   {isAdminMode ? 'Admin Password' : 'Password'}
                 </label>
                 <div className="relative">
@@ -355,13 +355,13 @@ export default function LoginPage() {
                         ? 'Minimum 6 characters'
                         : 'Enter your password'
                     }
-                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-sky-100 dark:border-slate-700 bg-sky-50/70 dark:bg-slate-800/80 text-xs font-bold text-black dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="absolute right-3 top-3 text-slate-400 hover:text-black dark:hover:text-slate-200"
                     title={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -374,11 +374,11 @@ export default function LoginPage() {
                 disabled={isSubmitting}
                 className={`w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm shadow-md active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
                   isAdminMode
-                    ? 'bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-emerald-600/20'
-                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
+                    ? 'bg-slate-900 hover:bg-slate-800 dark:bg-sky-600 dark:hover:bg-sky-500 text-white shadow-sky-600/20'
+                    : 'bg-sky-600 hover:bg-sky-500 text-white shadow-sky-600/20'
                 }`}
               >
-                {isAdminMode ? <KeyRound className="w-4 h-4 text-emerald-400" /> : <LogIn className="w-4 h-4" />}
+                {isAdminMode ? <KeyRound className="w-4 h-4 text-sky-400" /> : <LogIn className="w-4 h-4" />}
                 <span>
                   {isSubmitting
                     ? 'Authenticating...'
@@ -398,7 +398,7 @@ export default function LoginPage() {
                       setIsSignUp(!isSignUp);
                       setErrorMessage(null);
                     }}
-                    className="text-xs text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold transition-colors"
+                    className="text-xs text-slate-700 hover:text-sky-600 dark:hover:text-sky-400 font-bold transition-colors"
                   >
                     {isSignUp ? (
                       <span>
@@ -417,14 +417,14 @@ export default function LoginPage() {
         )}
 
         {/* Security & Multi-User Trust Badges */}
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-4 text-[11px] text-slate-400 font-medium">
+        <div className="pt-3 border-t border-sky-100 dark:border-slate-800 flex items-center justify-center gap-4 text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
           <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
             <span>Encrypted Auth</span>
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+            <Sparkles className="w-3.5 h-3.5 text-sky-600" />
             <span>Zero AI</span>
           </span>
           <span>•</span>

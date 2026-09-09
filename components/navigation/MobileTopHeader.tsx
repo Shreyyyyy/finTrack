@@ -11,17 +11,17 @@ export function MobileTopHeader() {
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   return (
-    <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-2.5 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 pt-safe">
+    <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-2.5 bg-white/95 dark:bg-slate-950/85 backdrop-blur-xl border-b border-sky-100 dark:border-slate-800/80 pt-safe">
       {/* Brand */}
       <Link href="/dashboard" className="flex items-center gap-2">
-        <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-black text-base shadow-sm shadow-emerald-600/20">
+        <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-500 dark:from-emerald-600 dark:to-teal-400 text-white font-black text-base shadow-sm shadow-sky-600/20 dark:shadow-emerald-600/20">
           ₹
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
+          <span className="font-black text-base tracking-tight text-black dark:text-white">
             finTrack
           </span>
-          <span className="text-[9px] uppercase font-black px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+          <span className="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-sky-100 dark:bg-emerald-950 text-sky-800 dark:text-emerald-300 border border-sky-200 dark:border-emerald-800">
             Personal
           </span>
         </div>
@@ -32,10 +32,10 @@ export function MobileTopHeader() {
         <button
           type="button"
           onClick={() => setShowProfileModal(true)}
-          className="flex items-center gap-2 p-1 pl-2 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 active:scale-95 transition-transform"
+          className="flex items-center gap-2 p-1 pl-2.5 rounded-full bg-sky-50 dark:bg-slate-900 border border-sky-100 dark:border-slate-800 active:scale-95 transition-transform"
           title="Edit profile & photo"
         >
-          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 max-w-[80px] truncate">
+          <span className="text-xs font-bold text-black dark:text-slate-200 max-w-[80px] truncate">
             {profile.display_name}
           </span>
           <div className="relative">
@@ -44,10 +44,10 @@ export function MobileTopHeader() {
               <img
                 src={profile.avatar_url}
                 alt={profile.display_name}
-                className="w-7 h-7 rounded-full border border-emerald-500/50 object-cover"
+                className="w-7 h-7 rounded-full border border-sky-500/50 dark:border-emerald-500/50 object-cover"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-sky-600 dark:bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
                 {profile.display_name.charAt(0)}
               </div>
             )}
@@ -59,7 +59,7 @@ export function MobileTopHeader() {
       ) : (
         <Link
           href="/login"
-          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow-sm"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-sky-600 dark:bg-emerald-600 text-white font-bold text-xs shadow-sm"
         >
           <LogIn className="w-3.5 h-3.5" />
           <span>Login</span>

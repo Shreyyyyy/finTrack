@@ -72,21 +72,21 @@ export function DesktopSidebar() {
   };
 
   return (
-    <aside className="hidden md:flex flex-col w-64 shrink-0 h-screen sticky top-0 bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl border-r border-slate-200/80 dark:border-slate-800/80 p-4 justify-between">
+    <aside className="hidden md:flex flex-col w-64 shrink-0 h-screen sticky top-0 bg-white/90 dark:bg-slate-950/70 backdrop-blur-xl border-r border-sky-100 dark:border-slate-800/80 p-4 justify-between">
       <div className="space-y-6">
         {/* Brand Header */}
         <div className="flex items-center gap-3 px-2 py-1">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-bold text-xl shadow-md shadow-emerald-600/20">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-500 dark:from-emerald-600 dark:to-teal-400 text-white font-bold text-xl shadow-md shadow-sky-600/20 dark:shadow-emerald-600/20">
             ₹
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+            <h1 className="font-black text-lg tracking-tight text-black dark:text-white flex items-center gap-1.5">
               finTrack
-              <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+              <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-sky-100 dark:bg-emerald-950 text-sky-800 dark:text-emerald-300 border border-sky-200 dark:border-emerald-800">
                 Personal
               </span>
             </h1>
-            <p className="text-xs text-slate-600 dark:text-slate-400">Zero AI · Instant Utility</p>
+            <p className="text-xs text-slate-700 dark:text-slate-400 font-semibold">Zero AI · Instant Utility</p>
           </div>
         </div>
 
@@ -101,10 +101,10 @@ export function DesktopSidebar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all mb-3 ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all mb-3 ${
                     isActive
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                      : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60'
+                      ? 'bg-sky-600 dark:bg-emerald-600 text-white shadow-md shadow-sky-600/20'
+                      : 'bg-sky-50 dark:bg-emerald-950/50 text-sky-900 dark:text-emerald-300 hover:bg-sky-100 dark:hover:bg-emerald-900/60 border border-sky-200 dark:border-emerald-800/60'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -117,18 +117,18 @@ export function DesktopSidebar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors ${
                   isActive
-                    ? 'bg-slate-100 dark:bg-slate-900 text-slate-950 dark:text-white font-semibold'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900/50 hover:text-slate-900 dark:hover:text-slate-200'
+                    ? 'bg-sky-100/90 dark:bg-slate-900 text-black dark:text-white font-black border border-sky-200/80 dark:border-transparent'
+                    : 'text-slate-800 dark:text-slate-400 hover:bg-sky-50 dark:hover:bg-slate-900/50 hover:text-black dark:hover:text-slate-200 font-semibold'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-sky-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-400'}`} />
                   <span>{link.label}</span>
                 </div>
                 {link.badge && (
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-sky-100 dark:bg-emerald-950 text-sky-800 dark:text-emerald-300 border border-sky-200 dark:border-emerald-800">
                     {link.badge}
                   </span>
                 )}
@@ -139,25 +139,25 @@ export function DesktopSidebar() {
       </div>
 
       {/* Footer Utilities */}
-      <div className="space-y-3 pt-4 border-t border-slate-200/80 dark:border-slate-800/80">
+      <div className="space-y-3 pt-4 border-t border-sky-100 dark:border-slate-800/80">
         {/* Quick Excel Export */}
         <button
           onClick={handleQuickExport}
-          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors border border-slate-200 dark:border-slate-800"
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-black dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-900 transition-colors border border-sky-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs"
         >
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <FileSpreadsheet className="w-4 h-4 text-sky-700 dark:text-emerald-400" />
             <span>Export to Excel</span>
           </div>
-          <span className="text-[10px] text-slate-600 dark:text-slate-400">.xlsx</span>
+          <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">.xlsx</span>
         </button>
 
         {/* Theme switcher */}
-        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 text-xs">
-          <span className="text-slate-600 dark:text-slate-400">Appearance</span>
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-sky-50 dark:bg-slate-900/50 text-xs border border-sky-100/70 dark:border-transparent font-medium">
+          <span className="text-slate-800 dark:text-slate-400 font-bold">Appearance</span>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-black dark:text-slate-300 hover:bg-sky-100 dark:hover:bg-slate-800 transition-colors"
             title="Toggle Light/Dark Theme"
           >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -165,9 +165,9 @@ export function DesktopSidebar() {
         </div>
 
         {/* User Profile Card */}
-        <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
+        <div className="pt-2 border-t border-sky-100 dark:border-slate-800/80">
           {profile ? (
-            <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between p-2 rounded-2xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 shadow-2xs">
               <button
                 type="button"
                 onClick={() => setShowProfileModal(true)}
@@ -192,10 +192,10 @@ export function DesktopSidebar() {
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  <div className="text-xs font-bold text-black dark:text-white truncate">
                     {profile.display_name}
                   </div>
-                  <div className="text-[10px] text-slate-500 truncate">
+                  <div className="text-[10px] text-slate-700 dark:text-slate-400 truncate font-medium">
                     {profile.email}
                   </div>
                 </div>
@@ -203,7 +203,7 @@ export function DesktopSidebar() {
 
               <button
                 onClick={signOut}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                 title="Sign out"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -212,7 +212,7 @@ export function DesktopSidebar() {
           ) : (
             <Link
               href="/login"
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-sm hover:opacity-90 active:scale-98 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-sm hover:opacity-90 active:scale-98 transition-all"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Sign In / Google</span>
@@ -221,8 +221,8 @@ export function DesktopSidebar() {
         </div>
 
         {/* Privacy Note */}
-        <div className="flex items-center gap-1.5 px-3 py-0.5 text-[11px] text-slate-600 dark:text-slate-400">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+        <div className="flex items-center gap-1.5 px-3 py-0.5 text-[11px] text-slate-700 dark:text-slate-400 font-medium">
+          <ShieldCheck className="w-3.5 h-3.5 text-sky-600 dark:text-emerald-500 shrink-0" />
           <span>Private & secure ($0/mo)</span>
         </div>
       </div>
