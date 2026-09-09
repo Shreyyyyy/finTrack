@@ -18,6 +18,9 @@ import {
   ExternalLink,
   ChevronRight,
   Eye,
+  EyeOff,
+  AlertCircle,
+  LogOut,
   CheckCircle2,
   Lock,
   KeyRound,
@@ -26,6 +29,7 @@ import {
   X,
   Plus
 } from 'lucide-react';
+import { DB_ADMIN_USERNAME } from '@/lib/auth/adminConfig';
 import { Profile, Expense, UserSummary, Category, PaymentMethod } from '@/types';
 import {
   getAllUsersSummary,
@@ -46,8 +50,14 @@ import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
 export default function DbAdminPage() {
-  const { user, profile: currentProfile, isLoading: authLoading, signOut } = useAuth();
+  const { user, profile: currentProfile, isLoading: authLoading, signOut, signInAsDbAdmin } = useAuth();
   const isAdmin = currentProfile?.role === 'admin';
+
+  // Direct DB Admin Form State
+  const [adminPasswordInput, setAdminPasswordInput] = useState<string>('');
+  const [adminAuthLoading, setAdminAuthLoading] = useState<boolean>(false);
+  const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
+  const [showAdminPass, setShowAdminPass] = useState<boolean>(false);
 
   const [usersSummary, setUsersSummary] = useState<UserSummary[]>([]);
   const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
@@ -132,7 +142,7 @@ export default function DbAdminPage() {
   const handleCreateMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMemberName.trim() || !newMemberEmail.trim()) {
-      showToast('Name and email are required', 'error');
+      showToast('Name and username/email are required', 'error');
       return;
     }
 
@@ -142,7 +152,7 @@ export default function DbAdminPage() {
         id: newId,
         display_name: newMemberName.trim(),
         email: newMemberEmail.trim().toLowerCase(),
-        role: newMemberRole,
+        role: 'member',
         currency: 'INR',
         default_payment_method: 'UPI',
         avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80`,
@@ -223,6 +233,25 @@ export default function DbAdminPage() {
     });
   }, [allExpenses, selectedUserFilter, selectedCategoryFilter, searchQuery]);
 
+  const handleDirectAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminAuthError(null);
+    setAdminAuthLoading(true);
+    try {
+      const res = await signInAsDbAdmin(adminPasswordInput);
+      if (!res.success && res.error) {
+        setAdminAuthError(res.error);
+      } else {
+        setAdminPasswordInput('');
+        loadAdminData();
+      }
+    } catch (err: any) {
+      setAdminAuthError(err?.message || 'Authentication failed');
+    } finally {
+      setAdminAuthLoading(false);
+    }
+  };
+
   // 1. Loading state while checking auth
   if (authLoading) {
     return (
@@ -233,75 +262,117 @@ export default function DbAdminPage() {
     );
   }
 
-  // 2. Unauthenticated state
-  if (!user && !currentProfile) {
-    return (
-      <div className="w-full max-w-md mx-auto px-4 py-16 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center mb-6 shadow-xl">
-          <Lock className="w-8 h-8" />
-        </div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
-          Admin Sign In Required
-        </h1>
-        <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
-          The Database Admin Console is restricted to system administrators. Please sign in with your administrator account.
-        </p>
-        <div className="mt-6 flex flex-col gap-2.5 w-full">
-          <Link
-            href="/login?next=/admin"
-            className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 text-center transition-all active:scale-98"
-          >
-            Sign In with Admin Account
-          </Link>
-          <Link
-            href="/dashboard"
-            className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // 3. Normal user state (access denied)
+  // 2. Unauthenticated or Non-Admin state -> Direct DB Admin Authentication
   if (!isAdmin) {
     return (
-      <div className="w-full max-w-md mx-auto px-4 py-16 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-6 shadow-xl shadow-rose-500/10">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
+      <div className="w-full max-w-md mx-auto px-4 py-10 sm:py-16 flex flex-col items-center">
+        <div className="w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+              <ShieldAlert className="w-7 h-7" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
+              DB Admin Console
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+              This console is isolated exclusively for system database administration. Please sign in with the DB Admin credentials.
+            </p>
+          </div>
 
-        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 mb-2">
-          Access Denied · Normal Account
-        </span>
+          {user || currentProfile ? (
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Currently signed in:</span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                  Member Account
+                </span>
+              </div>
+              <div className="font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5">
+                {currentProfile?.email || user?.email}
+              </div>
+            </div>
+          ) : null}
 
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
-          Admin Rights Required
-        </h1>
+          {adminAuthError && (
+            <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2.5 animate-in fade-in duration-150">
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+              <span className="leading-snug">{adminAuthError}</span>
+            </div>
+          )}
 
-        <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
-          This Database Admin Console is disabled for normal user accounts. Only the designated administrator login can access this console.
-        </p>
+          <form onSubmit={handleDirectAdminLogin} noValidate className="space-y-3.5">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Admin Username
+              </label>
+              <div className="relative">
+                <ShieldAlert className="w-4 h-4 text-emerald-500 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  value={DB_ADMIN_USERNAME}
+                  readOnly
+                  disabled
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-xs font-mono font-bold text-slate-700 dark:text-slate-300 cursor-not-allowed"
+                />
+              </div>
+            </div>
 
-        <div className="mt-3 text-[11px] font-mono text-slate-400">
-          Signed in as: <span className="font-semibold text-slate-700 dark:text-slate-300">{user?.email || currentProfile?.email}</span>
-        </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Admin Password
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type={showAdminPass ? 'text' : 'password'}
+                  value={adminPasswordInput}
+                  onChange={(e) => setAdminPasswordInput(e.target.value)}
+                  placeholder="Enter dbadmin password"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                  required
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAdminPass(!showAdminPass)}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  title={showAdminPass ? 'Hide password' : 'Show password'}
+                >
+                  {showAdminPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
 
-        <div className="mt-6 flex flex-col gap-2.5 w-full">
-          <Link
-            href="/dashboard"
-            className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs shadow-md text-center transition-all active:scale-98"
-          >
-            Return to Dashboard
-          </Link>
-          <button
-            type="button"
-            onClick={signOut}
-            className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-rose-600 dark:text-rose-400 text-center hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-          >
-            Sign Out / Switch Account
-          </button>
+            <button
+              type="submit"
+              disabled={adminAuthLoading}
+              className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <KeyRound className="w-4 h-4 text-emerald-400" />
+              <span>{adminAuthLoading ? 'Verifying Admin Key...' : 'Unlock DB Admin Console'}</span>
+            </button>
+          </form>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+            <Link
+              href="/dashboard"
+              className="text-slate-500 hover:text-slate-900 dark:hover:text-white font-semibold transition-colors flex items-center gap-1"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </Link>
+
+            {user && (
+              <button
+                type="button"
+                onClick={signOut}
+                className="text-rose-600 dark:text-rose-400 hover:underline font-semibold flex items-center gap-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -324,6 +395,10 @@ export default function DbAdminPage() {
             <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               Central Master DB
             </span>
+            <span className="text-slate-300 dark:text-slate-700">·</span>
+            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              User: <strong className="text-slate-800 dark:text-slate-200">{DB_ADMIN_USERNAME}</strong>
+            </span>
           </div>
           <div className="flex items-center gap-2.5 mt-1">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase flex items-center gap-2">
@@ -336,7 +411,7 @@ export default function DbAdminPage() {
         </div>
 
         {/* Global Admin Actions */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           <button
             onClick={() => setShowAddMemberModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 transition-all shadow-sm active:scale-95"
@@ -360,6 +435,15 @@ export default function DbAdminPage() {
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Purge All Data</span>
+          </button>
+
+          <button
+            onClick={signOut}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 transition-all active:scale-95"
+            title="Exit DB Admin"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
           </button>
         </div>
       </div>
@@ -479,13 +563,13 @@ export default function DbAdminPage() {
                     <td className="py-3 px-3">
                       <span
                         className={`inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                          isAdmin
+                          summary.profile.role === 'admin'
                             ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
                             : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                         }`}
                       >
-                        {isAdmin ? <ShieldCheck className="w-3 h-3" /> : null}
-                        <span>{isAdmin ? 'Admin' : 'Member'}</span>
+                        {summary.profile.role === 'admin' ? <ShieldCheck className="w-3 h-3" /> : null}
+                        <span>{summary.profile.role === 'admin' ? 'Admin' : 'Member'}</span>
                       </span>
                     </td>
 
@@ -514,18 +598,6 @@ export default function DbAdminPage() {
                         >
                           <Eye className="w-3 h-3" />
                           <span>Inspect</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleToggleRole(summary)}
-                          className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
-                            isAdmin
-                              ? 'border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40'
-                              : 'border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                          }`}
-                          title="Toggle between Admin and Member role"
-                        >
-                          {isAdmin ? 'Demote' : 'Make Admin'}
                         </button>
 
                         {usersSummary.length > 1 && (
@@ -818,7 +890,7 @@ export default function DbAdminPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateMember} className="space-y-4">
+            <form onSubmit={handleCreateMember} noValidate className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Display Name
@@ -835,13 +907,13 @@ export default function DbAdminPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Email Address
+                  Email Address or Username
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   value={newMemberEmail}
                   onChange={(e) => setNewMemberEmail(e.target.value)}
-                  placeholder="e.g. john@fintrack.local"
+                  placeholder="name@example.com or username"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
                   required
                 />
@@ -849,31 +921,11 @@ export default function DbAdminPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Role
+                  Account Role
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewMemberRole('member')}
-                    className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                      newMemberRole === 'member'
-                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    Member
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewMemberRole('admin')}
-                    className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                      newMemberRole === 'admin'
-                        ? 'bg-emerald-600 text-white border-transparent'
-                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    Admin
-                  </button>
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400 flex items-center justify-between">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">Standard Member</span>
+                  <span className="text-[10px] font-bold text-slate-400">DB Admin role is exclusive to dbadmin</span>
                 </div>
               </div>
 

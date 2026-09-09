@@ -133,7 +133,7 @@ export async function saveProfile(profile: Partial<Profile> & { id: string }): P
   } else {
     updated = {
       id: profile.id,
-      email: profile.email || 'user@fintrack.local',
+      email: profile.email || '',
       display_name: profile.display_name || 'Member',
       avatar_url: profile.avatar_url,
       currency: profile.currency || 'INR',
@@ -1134,7 +1134,14 @@ export async function wipeAllData(): Promise<boolean> {
 // DATABASE ADMIN & MULTI-ACCOUNT MANAGEMENT
 // -------------------------------------------------------------
 export async function getAllUsersSummary(): Promise<UserSummary[]> {
-  const profiles = await getProfiles();
+  const allProfiles = await getProfiles();
+  // Filter out any demo or administrative placeholder accounts, ensuring only real users are shown
+  const profiles = allProfiles.filter(
+    (p) =>
+      p.id !== 'usr-db-admin-master' &&
+      p.email !== 'db_admin@fintrack.internal' &&
+      !p.email?.endsWith('@fintrack.local')
+  );
   const allExpenses = await getExpenses('all');
   const allGoals = await getGoals();
 

@@ -8,6 +8,16 @@ import { showToast } from '@/components/ui/Toast';
 import { saveProfile as storeSaveProfile, getProfiles } from '@/lib/data/store';
 import { SignOutConfirmModal } from '@/components/auth/SignOutConfirmModal';
 
+import {
+  DB_ADMIN_USERNAME,
+  DB_ADMIN_PASSWORD,
+  DB_ADMIN_SESSION_KEY,
+  isDbAdminIdentifier,
+  isDbAdminPassword,
+  getDbAdminProfile,
+  getDbAdminUser,
+} from '@/lib/auth/adminConfig';
+
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
@@ -16,6 +26,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (email: string, password?: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
+  signInAsDbAdmin: (password: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => void;
   confirmSignOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -43,14 +54,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', currentUser.id)
         .single();
 
-      const isAdminEmail = Boolean(
-        currentUser.email?.toLowerCase().includes('shrey') ||
-        currentUser.email?.toLowerCase().includes('sjain')
+      const isDbAdmin = Boolean(
+        (currentUser.email && isDbAdminIdentifier(currentUser.email)) ||
+        ((currentUser.user_metadata as any)?.username && isDbAdminIdentifier((currentUser.user_metadata as any)?.username)) ||
+        currentUser.id === 'usr-dbadmin'
       );
 
+      // STRICT ISOLATION: ONLY the dbadmin account has the admin role.
+      // All other accounts (including Google sign-in and normal member accounts) are strictly 'member'.
+      const role: 'admin' | 'member' = isDbAdmin ? 'admin' : 'member';
+
       if (!error && data) {
-        const role = data.role || (isAdminEmail ? 'admin' : 'member');
         setProfile({ ...data, role } as Profile);
+        // If an old Supabase record marked a normal account as admin, demote it
+        if (data.role === 'admin' && !isDbAdmin) {
+          storeSaveProfile({ ...data, role: 'member' } as Profile);
+        }
       } else {
         const meta = currentUser.user_metadata || {};
         const fallbackProfile: Profile = {
@@ -60,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatar_url: meta.avatar_url || meta.picture || undefined,
           currency: 'INR',
           default_payment_method: 'UPI',
-          role: isAdminEmail ? 'admin' : 'member',
+          role,
         };
         setProfile(fallbackProfile);
         // Persist default profile to Supabase
@@ -72,7 +91,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // 1. Check if an active DB Admin session is saved locally
+    if (typeof window !== 'undefined') {
+      try {
+        const savedAdmin = localStorage.getItem(DB_ADMIN_SESSION_KEY);
+        if (savedAdmin) {
+          const parsed = JSON.parse(savedAdmin);
+          if (
+            parsed?.role === 'admin' &&
+            (isDbAdminIdentifier(parsed.email) || isDbAdminIdentifier(parsed.username) || parsed.id === 'usr-dbadmin' || parsed.id === 'usr-db-admin-master')
+          ) {
+            setUser(getDbAdminUser());
+            setProfile(getDbAdminProfile());
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to restore admin session:', err);
+      }
+    }
+
     if (!isConfigured) {
+      if (typeof window !== 'undefined') {
+        try {
+          const guestProfile = localStorage.getItem(GUEST_PROFILE_KEY);
+          if (guestProfile) {
+            const parsed = JSON.parse(guestProfile);
+            setProfile(parsed);
+          }
+        } catch {}
+      }
       setIsLoading(false);
       return;
     }
@@ -203,12 +252,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInAsDbAdmin = async (
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!password) {
+      return { success: false, error: 'Password is required' };
+    }
+    if (!isDbAdminPassword(password)) {
+      showToast('Incorrect password for DB Admin', 'error');
+      return { success: false, error: 'Incorrect password for DB Admin' };
+    }
+
+    try {
+      // Call backend route to sync session / cookies
+      try {
+        await fetch('/api/auth/admin-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: DB_ADMIN_USERNAME, password }),
+        });
+      } catch (apiErr) {
+        console.warn('Backend admin login sync:', apiErr);
+      }
+
+
+
+      const adminUser = getDbAdminUser();
+      const adminProfile = getDbAdminProfile();
+
+      setUser(adminUser);
+      setProfile(adminProfile);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(DB_ADMIN_SESSION_KEY, JSON.stringify(adminProfile));
+        localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(adminProfile));
+      }
+
+      showToast('Signed in as DB Administrator ✓', 'success');
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to authenticate DB Admin' };
+    }
+  };
+
   const signInWithEmail = async (
     email: string,
     password?: string
   ): Promise<{ success: boolean; error?: string }> => {
-    if (!email) return { success: false, error: 'Email is required' };
+    if (!email) return { success: false, error: 'Email or Username is required' };
     if (!password) return { success: false, error: 'Password is required' };
+
+    // Seamless DB Admin interception:
+    if (isDbAdminIdentifier(email)) {
+      return signInAsDbAdmin(password);
+    }
+
+    // Clear any leftover DB Admin session if regular user signs in
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(DB_ADMIN_SESSION_KEY);
+    }
 
     try {
       const supabase = createClient();
@@ -296,8 +398,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const supabase = createClient();
         await supabase.auth.signOut();
       }
+      try {
+        await fetch('/api/auth/admin-login', { method: 'DELETE' });
+      } catch {}
       if (typeof window !== 'undefined') {
         localStorage.removeItem(GUEST_PROFILE_KEY);
+        localStorage.removeItem(DB_ADMIN_SESSION_KEY);
       }
       setUser(null);
       setProfile(null);
@@ -325,6 +431,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
+        signInAsDbAdmin,
         signOut,
         confirmSignOut,
         updateProfile,

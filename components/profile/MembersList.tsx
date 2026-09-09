@@ -243,7 +243,7 @@ export function MembersList() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateMember} className="space-y-4">
+            <form onSubmit={handleCreateMember} noValidate className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Member Name
@@ -260,13 +260,13 @@ export function MembersList() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Email (Optional)
+                  Email or Username (Optional)
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="alex@example.com"
+                  placeholder="alex@example.com or alex"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>

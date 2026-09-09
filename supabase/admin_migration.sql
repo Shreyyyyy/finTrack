@@ -14,17 +14,32 @@ returns boolean as $$
 begin
   return exists (
     select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
+    where id = auth.uid() 
+      and role = 'admin'
+      and (
+        email in ('dbadmin', 'db_admin') 
+        or email ilike 'dbadmin%' 
+        or email ilike 'db_admin%'
+      )
   );
 end;
 $$ language plpgsql security definer;
 
--- 3. Designate existing primary user as admin
+-- 3. Preserve only real users, purge any demo data, and enforce roles
+delete from public.profiles
+where email in ('db_admin@fintrack.internal', 'user@fintrack.local')
+   or id::text in ('usr-db-admin-master', 'usr-dbadmin')
+   or id::text like 'usr-%';
+
+-- Demote all standard user accounts to 'member' (strictly no unverified admins)
+update public.profiles
+set role = 'member'
+where email not in ('dbadmin', 'db_admin') and email not ilike 'dbadmin%' and email not ilike 'db_admin%';
+
+-- Only the dedicated dbadmin / db_admin login is granted admin privileges (no @ required)
 update public.profiles
 set role = 'admin'
-where email ilike '%shrey%' or email ilike '%sjain%' or id in (
-  select id from public.profiles order by created_at asc limit 1
-);
+where email in ('dbadmin', 'db_admin') or email ilike 'dbadmin%' or email ilike 'db_admin%';
 
 -- 4. Enable Row Level Security (RLS) policies for Admin Access
 drop policy if exists "Admins can view and manage all profiles" on public.profiles;
@@ -47,11 +62,9 @@ create policy "Admins can view all monthly settings" on public.monthly_settings
 create or replace function public.handle_new_user()
 returns trigger as $$
 declare
-  is_first_user boolean;
   assigned_role text := 'member';
 begin
-  select count(*) = 0 into is_first_user from public.profiles;
-  if is_first_user or new.email ilike '%shrey%' or new.email ilike '%sjain%' then
+  if new.email in ('dbadmin', 'db_admin') or new.email ilike 'dbadmin%' or new.email ilike 'db_admin%' then
     assigned_role := 'admin';
   end if;
 

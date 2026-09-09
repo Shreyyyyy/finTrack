@@ -294,15 +294,15 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               />
             </div>
 
-            {/* Email */}
+            {/* Email / Username */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-slate-400" />
-                <span>Account Email</span>
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span>Account Identifier (Email or Username)</span>
               </label>
               <input
                 type="text"
-                value={user?.email || profile?.email || 'shrey@fintrack.local'}
+                value={user?.email || profile?.email || '—'}
                 disabled
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 text-xs text-slate-500 cursor-not-allowed"
               />
