@@ -43,8 +43,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', currentUser.id)
         .single();
 
+      const isAdminEmail = Boolean(
+        currentUser.email?.toLowerCase().includes('shrey') ||
+        currentUser.email?.toLowerCase().includes('sjain')
+      );
+
       if (!error && data) {
-        setProfile(data as Profile);
+        const role = data.role || (isAdminEmail ? 'admin' : 'member');
+        setProfile({ ...data, role } as Profile);
       } else {
         const meta = currentUser.user_metadata || {};
         const fallbackProfile: Profile = {
@@ -54,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           avatar_url: meta.avatar_url || meta.picture || undefined,
           currency: 'INR',
           default_payment_method: 'UPI',
+          role: isAdminEmail ? 'admin' : 'member',
         };
         setProfile(fallbackProfile);
         // Persist default profile to Supabase
@@ -82,31 +89,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const supabase = createClient();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user || null;
-      setUser(currentUser);
-      if (currentUser) {
-        loadProfile(currentUser);
-      } else {
-        setProfile(null);
-      }
-      setIsLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        const currentUser = session?.user || null;
+        setUser(currentUser);
+        if (currentUser) {
+          await loadProfile(currentUser);
+        } else {
+          setProfile(null);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to get session:', err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user || null;
-      setUser(currentUser);
-      if (currentUser) {
-        await loadProfile(currentUser);
-      } else {
-        setProfile(null);
+      try {
+        const currentUser = session?.user || null;
+        setUser(currentUser);
+        if (currentUser) {
+          await loadProfile(currentUser);
+        } else {
+          setProfile(null);
+        }
+      } catch (err) {
+        console.warn('onAuthStateChange error:', err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
+    // Safety timeout: Ensure loading never hangs if network / auth is slow
+    const safetyTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200);
+
     return () => {
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, [isConfigured, loadProfile]);

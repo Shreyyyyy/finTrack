@@ -10,16 +10,14 @@ import {
   Smartphone,
   Calendar,
   Sparkles,
-  Shield,
 } from 'lucide-react';
-import { Expense, Category, PaymentMethod, MonthlySetting, Goal, Profile } from '@/types';
+import { Expense, Category, PaymentMethod, MonthlySetting, Goal } from '@/types';
 import {
   getExpenses,
   getCategories,
   getPaymentMethods,
   getMonthlySetting,
   getGoals,
-  getProfiles,
   DATA_CHANGE_EVENT,
 } from '@/lib/data/store';
 import { calculateDashboardSummary } from '@/lib/calculations/financial';
@@ -33,14 +31,13 @@ import { DailySpendingChart } from '@/components/dashboard/DailySpendingChart';
 import { RecentExpenses } from '@/components/dashboard/RecentExpenses';
 import { SalaryBudgetModal } from '@/components/dashboard/SalaryBudgetModal';
 import { QuickGoalModal } from '@/components/dashboard/QuickGoalModal';
-import { PersonSelector } from '@/components/navigation/PersonSelector';
 import { BackTapSetupModal } from '@/components/shortcuts/BackTapSetupModal';
 import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
 export default function DashboardPage() {
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === 'admin';
+  const { profile, user } = useAuth();
+  const currentUserId = profile?.id || user?.id;
 
   // Dynamic date state
   const currentDate = new Date();
@@ -49,8 +46,6 @@ export default function DashboardPage() {
 
   const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedUserId, setSelectedUserId] = useState<string>('all');
-  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [showBackTapModal, setShowBackTapModal] = useState<boolean>(false);
   const [showSalaryModal, setShowSalaryModal] = useState<boolean>(false);
   const [showGoalModal, setShowGoalModal] = useState<boolean>(false);
@@ -71,13 +66,12 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [expList, catList, pmList, setting, goalList, profList] = await Promise.all([
-        getExpenses(isAdmin ? selectedUserId : undefined),
+      const [expList, catList, pmList, setting, goalList] = await Promise.all([
+        getExpenses(currentUserId),
         getCategories(),
         getPaymentMethods(),
         getMonthlySetting(selectedMonth, selectedYear),
         getGoals(),
-        getProfiles(),
       ]);
 
       setExpenses(expList);
@@ -85,13 +79,12 @@ export default function DashboardPage() {
       setPaymentMethods(pmList);
       setMonthlySetting(setting);
       setGoals(goalList);
-      setProfiles(profList);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, selectedYear, selectedUserId, isAdmin]);
+  }, [selectedMonth, selectedYear, currentUserId]);
 
   useEffect(() => {
     loadData();
@@ -194,12 +187,6 @@ export default function DashboardPage() {
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
               Financial Control Center
             </span>
-            {isAdmin && (
-              <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
-                <Shield className="w-2.5 h-2.5" />
-                <span>Admin View</span>
-              </span>
-            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 mt-1.5">
@@ -235,15 +222,6 @@ export default function DashboardPage() {
                 <Calendar className="w-3.5 h-3.5 text-emerald-500" />
                 <span>Today</span>
               </button>
-            )}
-
-            {/* Admin Multi-Person Selector (Only shown to admins) */}
-            {isAdmin && (
-              <PersonSelector
-                profiles={profiles}
-                selectedUserId={selectedUserId}
-                onSelectUser={setSelectedUserId}
-              />
             )}
           </div>
         </div>

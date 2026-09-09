@@ -170,8 +170,19 @@ export async function getExpenses(filterUserId?: string): Promise<Expense[]> {
         `)
         .order('expense_date', { ascending: false });
 
-      if (filterUserId && filterUserId !== 'all') {
-        query = query.eq('user_id', filterUserId);
+      // Determine target user ID:
+      // If filterUserId is explicitly 'all', allow loading all expenses (reserved for DB Admin)
+      // Otherwise, filter by filterUserId if provided, or default to current authenticated user
+      let targetUserId = filterUserId;
+      if (!targetUserId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          targetUserId = session.user.id;
+        }
+      }
+
+      if (targetUserId && targetUserId !== 'all') {
+        query = query.eq('user_id', targetUserId);
       }
 
       const { data, error } = await query;
@@ -189,8 +200,19 @@ export async function getExpenses(filterUserId?: string): Promise<Expense[]> {
   // Local storage fallback
   const rawExpenses = getLocalItem<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_EXPENSES);
   let list = rawExpenses;
-  if (filterUserId && filterUserId !== 'all') {
-    list = list.filter((e) => e.user_id === filterUserId);
+  let targetUserId = filterUserId;
+  if (!targetUserId && typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('fintrack_guest_profile');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.id) targetUserId = parsed.id;
+      }
+    } catch {}
+  }
+
+  if (targetUserId && targetUserId !== 'all') {
+    list = list.filter((e) => e.user_id === targetUserId);
   }
 
   return list.map((exp) => ({

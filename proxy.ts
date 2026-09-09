@@ -5,61 +5,19 @@ export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const code = searchParams.get('code');
 
-  // 1. If Supabase OAuth redirected with ?code=..., forward to /auth/callback
+  // 1. If Supabase OAuth redirected with ?code=..., forward cleanly to /auth/callback
   if (code && !pathname.startsWith('/auth/callback')) {
     const callbackUrl = new URL('/auth/callback', request.url);
     callbackUrl.searchParams.set('code', code);
 
-    // Preserve original destination path
+    // Preserve original destination path if present
     if (pathname && pathname !== '/') {
       callbackUrl.searchParams.set('next', pathname);
     }
     return NextResponse.redirect(callbackUrl);
   }
 
-  // 2. Allow API routes, auth callback, static assets, and manifest/icons without interception
-  if (
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/_next') ||
-    pathname === '/favicon.ico' ||
-    pathname === '/icon-192.svg' ||
-    pathname === '/manifest.json'
-  ) {
-    return NextResponse.next();
-  }
-
-  // 3. Inspect cookies for Supabase auth session
-  const cookies = request.cookies.getAll();
-  const hasAuthCookie = cookies.some(
-    (c) =>
-      c.name.startsWith('sb-') &&
-      (c.name.includes('auth-token') || c.name.includes('access-token')) &&
-      Boolean(c.value)
-  );
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseConfigured =
-    Boolean(supabaseUrl) && !supabaseUrl.includes('your-project-ref');
-
-  // 4. If Supabase is configured:
-  if (supabaseConfigured) {
-    // If not authenticated and visiting any protected route (like /), redirect to /login
-    if (!hasAuthCookie && !pathname.startsWith('/login')) {
-      const loginUrl = new URL('/login', request.url);
-      if (pathname !== '/') {
-        loginUrl.searchParams.set('next', pathname);
-      }
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // If authenticated and visiting /login, redirect to / (or requested target)
-    if (hasAuthCookie && pathname.startsWith('/login')) {
-      const target = searchParams.get('next') || '/';
-      return NextResponse.redirect(new URL(target, request.url));
-    }
-  }
-
+  // 2. Allow all routes to load without artificial redirect loops
   return NextResponse.next();
 }
 

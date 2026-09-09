@@ -14,12 +14,11 @@ import {
   X,
   FileSpreadsheet,
 } from 'lucide-react';
-import { Expense, Category, PaymentMethod, Profile } from '@/types';
+import { Expense, Category, PaymentMethod } from '@/types';
 import {
   getExpenses,
   getCategories,
   getPaymentMethods,
-  getProfiles,
   deleteExpense,
   DATA_CHANGE_EVENT,
   getMonthlySetting,
@@ -31,16 +30,17 @@ import {
   formatRelativeDate,
 } from '@/lib/formatting/formatters';
 import { ExpenseForm } from '@/components/expenses/ExpenseForm';
-import { PersonSelector } from '@/components/navigation/PersonSelector';
 import { showToast } from '@/components/ui/Toast';
 import { exportToExcel } from '@/lib/excel/exporter';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function TransactionsPage() {
+  const { profile, user } = useAuth();
+  const currentUserId = profile?.id || user?.id;
+
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [selectedPersonId, setSelectedPersonId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
@@ -58,22 +58,20 @@ export default function TransactionsPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [expList, catList, pmList, profList] = await Promise.all([
-        getExpenses(selectedPersonId),
+      const [expList, catList, pmList] = await Promise.all([
+        getExpenses(currentUserId),
         getCategories(),
         getPaymentMethods(),
-        getProfiles(),
       ]);
       setExpenses(expList);
       setCategories(catList);
       setPaymentMethods(pmList);
-      setProfiles(profList);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [selectedPersonId]);
+  }, [currentUserId]);
 
   useEffect(() => {
     loadData();
@@ -193,13 +191,6 @@ export default function TransactionsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Person Selector */}
-          <PersonSelector
-            profiles={profiles}
-            selectedUserId={selectedPersonId}
-            onSelectUser={setSelectedPersonId}
-          />
-
           <button
             onClick={handleExportFiltered}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm"
@@ -386,24 +377,6 @@ export default function TransactionsPage() {
                               <CreditCard className="w-3 h-3" />
                               {exp.payment_method?.name || 'UPI'}
                             </span>
-                            {exp.profile?.display_name && (
-                              <>
-                                <span>·</span>
-                                <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                                  {exp.profile.avatar_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                      src={exp.profile.avatar_url}
-                                      alt={exp.profile.display_name}
-                                      className="w-3.5 h-3.5 rounded-full object-cover border border-emerald-500/40"
-                                    />
-                                  ) : (
-                                    <span>👤</span>
-                                  )}
-                                  <span>{exp.profile.display_name}</span>
-                                </span>
-                              </>
-                            )}
                             {exp.note && (
                               <>
                                 <span>·</span>

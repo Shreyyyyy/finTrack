@@ -46,10 +46,8 @@ import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
 export default function DbAdminPage() {
-  const { profile: currentProfile } = useAuth();
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
-  const [passcode, setPasscode] = useState<string>('');
-  const [passcodeError, setPasscodeError] = useState<boolean>(false);
+  const { user, profile: currentProfile, isLoading: authLoading, signOut } = useAuth();
+  const isAdmin = currentProfile?.role === 'admin';
 
   const [usersSummary, setUsersSummary] = useState<UserSummary[]>([]);
   const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
@@ -70,13 +68,6 @@ export default function DbAdminPage() {
   const [newMemberName, setNewMemberName] = useState<string>('');
   const [newMemberEmail, setNewMemberEmail] = useState<string>('');
   const [newMemberRole, setNewMemberRole] = useState<'admin' | 'member'>('member');
-
-  // Check if current user is admin automatically
-  useEffect(() => {
-    if (currentProfile?.role === 'admin') {
-      setIsUnlocked(true);
-    }
-  }, [currentProfile]);
 
   const loadAdminData = useCallback(async () => {
     try {
@@ -101,30 +92,17 @@ export default function DbAdminPage() {
   }, []);
 
   useEffect(() => {
-    if (isUnlocked) {
+    if (isAdmin) {
       loadAdminData();
     }
     const handleStoreChange = () => {
-      if (isUnlocked) loadAdminData();
+      if (isAdmin) loadAdminData();
     };
     window.addEventListener(DATA_CHANGE_EVENT, handleStoreChange);
     return () => {
       window.removeEventListener(DATA_CHANGE_EVENT, handleStoreChange);
     };
-  }, [isUnlocked, loadAdminData]);
-
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Default admin code is admin2026 or finTrack
-    if (passcode.trim() === 'admin2026' || passcode.trim().toLowerCase() === 'fintrack' || currentProfile?.role === 'admin') {
-      setIsUnlocked(true);
-      setPasscodeError(false);
-      showToast('DB Admin Access Granted ✓', 'success');
-    } else {
-      setPasscodeError(true);
-      showToast('Invalid Admin Passcode', 'error');
-    }
-  };
+  }, [isAdmin, loadAdminData]);
 
   const handleToggleRole = async (user: UserSummary) => {
     const nextRole = user.profile.role === 'admin' ? 'member' : 'admin';
@@ -245,52 +223,85 @@ export default function DbAdminPage() {
     });
   }, [allExpenses, selectedUserFilter, selectedCategoryFilter, searchQuery]);
 
-  // If locked, render the secure authentication gate
-  if (!isUnlocked) {
+  // 1. Loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="w-full max-w-md mx-auto px-4 py-24 flex flex-col items-center justify-center text-center">
+        <div className="w-9 h-9 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-xs text-slate-400 font-semibold">Verifying administrator permissions...</p>
+      </div>
+    );
+  }
+
+  // 2. Unauthenticated state
+  if (!user && !currentProfile) {
     return (
       <div className="w-full max-w-md mx-auto px-4 py-16 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/10">
+        <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center mb-6 shadow-xl">
+          <Lock className="w-8 h-8" />
+        </div>
+        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
+          Admin Sign In Required
+        </h1>
+        <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
+          The Database Admin Console is restricted to system administrators. Please sign in with your administrator account.
+        </p>
+        <div className="mt-6 flex flex-col gap-2.5 w-full">
+          <Link
+            href="/login?next=/admin"
+            className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 text-center transition-all active:scale-98"
+          >
+            Sign In with Admin Account
+          </Link>
+          <Link
+            href="/"
+            className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Normal user state (access denied)
+  if (!isAdmin) {
+    return (
+      <div className="w-full max-w-md mx-auto px-4 py-16 flex flex-col items-center text-center">
+        <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-6 shadow-xl shadow-rose-500/10">
           <ShieldAlert className="w-8 h-8" />
         </div>
 
+        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 mb-2">
+          Access Denied · Normal Account
+        </span>
+
         <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
-          Database Admin Access
+          Admin Rights Required
         </h1>
+
         <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
-          Authorized administrative access to inspect all database accounts, cross-user expenses, and system controls.
+          This Database Admin Console is disabled for normal user accounts. Only the designated administrator login can access this console.
         </p>
 
-        <form onSubmit={handleUnlock} className="w-full mt-8 space-y-4">
-          <div className="relative">
-            <input
-              type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              placeholder="Enter Admin Passcode (admin2026)"
-              className={`w-full px-4 py-3 rounded-2xl bg-white dark:bg-slate-900 border ${
-                passcodeError
-                  ? 'border-rose-500 focus:ring-rose-500'
-                  : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500'
-              } text-sm font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-2 shadow-sm`}
-              autoFocus
-            />
-            <div className="absolute right-3.5 top-3.5 text-slate-400">
-              <KeyRound className="w-4 h-4" />
-            </div>
-          </div>
+        <div className="mt-3 text-[11px] font-mono text-slate-400">
+          Signed in as: <span className="font-semibold text-slate-700 dark:text-slate-300">{user?.email || currentProfile?.email}</span>
+        </div>
 
-          <button
-            type="submit"
-            className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-600/20 active:scale-98 transition-all"
+        <div className="mt-6 flex flex-col gap-2.5 w-full">
+          <Link
+            href="/"
+            className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs shadow-md text-center transition-all active:scale-98"
           >
-            Unlock DB Admin Console
-          </button>
-        </form>
-
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <Link href="/" className="text-xs text-slate-500 hover:underline font-semibold">
             Return to Dashboard
           </Link>
+          <button
+            type="button"
+            onClick={signOut}
+            className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-rose-600 dark:text-rose-400 text-center hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+          >
+            Sign Out / Switch Account
+          </button>
         </div>
       </div>
     );

@@ -39,7 +39,9 @@ export function DesktopSidebar() {
     { label: 'Analytics', href: '/analytics', icon: BarChart3 },
     { label: 'Budgets', href: '/budgets', icon: PieChart },
     { label: 'Goals', href: '/goals', icon: Target },
-    { label: 'DB Admin', href: '/admin', icon: ShieldAlert, badge: profile?.role === 'admin' ? 'Super' : undefined },
+    ...(profile?.role === 'admin'
+      ? [{ label: 'DB Admin', href: '/admin', icon: ShieldAlert, badge: 'Super' as const }]
+      : []),
     { label: 'Settings', href: '/settings', icon: Settings },
   ];
 
