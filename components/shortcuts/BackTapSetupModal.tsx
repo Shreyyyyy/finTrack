@@ -80,6 +80,14 @@ export function BackTapSetupModal({ isOpen, onClose, userEmail }: BackTapSetupMo
                 <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
                   &lt; 5s Flow
                 </span>
+                <a
+                  href="/api/expenses/logs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Live Logs ↗
+                </a>
               </div>
               <p className="text-xs text-slate-500">
                 Log expenses by double-tapping the back of your iPhone.

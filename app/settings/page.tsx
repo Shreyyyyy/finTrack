@@ -451,13 +451,23 @@ export default function SettingsPage() {
               <p className="text-xs text-slate-500">Record expenses in &lt; 5 seconds from your lock screen</p>
             </div>
           </div>
-          <button
-            onClick={handleGenerateApiKey}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New API Key</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="/api/expenses/logs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <span>Live Logs ↗</span>
+            </a>
+            <button
+              onClick={handleGenerateApiKey}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New API Key</span>
+            </button>
+          </div>
         </div>
 
         {/* API Endpoint Box */}

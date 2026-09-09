@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createClientServer } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 import { DEFAULT_CATEGORIES, DEFAULT_PAYMENT_METHODS } from '@/lib/data/initialData';
+import { addShortcutLog } from '@/lib/logging/requestLogs';
 
 const isUUID = (str: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
@@ -20,36 +21,64 @@ function getAdminSupabaseClient() {
 }
 
 export async function POST(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const apiKeyParam = searchParams.get('api_key') || searchParams.get('key');
+  const apiKey = (request.headers.get('x-api-key') || apiKeyParam || '').trim();
+  const authHeader = request.headers.get('authorization');
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
+  const trace = {
+    supabaseConfigured: isSupabaseConfigured(),
+    rpcAttempted: false,
+    rpcError: null as string | null,
+    apiKeysQueryError: null as string | null,
+    profilesQueryError: null as string | null,
+    resolvedUserId: null as string | null,
+    insertError: null as string | null,
+  };
+
+  const body = await request.json().catch(() => ({}));
+  const rawAmount = body.amount;
+  const amount = typeof rawAmount === 'number' ? rawAmount : parseFloat(String(rawAmount || '0'));
+  const categoryInput = String(body.category_id || body.category || 'Other').trim();
+  const paymentInput = String(body.payment_method_id || body.payment_method || 'UPI').trim();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const expenseDate = body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : todayStr;
+  const merchant = body.merchant ? String(body.merchant).substring(0, 100) : null;
+  const note = body.note ? String(body.note).substring(0, 200) : null;
+
+  const logFinish = (statusCode: number, success: boolean, message?: string, error?: string) => {
+    addShortcutLog({
+      id: 'log-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      timestamp: new Date().toLocaleTimeString('en-US', { hour12: false }),
+      method: 'POST',
+      url: request.nextUrl.pathname + request.nextUrl.search,
+      apiKeyUsed: apiKey,
+      amount,
+      category: categoryInput,
+      paymentMethod: paymentInput,
+      note: note || undefined,
+      statusCode,
+      success,
+      message,
+      error,
+      trace,
+    });
+  };
+
   try {
-    // 1. Authenticate Request
-    const searchParams = request.nextUrl.searchParams;
-    const apiKeyParam = searchParams.get('api_key') || searchParams.get('key');
-    const apiKey = (request.headers.get('x-api-key') || apiKeyParam || '').trim();
-    const authHeader = request.headers.get('authorization');
-    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
-
-    // 2. Parse & Validate Payload
-    const body = await request.json().catch(() => ({}));
-    const rawAmount = body.amount;
-    const amount = typeof rawAmount === 'number' ? rawAmount : parseFloat(String(rawAmount || '0'));
-
     if (isNaN(amount) || amount <= 0) {
+      logFinish(400, false, undefined, 'Amount must be a valid number greater than 0.');
       return NextResponse.json(
         { success: false, error: 'Amount must be a valid number greater than 0.' },
         { status: 400 }
       );
     }
 
-    const categoryInput = String(body.category_id || body.category || 'Other').trim();
-    const paymentInput = String(body.payment_method_id || body.payment_method || 'UPI').trim();
-    const todayStr = new Date().toISOString().split('T')[0];
-    const expenseDate = body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : todayStr;
-    const merchant = body.merchant ? String(body.merchant).substring(0, 100) : null;
-    const note = body.note ? String(body.note).substring(0, 200) : null;
-
     if (!isSupabaseConfigured()) {
       // Local/Demo Mode Return
       if (!apiKey && !bearerToken) {
+        logFinish(401, false, undefined, 'API key required in demo mode.');
         return NextResponse.json(
           { success: false, error: 'API key required. Please provide x-api-key header or ?api_key= parameter.' },
           { status: 401 }
@@ -62,9 +91,11 @@ export async function POST(request: NextRequest) {
         (p) => p.id.toLowerCase() === paymentInput.toLowerCase() || p.name.toLowerCase() === paymentInput.toLowerCase()
       );
 
+      const msg = `Expense added ✓: ₹${amount.toLocaleString('en-IN')} for ${matchedCat ? matchedCat.name : categoryInput}`;
+      logFinish(200, true, msg);
       return NextResponse.json({
         success: true,
-        message: `Expense added ✓: ₹${amount.toLocaleString('en-IN')} for ${matchedCat ? matchedCat.name : categoryInput}`,
+        message: msg,
         expense: {
           id: 'exp-shortcut-' + Date.now(),
           amount,
@@ -87,6 +118,7 @@ export async function POST(request: NextRequest) {
 
     // Strategy A: Dedicated RPC function log_quick_expense (Fastest & Bypasses RLS with SECURITY DEFINER)
     if (apiKey) {
+      trace.rpcAttempted = true;
       try {
         const { data: rpcData, error: rpcError } = await serverSupabase.rpc('log_quick_expense', {
           p_api_key: apiKey,
@@ -98,15 +130,19 @@ export async function POST(request: NextRequest) {
           p_date: expenseDate,
         });
 
-        if (!rpcError && rpcData) {
+        if (rpcError) {
+          trace.rpcError = `${rpcError.code}: ${rpcError.message}`;
+        } else if (rpcData) {
           if (rpcData.success) {
+            logFinish(200, true, rpcData.message);
             return NextResponse.json(rpcData);
           } else {
+            logFinish(401, false, undefined, rpcData.error);
             return NextResponse.json(rpcData, { status: 401 });
           }
         }
-      } catch {
-        // RPC not defined yet, fall through to Strategy B
+      } catch (err: unknown) {
+        trace.rpcError = err instanceof Error ? err.message : String(err);
       }
     }
 
@@ -122,22 +158,30 @@ export async function POST(request: NextRequest) {
 
     if (!userId && apiKey) {
       // Look up key in api_keys table
-      const { data: keyRow } = await supabase
+      const { data: keyRow, error: kErr } = await supabase
         .from('api_keys')
         .select('user_id')
         .eq('key_hash', apiKey)
         .maybeSingle();
 
+      if (kErr) {
+        trace.apiKeysQueryError = `${kErr.code}: ${kErr.message}`;
+      }
+
       if (keyRow?.user_id) {
         userId = keyRow.user_id;
       } else if (apiKey.startsWith('fintrack_sec_') || apiKey.startsWith('fintrack_')) {
         // Fallback to primary registered profile in database
-        const { data: primaryProfile } = await supabase
+        const { data: primaryProfile, error: pErr } = await supabase
           .from('profiles')
           .select('id')
           .order('created_at', { ascending: true })
           .limit(1)
           .maybeSingle();
+
+        if (pErr) {
+          trace.profilesQueryError = `${pErr.code}: ${pErr.message}`;
+        }
 
         if (primaryProfile?.id) {
           userId = primaryProfile.id;
@@ -152,12 +196,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    trace.resolvedUserId = userId;
+
     if (!userId) {
+      const err = 'Unauthorized. API key not recognized.';
+      logFinish(401, false, undefined, `${err} (RPC Error: ${trace.rpcError || 'None'}, api_keys Error: ${trace.apiKeysQueryError || 'None'})`);
       return NextResponse.json(
         {
           success: false,
-          error: 'Unauthorized. API key not recognized.',
+          error: err,
           instructions: 'Please copy your personal API key from finTrack Settings or run the Supabase SQL migration to enable shortcut access.',
+          trace,
         },
         { status: 401 }
       );
@@ -225,25 +274,30 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      console.error('Supabase expense insert error:', insertError);
+      trace.insertError = `${insertError.code}: ${insertError.message}`;
+      logFinish(500, false, undefined, `Database insert error: ${insertError.message}`);
       return NextResponse.json(
         {
           success: false,
           error: `Database error: ${insertError.message}. Please run the Supabase SQL migration.`,
+          trace,
         },
         { status: 500 }
       );
     }
 
     const categoryDisplayName = matchedCategory ? matchedCategory.name : categoryInput;
+    const successMsg = `Expense added ✓: ₹${amount.toLocaleString('en-IN')} for ${categoryDisplayName}`;
+    logFinish(200, true, successMsg);
 
     return NextResponse.json({
       success: true,
-      message: `Expense added ✓: ₹${amount.toLocaleString('en-IN')} for ${categoryDisplayName}`,
+      message: successMsg,
       expense: newExpense,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';
+    logFinish(500, false, undefined, message);
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }
