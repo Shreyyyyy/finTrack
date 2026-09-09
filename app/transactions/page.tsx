@@ -76,7 +76,11 @@ export default function TransactionsPage() {
   useEffect(() => {
     loadData();
     window.addEventListener(DATA_CHANGE_EVENT, loadData);
-    return () => window.removeEventListener(DATA_CHANGE_EVENT, loadData);
+    window.addEventListener('focus', loadData);
+    return () => {
+      window.removeEventListener(DATA_CHANGE_EVENT, loadData);
+      window.removeEventListener('focus', loadData);
+    };
   }, [loadData]);
 
   // Filter & Sort Logic
