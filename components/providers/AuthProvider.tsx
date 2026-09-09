@@ -63,26 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isConfigured) {
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(GUEST_PROFILE_KEY);
-        if (stored) {
-          try {
-            setProfile(JSON.parse(stored));
-          } catch {
-            // fallback
-          }
-        } else {
-          const defaultGuest: Profile = {
-            id: 'usr-1',
-            email: 'shrey@fintrack.local',
-            display_name: 'Shrey',
-            avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-            currency: 'INR',
-            default_payment_method: 'UPI',
-          };
-          setProfile(defaultGuest);
-        }
-      }
       setIsLoading(false);
       return;
     }
@@ -105,17 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentUser) {
         loadProfile(currentUser);
       } else {
-        // In case there is a chosen member profile stored
-        if (typeof window !== 'undefined') {
-          const stored = localStorage.getItem(GUEST_PROFILE_KEY);
-          if (stored) {
-            try {
-              setProfile(JSON.parse(stored));
-            } catch {
-              // fallback
-            }
-          }
-        }
+        setProfile(null);
       }
       setIsLoading(false);
     });
@@ -202,33 +172,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password?: string
   ): Promise<{ success: boolean; error?: string }> => {
     if (!email) return { success: false, error: 'Email is required' };
-
-    if (!isConfigured) {
-      // Demo/Local mode: switch or create profile with this email
-      const profiles = await getProfiles();
-      let found = profiles.find((p) => p.email.toLowerCase() === email.toLowerCase());
-      if (!found) {
-        found = await storeSaveProfile({
-          id: `usr-${Date.now()}`,
-          email,
-          display_name: email.split('@')[0],
-          currency: 'INR',
-          default_payment_method: 'UPI',
-        });
-      }
-      setProfile(found);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(found));
-      }
-      showToast(`Welcome back, ${found.display_name}!`, 'success');
-      return { success: true };
-    }
+    if (!password) return { success: false, error: 'Password is required' };
 
     try {
       const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: password || 'FinTrack@2026',
+        email: email.trim(),
+        password,
       });
 
       if (error) {
@@ -254,30 +204,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     displayName?: string
   ): Promise<{ success: boolean; error?: string }> => {
     if (!email) return { success: false, error: 'Email is required' };
-
-    const name = displayName || email.split('@')[0];
-
-    if (!isConfigured) {
-      const newProfile = await storeSaveProfile({
-        id: `usr-${Date.now()}`,
-        email,
-        display_name: name,
-        currency: 'INR',
-        default_payment_method: 'UPI',
-      });
-      setProfile(newProfile);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(newProfile));
-      }
-      showToast(`Account created for ${name}!`, 'success');
-      return { success: true };
+    if (!password || password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters' };
     }
+
+    const name = displayName?.trim() || email.split('@')[0];
 
     try {
       const supabase = createClient();
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password: password || 'FinTrack@2026',
+        email: email.trim(),
+        password,
         options: {
           data: {
             full_name: name,
@@ -304,9 +241,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         showToast(`Account created for ${name} ✓`, 'success');
         return { success: true };
       }
-      return { success: false, error: 'Signup failed' };
+      return { success: true };
     } catch (err: any) {
-      return { success: false, error: err.message || 'Signup error' };
+      return { success: false, error: err.message || 'Registration error' };
     }
   };
 

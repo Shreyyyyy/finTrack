@@ -11,15 +11,12 @@ import {
   Mail,
   Lock,
   User,
-  Users,
   Check,
   Camera,
   LogIn
 } from 'lucide-react';
 import { BackTapSetupModal } from '@/components/shortcuts/BackTapSetupModal';
 import { ProfileModal } from '@/components/profile/ProfileModal';
-import { getProfiles } from '@/lib/data/store';
-import { Profile } from '@/types';
 import { showToast } from '@/components/ui/Toast';
 
 export default function LoginPage() {
@@ -30,7 +27,6 @@ export default function LoginPage() {
     signInWithEmail,
     signUpWithEmail,
     signOut,
-    switchActiveProfile,
     isConfigured,
     isLoading,
   } = useAuth();
@@ -45,13 +41,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Household Members for 1-click Fast Switching
-  const [householdMembers, setHouseholdMembers] = useState<Profile[]>([]);
-
-  useEffect(() => {
-    getProfiles().then(setHouseholdMembers);
-  }, [profile]);
 
   const handleGoogleSignIn = async () => {
     await signInWithGoogle();
@@ -323,61 +312,6 @@ export default function LoginPage() {
               </div>
             </form>
           )}
-
-          {/* Quick Member Switcher */}
-          {householdMembers.length > 0 && (
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-                <span className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Or Quick Switch Member</span>
-                </span>
-                <span>{householdMembers.length} profiles</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {householdMembers.slice(0, 3).map((person) => (
-                  <button
-                    key={person.id}
-                    onClick={() => switchActiveProfile(person.id)}
-                    className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center gap-1.5 transition-all active:scale-95"
-                  >
-                    {person.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={person.avatar_url}
-                        alt={person.display_name}
-                        className="w-8 h-8 rounded-full object-cover border border-emerald-500/40"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">
-                        {person.display_name.charAt(0)}
-                      </div>
-                    )}
-                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate w-full">
-                      {person.display_name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="relative flex items-center justify-center my-2">
-            <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-            <span className="bg-white dark:bg-slate-900 px-3 text-[11px] text-slate-400 uppercase font-semibold">
-              Or
-            </span>
-          </div>
-
-          {/* Guest / Local Link */}
-          <Link
-            href="/"
-            className="w-full py-3 px-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs text-center flex items-center justify-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            <span>Continue in Guest / Demo Mode</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
         </div>
 
         {/* Security & Multi-User Notice */}

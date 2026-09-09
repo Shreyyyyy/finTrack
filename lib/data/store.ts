@@ -35,6 +35,18 @@ const STORAGE_KEYS = {
 
 export const DATA_CHANGE_EVENT = 'fintrack_store_change';
 
+// Auto-purge any stale mock/dummy data on client boot
+if (typeof window !== 'undefined') {
+  const PURGE_KEY = 'fintrack_clean_slate_purged_v1';
+  if (!localStorage.getItem(PURGE_KEY)) {
+    localStorage.removeItem(STORAGE_KEYS.EXPENSES);
+    localStorage.removeItem(STORAGE_KEYS.GOALS);
+    localStorage.removeItem(STORAGE_KEYS.GOAL_TRANSACTIONS);
+    localStorage.removeItem(STORAGE_KEYS.PROFILES);
+    localStorage.setItem(PURGE_KEY, 'true');
+  }
+}
+
 function emitChange() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(DATA_CHANGE_EVENT));
