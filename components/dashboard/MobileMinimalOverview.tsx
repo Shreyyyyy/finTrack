@@ -35,7 +35,7 @@ export function MobileMinimalOverview({
 }: MobileMinimalOverviewProps) {
   return (
     <div className="space-y-4 md:hidden">
-      {/* 1. Featured Category Pie Chart Right Up Top on Phone */}
+      {/* 1. Featured Category Donut & List Breakdown */}
       <HomePagePieChart
         expenses={expenses}
         categories={categories}
@@ -56,50 +56,50 @@ export function MobileMinimalOverview({
       {/* 2. Ultra Minimal Essential Numbers Grid */}
       <div className="grid grid-cols-2 gap-2.5">
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider">
+          <div className="flex items-center justify-between text-[10px] font-black text-slate-800 dark:text-slate-400 uppercase tracking-wider">
             <span>Salary</span>
-            <Wallet className="w-3.5 h-3.5 text-sky-600 dark:text-emerald-500" />
+            <Wallet className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
           </div>
           <div className="text-lg font-black text-black dark:text-white mt-1">
             {formatINR(monthlySetting.income)}
           </div>
-          <div className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">Monthly Income</div>
+          <div className="text-[10px] text-slate-700 dark:text-slate-400 mt-0.5 font-bold">Monthly Income</div>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-wider">
+          <div className="flex items-center justify-between text-[10px] font-black text-slate-800 dark:text-slate-400 uppercase tracking-wider">
             <span>Spent</span>
             <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
           </div>
           <div className="text-lg font-black text-black dark:text-white mt-1">
             {formatINR(totalSpent)}
           </div>
-          <div className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">Total Outflow</div>
+          <div className="text-[10px] text-slate-700 dark:text-slate-400 mt-0.5 font-bold">Total Outflow</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-emerald-950 dark:text-emerald-400 uppercase tracking-wider">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
+          <div className="flex items-center justify-between text-[10px] font-black text-slate-800 dark:text-emerald-400 uppercase tracking-wider">
             <span>How Much Left</span>
-            <PiggyBank className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
+            <PiggyBank className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="text-lg font-black text-emerald-950 dark:text-emerald-400 mt-1">
+          <div className="text-lg font-black text-black dark:text-emerald-400 mt-1">
             {formatINR(remainingBudget)}
           </div>
-          <div className="text-[10px] text-emerald-900/80 dark:text-emerald-300/70 mt-0.5 font-semibold">
+          <div className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold mt-0.5">
             Safe Remaining
           </div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 shadow-xs">
-          <div className="flex items-center justify-between text-[10px] font-bold text-amber-950 dark:text-amber-400 uppercase tracking-wider">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-200/80 dark:border-amber-800/60 shadow-xs">
+          <div className="flex items-center justify-between text-[10px] font-black text-slate-800 dark:text-amber-400 uppercase tracking-wider">
             <span>Daily Safe</span>
-            <Scale className="w-3.5 h-3.5 text-amber-600 dark:text-amber-500" />
+            <Scale className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
           </div>
-          <div className="text-lg font-black text-amber-950 dark:text-amber-400 mt-1">
-            {formatINR(safeDailyAllowance)} <span className="text-[10px] font-normal">/day</span>
+          <div className="text-lg font-black text-black dark:text-amber-400 mt-1">
+            {formatINR(safeDailyAllowance)} <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">/day</span>
           </div>
-          <div className="text-[10px] text-amber-900/80 dark:text-amber-300/70 mt-0.5 font-semibold">
-            For {daysRemaining} days
+          <div className="text-[10px] text-amber-700 dark:text-amber-300 font-bold mt-0.5">
+            For {daysRemaining} days left
           </div>
         </div>
       </div>

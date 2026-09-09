@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Expense, Category } from '@/types';
 import { formatINR, formatPercentage } from '@/lib/formatting/formatters';
-import { PieChart as PieIcon, ListFilter, PlusCircle } from 'lucide-react';
+import { CircleDot, List, PlusCircle } from 'lucide-react';
 
 interface CategorySpendingCardProps {
   expenses: Expense[];
@@ -51,39 +51,41 @@ export function CategorySpendingCard({
     name: c.name,
     icon: c.icon,
     value: c.spent,
-    color: c.color || '#10b981',
+    color: c.color || '#0284c7',
   }));
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
+        <h3 className="text-xs font-black uppercase tracking-wider text-black dark:text-slate-400">
           Category Spending
         </h3>
 
         {sortedCategories.length > 0 && (
-          <div className="flex items-center gap-1 rounded-lg bg-sky-50 dark:bg-slate-800 p-0.5 border border-sky-100 dark:border-transparent">
+          <div className="flex items-center gap-1 rounded-xl bg-sky-100/70 dark:bg-slate-800 p-0.5 border border-sky-200/70 dark:border-transparent">
             <button
               onClick={() => setViewMode('bars')}
-              className={`p-1 rounded-md text-xs transition-colors ${
+              className={`p-1.5 rounded-lg text-xs transition-colors flex items-center gap-1 ${
                 viewMode === 'bars'
-                  ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-xs font-bold'
-                  : 'text-slate-500'
+                  ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-xs font-black'
+                  : 'text-slate-700 hover:text-black dark:text-slate-400 font-bold'
               }`}
               title="List View"
             >
-              <ListFilter className="w-3.5 h-3.5" />
+              <List className="w-3.5 h-3.5" />
+              <span className="text-[10px]">List</span>
             </button>
             <button
               onClick={() => setViewMode('donut')}
-              className={`p-1 rounded-md text-xs transition-colors ${
+              className={`p-1.5 rounded-lg text-xs transition-colors flex items-center gap-1 ${
                 viewMode === 'donut'
-                  ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-xs font-bold'
-                  : 'text-slate-500'
+                  ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-xs font-black'
+                  : 'text-slate-700 hover:text-black dark:text-slate-400 font-bold'
               }`}
               title="Donut Chart View"
             >
-              <PieIcon className="w-3.5 h-3.5" />
+              <CircleDot className="w-3.5 h-3.5" />
+              <span className="text-[10px]">Donut</span>
             </button>
           </div>
         )}
