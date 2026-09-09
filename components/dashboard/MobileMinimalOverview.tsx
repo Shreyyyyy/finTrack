@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React from 'react';
 import { Expense, Category, MonthlySetting } from '@/types';
 import { formatINR } from '@/lib/formatting/formatters';
 import { HomePagePieChart } from './HomePagePieChart';
 import { RecentExpenses } from './RecentExpenses';
-import { Wallet, TrendingDown, PiggyBank, Scale, Plus, ChevronDown, ChevronUp, Sliders } from 'lucide-react';
+import { FinancialPulseWidget } from './FinancialPulseWidget';
+import { Wallet, TrendingDown, PiggyBank, Scale, Sliders } from 'lucide-react';
 
 interface MobileMinimalOverviewProps {
   expenses: Expense[];
@@ -33,8 +33,6 @@ export function MobileMinimalOverview({
   daysRemaining,
   onEditPlan,
 }: MobileMinimalOverviewProps) {
-  const [showMoreDetails, setShowMoreDetails] = useState(false);
-
   return (
     <div className="space-y-4 md:hidden">
       {/* 1. Featured Category Pie Chart Right Up Top on Phone */}
@@ -44,6 +42,15 @@ export function MobileMinimalOverview({
         month={selectedMonth}
         year={selectedYear}
         income={monthlySetting.income}
+      />
+
+      {/* 1.5 Live Financial Vitality & Habits Pulse */}
+      <FinancialPulseWidget
+        expenses={expenses}
+        income={monthlySetting.income}
+        monthlyBudget={monthlySetting.monthly_budget}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
       />
 
       {/* 2. Ultra Minimal Essential Numbers Grid */}

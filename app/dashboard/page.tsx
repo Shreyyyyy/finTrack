@@ -35,6 +35,7 @@ import { HomePagePieChart } from '@/components/dashboard/HomePagePieChart';
 import { DashboardTabs, DashboardTabType } from '@/components/dashboard/DashboardTabs';
 import { DashboardTransactionsTable } from '@/components/dashboard/DashboardTransactionsTable';
 import { MobileMinimalOverview } from '@/components/dashboard/MobileMinimalOverview';
+import { FinancialPulseWidget } from '@/components/dashboard/FinancialPulseWidget';
 import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
@@ -314,6 +315,15 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Live Financial Vitality & Health Pulse Widget */}
+            <FinancialPulseWidget
+              expenses={expenses}
+              income={summary.income}
+              monthlyBudget={summary.monthlyBudget}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+            />
+
             {/* Core Pillars Grid - Expanded Full Width */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <BudgetHealthCard
@@ -358,6 +368,14 @@ export default function DashboardPage() {
             month={selectedMonth}
             year={selectedYear}
             income={summary.income}
+          />
+
+          <FinancialPulseWidget
+            expenses={expenses}
+            income={summary.income}
+            monthlyBudget={summary.monthlyBudget}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
           />
 
           <DailySpendingChart
