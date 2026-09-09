@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClientServer } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -21,13 +21,42 @@ export async function GET(request: Request) {
   }
 
   if (code) {
-    const supabase = await createClientServer();
+    const redirectResponse = NextResponse.redirect(`${hostOrigin}${next}`);
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+    const supabase = createServerClient(
+      supabaseUrl || 'https://placeholder.supabase.co',
+      supabaseAnonKey || 'placeholder',
+      {
+        cookies: {
+          getAll() {
+            const cookieHeader = request.headers.get('cookie') || '';
+            return cookieHeader
+              .split(';')
+              .map((c) => c.trim())
+              .filter(Boolean)
+              .map((c) => {
+                const [name, ...val] = c.split('=');
+                return { name, value: val.join('=') };
+              });
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              redirectResponse.cookies.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
+
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${hostOrigin}${next}`);
+      return redirectResponse;
     }
+    console.error('OAuth exchange error:', error);
   }
 
-  // Return user to login or home with error if failed
+  // Return user to login if failed
   return NextResponse.redirect(`${hostOrigin}/login?error=oauth_failed`);
 }

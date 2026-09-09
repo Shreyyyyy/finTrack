@@ -145,10 +145,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const supabase = createClient();
-      const redirectUrl =
+      const searchParams =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search)
+          : null;
+      const nextParam = searchParams?.get('next');
+      const callbackBase =
         typeof window !== 'undefined'
           ? `${window.location.origin}/auth/callback`
           : 'https://shrey-fintrack.vercel.app/auth/callback';
+      const redirectUrl = nextParam
+        ? `${callbackBase}?next=${encodeURIComponent(nextParam)}`
+        : callbackBase;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

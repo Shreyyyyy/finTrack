@@ -68,19 +68,25 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
+      const searchParams =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search)
+          : null;
+      const targetUrl = searchParams?.get('next') || '/';
+
       if (isSignUp) {
         const res = await signUpWithEmail(email, password, displayName);
         if (!res.success && res.error) {
           setErrorMessage(res.error);
         } else {
-          router.push('/');
+          window.location.href = targetUrl;
         }
       } else {
         const res = await signInWithEmail(email, password);
         if (!res.success && res.error) {
           setErrorMessage(res.error);
         } else {
-          router.push('/');
+          window.location.href = targetUrl;
         }
       }
     } catch (err: any) {
