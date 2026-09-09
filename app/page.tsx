@@ -4,16 +4,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Plus,
-  TrendingDown,
-  Wallet,
-  PiggyBank,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   FileSpreadsheet,
-  Clock,
   Smartphone,
-  Sliders
+  Sliders,
 } from 'lucide-react';
 import { Expense, Category, PaymentMethod, MonthlySetting, Goal, Profile } from '@/types';
 import {
@@ -25,18 +20,14 @@ import {
   getProfiles,
   DATA_CHANGE_EVENT,
 } from '@/lib/data/store';
-import {
-  calculateDashboardSummary,
-  generateDeterministicInsights,
-} from '@/lib/calculations/financial';
-import { formatINR, formatPercentage, MONTH_NAMES } from '@/lib/formatting/formatters';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { BudgetProgressBar } from '@/components/dashboard/BudgetProgressBar';
-import { RecentExpenses } from '@/components/dashboard/RecentExpenses';
-import { DailySpendingChart } from '@/components/dashboard/DailySpendingChart';
-import { IncomeSavingsChart } from '@/components/dashboard/IncomeSavingsChart';
+import { calculateDashboardSummary } from '@/lib/calculations/financial';
+import { MONTH_NAMES } from '@/lib/formatting/formatters';
+import { CashFlowHeroCard } from '@/components/dashboard/CashFlowHeroCard';
+import { BudgetHealthCard } from '@/components/dashboard/BudgetHealthCard';
 import { CategorySpendingCard } from '@/components/dashboard/CategorySpendingCard';
 import { GoalsPreviewCard } from '@/components/dashboard/GoalsPreviewCard';
+import { DailySpendingChart } from '@/components/dashboard/DailySpendingChart';
+import { RecentExpenses } from '@/components/dashboard/RecentExpenses';
 import { SalaryBudgetModal } from '@/components/dashboard/SalaryBudgetModal';
 import { QuickGoalModal } from '@/components/dashboard/QuickGoalModal';
 import { PersonSelector } from '@/components/navigation/PersonSelector';
@@ -60,9 +51,9 @@ export default function DashboardPage() {
     id: 'ms-9-2026',
     month: 9,
     year: 2026,
-    income: 80000,
-    monthly_budget: 50000,
-    savings_target: 30000,
+    income: 54000,
+    monthly_budget: 35000,
+    savings_target: 19000,
   });
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -123,7 +114,7 @@ export default function DashboardPage() {
 
   // Calculations
   const summary = calculateDashboardSummary(expenses, monthlySetting, categories);
-  const insights = generateDeterministicInsights(summary);
+  const daysRemaining = Math.max(1, summary.daysInMonth - summary.daysElapsed);
 
   const handleExportMonth = () => {
     try {
@@ -172,13 +163,13 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* 1. Header, Person Selector, Month Navigator & Customize Button */}
+      {/* 1. Header, Person Selector, Month Navigator & Salary/Budget Setup */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
-              Personal Financial Overview
+              Financial Control Center
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 mt-1.5">
@@ -241,112 +232,55 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 2. Primary KPI Stat Cards (Interactive with tap-to-edit) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard
-          label="Income"
-          value={formatINR(summary.income)}
-          subtext="Monthly inflow"
-          icon={<Wallet className="w-4 h-4 text-emerald-500" />}
-          variant="default"
-          onClick={() => setShowSalaryModal(true)}
-          editable
+      {/* 2. Unified Cash Flow Spectrum Hero Card */}
+      <CashFlowHeroCard
+        income={summary.income}
+        monthlyBudget={summary.monthlyBudget}
+        totalSpent={summary.totalSpent}
+        savingsTarget={monthlySetting.savings_target}
+        daysRemaining={daysRemaining}
+        onEditPlan={() => setShowSalaryModal(true)}
+      />
+
+      {/* 3. Three Core Financial Pillars */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Pillar 1: Budget Health & Pace */}
+        <BudgetHealthCard
+          totalSpent={summary.totalSpent}
+          monthlyBudget={summary.monthlyBudget}
+          daysElapsed={summary.daysElapsed}
+          daysInMonth={summary.daysInMonth}
         />
 
-        <StatCard
-          label="Spent"
-          value={formatINR(summary.totalSpent)}
-          subtext={`${formatPercentage(summary.budgetUtilization)} of budget`}
-          icon={<TrendingDown className="w-4 h-4 text-rose-500" />}
-          variant={summary.budgetUtilization > 100 ? 'rose' : 'default'}
-        />
-
-        <StatCard
-          label="Remaining Budget"
-          value={formatINR(summary.remainingBudget)}
-          subtext={`${summary.daysInMonth - summary.daysElapsed} days left`}
-          icon={<Clock className="w-4 h-4 text-amber-500" />}
-          variant={summary.remainingBudget <= 0 ? 'rose' : 'default'}
-          onClick={() => setShowSalaryModal(true)}
-          editable
-        />
-
-        <StatCard
-          label="Savings & Rate"
-          value={formatINR(summary.savings)}
-          subtext={`${formatPercentage(summary.savingsRate)} savings rate`}
-          icon={<PiggyBank className="w-4 h-4 text-teal-500" />}
-          variant="emerald"
-          onClick={() => setShowSalaryModal(true)}
-          editable
-        />
-      </div>
-
-      {/* 3. Monthly Budget Progress */}
-      <div
-        onClick={() => setShowSalaryModal(true)}
-        className="cursor-pointer group hover:opacity-95 transition-opacity"
-        title="Tap to edit budget limit"
-      >
-        <BudgetProgressBar spent={summary.totalSpent} budget={summary.monthlyBudget} />
-      </div>
-
-      {/* 4. Deterministic Insights Banner */}
-      {insights.length > 0 && (
-        <div className="p-4 rounded-3xl bg-slate-900 dark:bg-slate-900/90 text-white border border-slate-800 shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Financial Summary Insights (Zero AI)
-            </h3>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-2 text-xs text-slate-300 font-medium">
-            {insights.map((insight, idx) => (
-              <div key={idx} className="flex items-start gap-2">
-                <span className="text-emerald-400 font-bold">•</span>
-                <span>{insight}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 5. Rich Visual Graphs Grid */}
-      <div className="space-y-6">
-        {/* Income vs Spending vs Savings Breakdown & Burn-Down Chart */}
-        <IncomeSavingsChart
+        {/* Pillar 2: Category Spending & Donut */}
+        <CategorySpendingCard
           expenses={expenses}
-          monthlySetting={monthlySetting}
+          categories={categories}
           month={selectedMonth}
           year={selectedYear}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left 2 Cols: Daily Trend Chart and Recent Expenses */}
-          <div className="lg:col-span-2 space-y-6">
-            <DailySpendingChart
-              expenses={expenses}
-              month={selectedMonth}
-              year={selectedYear}
-            />
+        {/* Pillar 3: Savings Goals Vault */}
+        <GoalsPreviewCard
+          goals={goals}
+          onAddGoalClick={() => setShowGoalModal(true)}
+        />
+      </div>
 
-            <RecentExpenses expenses={expenses} limit={6} />
-          </div>
+      {/* 4. Bottom Analytical Grid: Daily Spending Pulse + Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Daily Spending Pulse (compact 1-30 days) */}
+        <div className="lg:col-span-2">
+          <DailySpendingChart
+            expenses={expenses}
+            month={selectedMonth}
+            year={selectedYear}
+          />
+        </div>
 
-          {/* Right 1 Col: Category Donut / Progress & Savings Goals */}
-          <div className="space-y-6">
-            <CategorySpendingCard
-              expenses={expenses}
-              categories={categories}
-              month={selectedMonth}
-              year={selectedYear}
-            />
-
-            <GoalsPreviewCard
-              goals={goals}
-              onAddGoalClick={() => setShowGoalModal(true)}
-            />
-          </div>
+        {/* Right 1 Col: Recent Transactions with Avatars */}
+        <div>
+          <RecentExpenses expenses={expenses} limit={6} />
         </div>
       </div>
 
