@@ -158,20 +158,15 @@ create policy "Users can manage categories" on public.categories
 create policy "Users can manage payment methods" on public.payment_methods
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- Household Shared Expenses
+-- Strict User Expenses Security Policy
 drop policy if exists "Users can manage expenses" on public.expenses;
 drop policy if exists "Users can view all expenses" on public.expenses;
-create policy "Users can view all expenses" on public.expenses
-  for select using (auth.role() = 'authenticated');
+drop policy if exists "Users can insert own expenses" on public.expenses;
+drop policy if exists "Users can update own expenses" on public.expenses;
+drop policy if exists "Users can delete own expenses" on public.expenses;
 
-create policy "Users can insert own expenses" on public.expenses
-  for insert with check (auth.uid() = user_id);
-
-create policy "Users can update own expenses" on public.expenses
-  for update using (auth.uid() = user_id);
-
-create policy "Users can delete own expenses" on public.expenses
-  for delete using (auth.uid() = user_id);
+create policy "Users can manage own expenses" on public.expenses
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create policy "Users can manage monthly settings" on public.monthly_settings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -186,12 +181,10 @@ create policy "Users can manage goal transactions" on public.goal_transactions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 drop policy if exists "Users can manage api keys" on public.api_keys;
-create policy "Users can manage api keys" on public.api_keys
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-
 drop policy if exists "Allow API key lookup" on public.api_keys;
-create policy "Allow API key lookup" on public.api_keys
-  for select to anon, authenticated using (true);
+
+create policy "Users can manage own api keys" on public.api_keys
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 drop policy if exists "Allow quick expense insert" on public.expenses;
 create policy "Allow quick expense insert" on public.expenses
@@ -387,6 +380,15 @@ begin
     0,
     0
   );
+
+  -- 5. Seed Unique API Key for iPhone Back Tap
+  insert into public.api_keys (user_id, name, key_hash)
+  values (
+    new.id,
+    'iPhone Back Tap',
+    'fintrack_sec_' || md5(new.id::text || clock_timestamp()::text || random()::text)
+  )
+  on conflict (key_hash) do nothing;
 
   return new;
 end;

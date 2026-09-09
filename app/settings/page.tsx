@@ -61,8 +61,8 @@ export default function SettingsPage() {
   const [defaultPayment, setDefaultPayment] = useState('UPI');
 
   // Month selector for monthly income configuration
-  const [selectedMonth, setSelectedMonth] = useState(9);
-  const [selectedYear, setSelectedYear] = useState(2026);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [monthIncome, setMonthIncome] = useState('0');
   const [monthBudget, setMonthBudget] = useState('0');
   const [monthSavings, setMonthSavings] = useState('0');
@@ -173,6 +173,7 @@ export default function SettingsPage() {
       savings_target: parseFloat(monthSavings) || 0,
     });
     showToast(`${MONTH_NAMES[selectedMonth - 1]} settings saved ✓`, 'success');
+    loadAll();
   };
 
   // Generate API Key for Shortcuts
