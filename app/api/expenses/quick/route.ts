@@ -6,7 +6,9 @@ import { DEFAULT_CATEGORIES, DEFAULT_PAYMENT_METHODS } from '@/lib/data/initialD
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate Request
-    const apiKey = request.headers.get('x-api-key');
+    const searchParams = request.nextUrl.searchParams;
+    const apiKeyParam = searchParams.get('api_key') || searchParams.get('key');
+    const apiKey = request.headers.get('x-api-key') || apiKeyParam;
     const authHeader = request.headers.get('authorization');
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
 
       if (!isAuthorized) {
         return NextResponse.json(
-          { success: false, error: 'Unauthorized. Please provide a valid API key in x-api-key header.' },
+          { success: false, error: 'Unauthorized. Please provide a valid API key in x-api-key header or ?api_key= query parameter.' },
           { status: 401 }
         );
       }
