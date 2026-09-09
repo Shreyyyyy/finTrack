@@ -33,7 +33,7 @@ export function DesktopSidebar() {
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   const navLinks = [
-    { label: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Add Expense', href: '/add', icon: PlusCircle, isHighlight: true },
     { label: 'Transactions', href: '/transactions', icon: ReceiptText },
     { label: 'Analytics', href: '/analytics', icon: BarChart3 },

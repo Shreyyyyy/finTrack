@@ -13,7 +13,7 @@ export function MobileTopHeader() {
   return (
     <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-2.5 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 pt-safe">
       {/* Brand */}
-      <Link href="/" className="flex items-center gap-2">
+      <Link href="/dashboard" className="flex items-center gap-2">
         <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-black text-base shadow-sm shadow-emerald-600/20">
           ₹
         </div>

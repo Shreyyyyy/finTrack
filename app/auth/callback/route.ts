@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') ?? '/';
+  const next = requestUrl.searchParams.get('next') ?? '/dashboard';
 
   // Determine the real public domain (handles reverse proxies like Vercel)
   const forwardedHost = request.headers.get('x-forwarded-host');

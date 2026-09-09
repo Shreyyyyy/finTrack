@@ -9,7 +9,7 @@ export function MobileBottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { label: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Transactions', href: '/transactions', icon: ReceiptText },
     { label: 'Add', href: '/add', icon: Plus, isAction: true },
     { label: 'Analytics', href: '/analytics', icon: BarChart3 },

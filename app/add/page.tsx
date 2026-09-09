@@ -11,7 +11,7 @@ export default function AddExpensePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <Link
-          href="/"
+          href="/dashboard"
           className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors p-1 -ml-1 rounded-lg"
         >
           <ArrowLeft className="w-4 h-4" />

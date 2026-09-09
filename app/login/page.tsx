@@ -72,7 +72,7 @@ export default function LoginPage() {
         typeof window !== 'undefined'
           ? new URLSearchParams(window.location.search)
           : null;
-      const targetUrl = searchParams?.get('next') || '/';
+      const targetUrl = searchParams?.get('next') || '/dashboard';
 
       if (isSignUp) {
         const res = await signUpWithEmail(email, password, displayName);
@@ -144,7 +144,7 @@ export default function LoginPage() {
 
             <div className="grid grid-cols-2 gap-2 pt-1">
               <Link
-                href="/"
+                href="/dashboard"
                 className="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20 active:scale-98"
               >
                 <span>Dashboard</span>

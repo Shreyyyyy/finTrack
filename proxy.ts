@@ -10,8 +10,8 @@ export function proxy(request: NextRequest) {
     const callbackUrl = new URL('/auth/callback', request.url);
     callbackUrl.searchParams.set('code', code);
 
-    // Preserve original destination path if present
-    if (pathname && pathname !== '/') {
+    // Preserve original destination path if present (skip root and dashboard defaults)
+    if (pathname && pathname !== '/' && pathname !== '/dashboard') {
       callbackUrl.searchParams.set('next', pathname);
     }
     return NextResponse.redirect(callbackUrl);

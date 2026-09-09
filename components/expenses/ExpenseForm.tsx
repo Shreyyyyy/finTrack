@@ -97,7 +97,7 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
         if (onSuccess) {
           onSuccess(created);
         } else {
-          router.push('/');
+          router.push('/dashboard');
         }
       }
     } catch (err) {
