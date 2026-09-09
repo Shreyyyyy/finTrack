@@ -92,8 +92,10 @@ export default function DashboardPage() {
       loadData();
     };
     window.addEventListener(DATA_CHANGE_EVENT, handleStoreChange);
+    window.addEventListener('focus', handleStoreChange);
     return () => {
       window.removeEventListener(DATA_CHANGE_EVENT, handleStoreChange);
+      window.removeEventListener('focus', handleStoreChange);
     };
   }, [loadData]);
 
