@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -134,6 +134,16 @@ export default function DashboardPage() {
   // Calculations
   const summary = calculateDashboardSummary(expenses, monthlySetting, categories);
   const daysRemaining = Math.max(1, summary.daysInMonth - summary.daysElapsed);
+
+  // Total monthly committed contributions to savings & investments deducted from salary
+  const totalMonthlyCommitted = useMemo(() => {
+    return goals.reduce((sum, g) => {
+      if (g.status !== 'paused' && g.category_type !== 'cash') {
+        return sum + (Number(g.monthly_contribution) || 0);
+      }
+      return sum;
+    }, 0);
+  }, [goals]);
 
   // Filter expenses belonging to selected month & year
   const monthExpenses = expenses.filter((e) => {
@@ -302,6 +312,7 @@ export default function DashboardPage() {
                   savingsTarget={monthlySetting.savings_target}
                   daysRemaining={daysRemaining}
                   todaySpent={todaySpent}
+                  monthlyCommittedSavingsInvestments={totalMonthlyCommitted}
                   onEditPlan={() => setShowSalaryModal(true)}
                 />
               </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sliders, TrendingDown, Clock, PiggyBank, Sparkles, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Sliders, TrendingDown, Clock, PiggyBank, Sparkles, Coins, Wallet } from 'lucide-react';
 import { formatINR, formatPercentage } from '@/lib/formatting/formatters';
 
 interface CashFlowHeroCardProps {
@@ -11,6 +11,7 @@ interface CashFlowHeroCardProps {
   savingsTarget: number;
   daysRemaining: number;
   todaySpent?: number;
+  monthlyCommittedSavingsInvestments?: number;
   onEditPlan: () => void;
 }
 
@@ -21,23 +22,26 @@ export function CashFlowHeroCard({
   savingsTarget,
   daysRemaining,
   todaySpent = 0,
+  monthlyCommittedSavingsInvestments = 0,
   onEditPlan,
 }: CashFlowHeroCardProps) {
   // Deterministic Financial Logic:
-  // Remaining to Spend = max(0, monthlyBudget - totalSpent)
-  // Current Surplus (Cash left in bank) = max(0, income - totalSpent)
-  // Planned Savings = max(0, income - monthlyBudget)
-  // Daily Allowance = Remaining to Spend / daysRemaining
+  // Savings & Investments are deducted from monthly salary first!
+  const effectiveSavingsInvestments = Math.max(savingsTarget, monthlyCommittedSavingsInvestments);
   const safeRemaining = Math.max(0, monthlyBudget - totalSpent);
   const plannedSavings = Math.max(0, income - monthlyBudget);
-  const currentSurplus = Math.max(0, income - totalSpent);
+  
+  // Current free cash surplus in bank = Salary - Spent - (Savings & Investments committed)
+  const currentSurplus = Math.max(0, income - totalSpent - monthlyCommittedSavingsInvestments);
+  
   const dailyAllowance = daysRemaining > 0 ? Math.round(safeRemaining / daysRemaining) : 0;
   const todayRemaining = Math.max(0, dailyAllowance - todaySpent);
 
   // Spectrum Bar Percentages (relative to Income)
   const spentPct = income > 0 ? Math.min(100, (totalSpent / income) * 100) : 0;
-  const remainingPct = income > 0 ? Math.min(100 - spentPct, (safeRemaining / income) * 100) : 0;
-  const savingsPct = Math.max(0, 100 - spentPct - remainingPct);
+  const savingsPct =
+    income > 0 ? Math.min(100 - spentPct, (effectiveSavingsInvestments / income) * 100) : 0;
+  const remainingPct = Math.max(0, 100 - spentPct - savingsPct);
   const budgetUsedPct = monthlyBudget > 0 ? Math.min(100, (totalSpent / monthlyBudget) * 100) : 0;
 
   // Clean Zero State: If no salary or budget is configured yet
@@ -82,7 +86,7 @@ export function CashFlowHeroCard({
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-sky-700 dark:text-emerald-400 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-sky-600 dark:text-emerald-400" />
-              <span>Monthly Cash Flow Plan</span>
+              <span>Monthly Salary Cash Flow</span>
             </span>
           </div>
           <div className="flex items-baseline gap-2.5 mt-1">
@@ -115,21 +119,21 @@ export function CashFlowHeroCard({
             />
           )}
 
-          {/* Safe to Spend Remaining */}
-          {remainingPct > 0 && (
-            <div
-              style={{ width: `${remainingPct}%` }}
-              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-300 transition-all duration-500"
-              title={`Remaining to spend: ${formatINR(safeRemaining)}`}
-            />
-          )}
-
-          {/* Planned Savings */}
+          {/* Saved & Invested from Salary */}
           {savingsPct > 0 && (
             <div
               style={{ width: `${savingsPct}%` }}
               className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500"
-              title={`Target Savings: ${formatINR(plannedSavings)}`}
+              title={`Saved & Invested: ${formatINR(effectiveSavingsInvestments)}`}
+            />
+          )}
+
+          {/* Safe to Spend / Free Remaining */}
+          {remainingPct > 0 && (
+            <div
+              style={{ width: `${remainingPct}%` }}
+              className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-300 transition-all duration-500"
+              title={`Free Cash: ${formatINR(currentSurplus)}`}
             />
           )}
         </div>
@@ -142,13 +146,13 @@ export function CashFlowHeroCard({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-            <span>Safe to Spend: <strong className="text-black dark:text-white">{formatINR(safeRemaining)}</strong></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span>Saved & Invested: <strong className="text-black dark:text-white">{formatINR(effectiveSavingsInvestments)}</strong></span>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span>Target Savings: <strong className="text-black dark:text-white">{formatINR(plannedSavings)}</strong></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
+            <span>Free Cash Left: <strong className="text-black dark:text-white">{formatINR(currentSurplus)}</strong></span>
           </div>
         </div>
       </div>
@@ -189,19 +193,19 @@ export function CashFlowHeroCard({
           </div>
         </div>
 
-        {/* Card 3: Net Cash Balance & Target Savings */}
+        {/* Card 3: Free Cash Balance (Salary - Saved - Spent) */}
         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-1.5 shadow-2xs">
           <div className="flex items-center justify-between text-[11px] text-emerald-950 dark:text-emerald-300 font-bold uppercase tracking-wider">
-            <span>Current Net Surplus</span>
-            <PiggyBank className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Free Cash Surplus</span>
+            <Wallet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-emerald-950 dark:text-emerald-300">
             {formatINR(currentSurplus)}
           </div>
           <div className="flex items-center justify-between text-[11px] text-emerald-900/80 dark:text-emerald-300/80 pt-0.5">
-            <span>Goal: {formatINR(plannedSavings)}</span>
+            <span>Salary - Saved - Spent</span>
             <span className="font-bold text-emerald-950 dark:text-emerald-200">
-              {income > 0 ? ((currentSurplus / income) * 100).toFixed(0) : 0}% retained
+              {income > 0 ? ((currentSurplus / income) * 100).toFixed(0) : 0}% free
             </span>
           </div>
         </div>

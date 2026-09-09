@@ -228,10 +228,16 @@ export function computeSavingsPortfolio(
 
 export interface UnifiedCashSavingsInvestBreakdown {
   // Cash
-  liquidCash: number;
-  operationalCashSurplus: number;
+  liquidCash: number; // Free cash left from salary after deducting both savings/investments and expenses + cash in hand
+  operationalCashSurplus: number; // max(0, income - totalSpent - totalMonthlyCommitted)
   cashVaults: number;
   cashPercentage: number;
+
+  // Monthly deductions from salary
+  monthlyCommittedSavings: number; // Monthly emergency, travel, and goal contributions
+  monthlyCommittedInvestments: number; // Monthly SIPs, mutual funds contributions
+  totalMonthlyCommitted: number; // monthlyCommittedSavings + monthlyCommittedInvestments
+  disposableLivingIncome: number; // max(0, income - totalMonthlyCommitted)
 
   // Savings
   totalSavings: number;
@@ -248,12 +254,13 @@ export interface UnifiedCashSavingsInvestBreakdown {
   investmentCount: number;
   investmentsPercentage: number;
 
-  // Total
+  // Total Net Wealth
   totalNetWealth: number;
 }
 
 /**
- * Calculates complete unified breakdown of Cash, Savings, and Investments
+ * Calculates complete unified breakdown of Cash, Savings, and Investments,
+ * with monthly savings & investments deducted directly from monthly salary.
  */
 export function computeCashSavingsInvestmentBreakdown({
   goals,
@@ -268,30 +275,42 @@ export function computeCashSavingsInvestmentBreakdown({
 }): UnifiedCashSavingsInvestBreakdown {
   const portfolio = computeSavingsPortfolio(goals, monthlyBurnRate);
 
-  // Operational cash left from monthly salary
-  const operationalCashSurplus = Math.max(0, income - totalSpent);
+  // 1. Calculate monthly committed contributions from salary towards savings & investments
+  let monthlyCommittedSavings = 0;
+  let monthlyCommittedInvestments = 0;
+
+  goals.forEach((g) => {
+    if (g.status !== 'paused') {
+      const monthly = Number(g.monthly_contribution) || 0;
+      const type = getGoalCategoryType(g);
+      if (type === 'investment') {
+        monthlyCommittedInvestments += monthly;
+      } else if (type !== 'cash') {
+        monthlyCommittedSavings += monthly;
+      }
+    }
+  });
+
+  const totalMonthlyCommitted = monthlyCommittedSavings + monthlyCommittedInvestments;
+
+  // 2. Net operational cash left from monthly salary AFTER minus savings & investments and expenses:
+  // Salary - (Savings + Investments) - Expenses = Free Liquid Cash Surplus
+  const operationalCashSurplus = Math.max(0, income - totalSpent - totalMonthlyCommitted);
   const cashVaults = portfolio.totalCash;
   const liquidCash = operationalCashSurplus + cashVaults;
+  const disposableLivingIncome = Math.max(0, income - totalMonthlyCommitted);
 
-  // Dedicated savings = emergency + travel + purchases + other
+  // 3. Dedicated savings = cumulative saved in emergency + travel + purchases + other
   const totalSavings =
     portfolio.totalEmergency +
     portfolio.totalTravel +
     portfolio.totalPurchases +
     portfolio.totalOther;
 
-  // Investments = stocks, mutual funds, gold
+  // 4. Investments = cumulative invested in mutual funds, stocks, gold
   const totalInvestments = portfolio.totalInvested;
 
-  // Total committed monthly SIP
-  const totalMonthlySIP = goals.reduce((sum, g) => {
-    if (getGoalCategoryType(g) === 'investment') {
-      return sum + (Number(g.monthly_contribution) || 0);
-    }
-    return sum;
-  }, 0);
-
-  // Total Net Wealth
+  // Total Net Wealth = Liquid Cash + Cumulative Savings + Cumulative Investments
   const totalNetWealth = liquidCash + totalSavings + totalInvestments;
   const divisor = totalNetWealth > 0 ? totalNetWealth : 1;
 
@@ -305,6 +324,11 @@ export function computeCashSavingsInvestmentBreakdown({
     cashVaults,
     cashPercentage,
 
+    monthlyCommittedSavings,
+    monthlyCommittedInvestments,
+    totalMonthlyCommitted,
+    disposableLivingIncome,
+
     totalSavings,
     emergencyFunds: portfolio.totalEmergency,
     emergencyRunwayMonths: portfolio.emergencyRunwayMonths,
@@ -314,7 +338,7 @@ export function computeCashSavingsInvestmentBreakdown({
     savingsPercentage,
 
     totalInvestments,
-    totalMonthlySIP,
+    totalMonthlySIP: monthlyCommittedInvestments,
     investmentCount: portfolio.investmentCount,
     investmentsPercentage,
 

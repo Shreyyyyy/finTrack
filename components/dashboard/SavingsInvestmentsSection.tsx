@@ -270,7 +270,9 @@ export function SavingsInvestmentsSection({
               {formatINR(breakdown.liquidCash)}
             </div>
             <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">
-              {breakdown.cashPercentage.toFixed(1)}% of wealth • Ready in hand
+              {breakdown.totalMonthlyCommitted > 0
+                ? `After -${formatINR(breakdown.totalMonthlyCommitted)} saved & invested from salary`
+                : `${breakdown.cashPercentage.toFixed(1)}% of wealth • Ready in hand`}
             </div>
           </div>
         </div>
@@ -399,22 +401,28 @@ export function SavingsInvestmentsSection({
 
             <div className="space-y-1.5 text-xs pt-1 border-t border-sky-100 dark:border-slate-800">
               <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
-                <span>Monthly Income (Inflow):</span>
+                <span>Monthly Salary (Inflow):</span>
                 <span className="font-bold text-black dark:text-white">{formatINR(income)}</span>
               </div>
               <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
-                <span>Month Spent (Outflow):</span>
-                <span className="font-bold text-rose-600">{formatINR(totalSpent)}</span>
+                <span>- Saved & Invested (from Salary):</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  -{formatINR(breakdown.totalMonthlyCommitted)}
+                </span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
+                <span>- Living Expenses (Spent):</span>
+                <span className="font-bold text-rose-600">-{formatINR(totalSpent)}</span>
               </div>
               <div className="flex justify-between font-bold text-black dark:text-white pt-1 border-t border-sky-50 dark:border-slate-800">
-                <span>Unspent Cash Surplus:</span>
-                <span className="font-black text-emerald-600 dark:text-emerald-400">
+                <span>Free Cash Left in Hand:</span>
+                <span className="font-black text-sky-700 dark:text-sky-400">
                   {formatINR(breakdown.operationalCashSurplus)}
                 </span>
               </div>
               {breakdown.cashVaults > 0 && (
                 <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-400">
-                  <span>Cash in Hand Vaults:</span>
+                  <span>+ Cash in Hand Vaults:</span>
                   <span className="font-bold text-black dark:text-white">{formatINR(breakdown.cashVaults)}</span>
                 </div>
               )}
