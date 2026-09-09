@@ -36,6 +36,7 @@ import { DashboardTabs, DashboardTabType } from '@/components/dashboard/Dashboar
 import { DashboardTransactionsTable } from '@/components/dashboard/DashboardTransactionsTable';
 import { MobileMinimalOverview } from '@/components/dashboard/MobileMinimalOverview';
 import { FinancialPulseWidget } from '@/components/dashboard/FinancialPulseWidget';
+import { SavingsInvestmentsSection } from '@/components/dashboard/SavingsInvestmentsSection';
 import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
@@ -285,6 +286,7 @@ export default function DashboardPage() {
             remainingBudget={summary.remainingBudget}
             safeDailyAllowance={safeDailyAllowance}
             daysRemaining={daysRemaining}
+            goals={goals}
             onEditPlan={() => setShowSalaryModal(true)}
           />
 
@@ -314,6 +316,13 @@ export default function DashboardPage() {
                 />
               </div>
             </div>
+
+            {/* Savings & Investments Portfolio Command Section */}
+            <SavingsInvestmentsSection
+              goals={goals}
+              monthlyBurnRate={summary.totalSpent}
+              onRefresh={loadData}
+            />
 
             {/* Live Financial Vitality & Health Pulse Widget */}
             <FinancialPulseWidget

@@ -81,15 +81,19 @@ export interface CategoryBudget {
   budget_amount: number;
 }
 
+export type GoalCategoryType = 'emergency' | 'investment' | 'travel' | 'purchase' | 'other';
+
 export interface Goal {
   id: string;
   user_id?: string;
   name: string;
+  category_type?: GoalCategoryType;
   target_amount: number;
   current_amount: number;
   deadline?: string | null; // YYYY-MM-DD
   monthly_contribution: number;
   status: 'in_progress' | 'completed' | 'paused';
+  institution?: string | null;
   created_at?: string;
   updated_at?: string;
 }

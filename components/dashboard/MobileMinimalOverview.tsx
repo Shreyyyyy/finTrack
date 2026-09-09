@@ -1,16 +1,18 @@
 'use client';
 
 import React from 'react';
-import { Expense, Category, MonthlySetting } from '@/types';
+import { Expense, Category, MonthlySetting, Goal } from '@/types';
 import { formatINR } from '@/lib/formatting/formatters';
 import { HomePagePieChart } from './HomePagePieChart';
 import { RecentExpenses } from './RecentExpenses';
 import { FinancialPulseWidget } from './FinancialPulseWidget';
+import { SavingsInvestmentsSection } from './SavingsInvestmentsSection';
 import { Wallet, TrendingDown, PiggyBank, Scale, Sliders } from 'lucide-react';
 
 interface MobileMinimalOverviewProps {
   expenses: Expense[];
   categories: Category[];
+  goals?: Goal[];
   monthlySetting: MonthlySetting;
   selectedMonth: number;
   selectedYear: number;
@@ -24,6 +26,7 @@ interface MobileMinimalOverviewProps {
 export function MobileMinimalOverview({
   expenses,
   categories,
+  goals = [],
   monthlySetting,
   selectedMonth,
   selectedYear,
@@ -43,6 +46,9 @@ export function MobileMinimalOverview({
         year={selectedYear}
         income={monthlySetting.income}
       />
+
+      {/* 1.2 Dedicated Savings & Investments Portfolio (Travel, Investments, Emergency Reserve) */}
+      <SavingsInvestmentsSection goals={goals} monthlyBurnRate={totalSpent} />
 
       {/* 1.5 Live Financial Vitality & Habits Pulse */}
       <FinancialPulseWidget

@@ -906,6 +906,8 @@ export async function saveGoal(goal: Partial<Goal> & { name: string; target_amou
             emitChange();
             return {
               ...data,
+              category_type: goal.category_type,
+              institution: goal.institution || null,
               target_amount: Number(data.target_amount),
               current_amount: Number(data.current_amount),
               monthly_contribution: Number(data.monthly_contribution),
@@ -930,6 +932,8 @@ export async function saveGoal(goal: Partial<Goal> & { name: string; target_amou
             emitChange();
             return {
               ...data,
+              category_type: goal.category_type,
+              institution: goal.institution || null,
               target_amount: Number(data.target_amount),
               current_amount: Number(data.current_amount),
               monthly_contribution: Number(data.monthly_contribution),
@@ -947,6 +951,8 @@ export async function saveGoal(goal: Partial<Goal> & { name: string; target_amou
   const fullGoal: Goal = {
     id,
     name: goal.name,
+    category_type: goal.category_type,
+    institution: goal.institution || null,
     target_amount: Number(goal.target_amount),
     current_amount: Number(goal.current_amount) || 0,
     deadline: goal.deadline || null,
