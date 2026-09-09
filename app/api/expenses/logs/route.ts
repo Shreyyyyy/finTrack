@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Live Database Diagnostics
-  let dbDiagnostics = {
+  const dbDiagnostics = {
     configured: isSupabaseConfigured(),
     serviceRoleKeySet: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     profilesAccessible: false,

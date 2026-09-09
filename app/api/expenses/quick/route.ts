@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
 
     // Resolve Category UUID
     let finalCategoryId: string | null = null;
-    let matchedCategory = DEFAULT_CATEGORIES.find(
+    const matchedCategory = DEFAULT_CATEGORIES.find(
       (c) => c.id.toLowerCase() === categoryInput.toLowerCase() || c.name.toLowerCase() === categoryInput.toLowerCase()
     );
 
@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
 
     // Resolve Payment Method UUID
     let finalPaymentMethodId: string | null = null;
-    let matchedPM = DEFAULT_PAYMENT_METHODS.find(
+    const matchedPM = DEFAULT_PAYMENT_METHODS.find(
       (p) => p.id.toLowerCase() === paymentInput.toLowerCase() || p.name.toLowerCase() === paymentInput.toLowerCase()
     );
 
