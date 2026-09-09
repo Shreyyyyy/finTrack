@@ -129,23 +129,23 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between px-5 py-3.5 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <User className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-bold text-base text-slate-900 dark:text-white">
+              <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
                 Edit Your Profile
               </h2>
-              <p className="text-[11px] text-slate-500">
-                Manage your name, profile photo, and preferences
+              <p className="text-[10px] sm:text-[11px] text-slate-500">
+                Manage your name, photo, and preferences
               </p>
             </div>
           </div>
@@ -157,179 +157,181 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           </button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={handleSave} className="overflow-y-auto p-6 space-y-6">
-          {/* Avatar Preview & Upload Area */}
-          <div className="flex flex-col items-center text-center space-y-3">
-            <div className="relative group">
-              <div className="w-24 h-24 rounded-full border-4 border-emerald-500/30 overflow-hidden bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg">
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarUrl}
-                    alt={displayName || 'Avatar'}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-white font-black text-3xl">
-                    {displayName.charAt(0).toUpperCase() || 'U'}
-                  </span>
-                )}
+        {/* Content & Form */}
+        <form onSubmit={handleSave} className="flex flex-col flex-1 min-h-0">
+          <div className="overflow-y-auto p-4 sm:p-6 space-y-5 flex-1">
+            {/* Avatar Preview & Upload Area */}
+            <div className="flex flex-col items-center text-center space-y-2.5">
+              <div className="relative group">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-emerald-500/30 overflow-hidden bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarUrl}
+                      alt={displayName || 'Avatar'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-black text-2xl sm:text-3xl">
+                      {displayName.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Quick camera button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 p-1.5 sm:p-2 rounded-full bg-emerald-600 text-white shadow-md hover:bg-emerald-500 transition-transform active:scale-95"
+                  title="Upload Photo"
+                >
+                  <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
               </div>
 
-              {/* Quick camera button */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 p-2 rounded-full bg-emerald-600 text-white shadow-md hover:bg-emerald-500 transition-transform active:scale-95"
-                title="Upload Photo"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
-            </div>
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-            />
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors"
-              >
-                <Upload className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Upload From Device</span>
-              </button>
-
-              {avatarUrl && (
-                <button
-                  type="button"
-                  onClick={handleRemovePhoto}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Remove</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Avatar Presets Picker */}
-          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Or Choose a Preset Avatar</span>
-              </span>
-            </div>
-
-            <div className="grid grid-cols-6 gap-2">
-              {AVATAR_PRESETS.map((url, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setAvatarUrl(url)}
-                  className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-transform active:scale-95 ${
-                    avatarUrl === url
-                      ? 'border-emerald-500 scale-105 shadow-md shadow-emerald-500/20'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-emerald-400'
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Preset ${i + 1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-
-            {/* Emoji Avatars */}
-            <div className="flex items-center justify-between gap-1 pt-2">
-              {EMOJI_AVATARS.map((emoji, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 128;
-                    canvas.height = 128;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                      ctx.fillStyle = '#10b981';
-                      ctx.beginPath();
-                      ctx.arc(64, 64, 64, 0, Math.PI * 2);
-                      ctx.fill();
-                      ctx.font = '64px sans-serif';
-                      ctx.textAlign = 'center';
-                      ctx.textBaseline = 'middle';
-                      ctx.fillText(emoji, 64, 72);
-                      setAvatarUrl(canvas.toDataURL('image/png'));
-                    }
-                  }}
-                  className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-lg flex items-center justify-center transition-transform active:scale-95"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Form Fields */}
-          <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-            {/* Display Name */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Display Name
-              </label>
               <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="e.g. Shrey, Sarah, Dad"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                required
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
               />
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors"
+                >
+                  <Upload className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Upload Photo</span>
+                </button>
+
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove</span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Email / Username */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-slate-400" />
-                <span>Account Identifier (Email or Username)</span>
-              </label>
-              <input
-                type="text"
-                value={user?.email || profile?.email || '—'}
-                disabled
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 text-xs text-slate-500 cursor-not-allowed"
-              />
+            {/* Avatar Presets Picker */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Preset Avatars</span>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-6 gap-2">
+                {AVATAR_PRESETS.map((url, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setAvatarUrl(url)}
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 transition-transform active:scale-95 justify-self-center ${
+                      avatarUrl === url
+                        ? 'border-emerald-500 scale-105 shadow-md shadow-emerald-500/20'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Preset ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Emoji Avatars */}
+              <div className="flex items-center justify-between gap-1 pt-1 overflow-x-auto pb-1">
+                {EMOJI_AVATARS.map((emoji, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      const canvas = document.createElement('canvas');
+                      canvas.width = 128;
+                      canvas.height = 128;
+                      const ctx = canvas.getContext('2d');
+                      if (ctx) {
+                        ctx.fillStyle = '#10b981';
+                        ctx.beginPath();
+                        ctx.arc(64, 64, 64, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.font = '64px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(emoji, 64, 72);
+                        setAvatarUrl(canvas.toDataURL('image/png'));
+                      }
+                    }}
+                    className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-base sm:text-lg flex items-center justify-center transition-transform active:scale-95"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Default Payment Method */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                <span>Default Payment Method</span>
-              </label>
-              <select
-                value={defaultPayment}
-                onChange={(e) => setDefaultPayment(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
-                <option value="Credit Card">Credit Card</option>
-                <option value="Debit Card">Debit Card</option>
-                <option value="Cash">Cash</option>
-                <option value="Net Banking">Net Banking</option>
-              </select>
+            {/* Form Fields */}
+            <div className="space-y-3.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {/* Display Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="e.g. Shrey, Sarah, Dad"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+
+              {/* Email / Username */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Account Email</span>
+                </label>
+                <input
+                  type="text"
+                  value={user?.email || profile?.email || '—'}
+                  disabled
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 text-xs text-slate-500 cursor-not-allowed"
+                />
+              </div>
+
+              {/* Default Payment Method */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Default Payment Method</span>
+                </label>
+                <select
+                  value={defaultPayment}
+                  onChange={(e) => setDefaultPayment(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
+                  <option value="Credit Card">Credit Card</option>
+                  <option value="Debit Card">Debit Card</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Net Banking">Net Banking</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+          {/* Sticky Footer Actions */}
+          <div className="flex items-center justify-end gap-2.5 p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
             <button
               type="button"
               onClick={onClose}
