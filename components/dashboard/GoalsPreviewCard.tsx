@@ -2,15 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Target, ChevronRight } from 'lucide-react';
+import { Target, ChevronRight, Plus } from 'lucide-react';
 import { Goal } from '@/types';
 import { formatINR, formatPercentage } from '@/lib/formatting/formatters';
 
 interface GoalsPreviewCardProps {
   goals: Goal[];
+  onAddGoalClick?: () => void;
 }
 
-export function GoalsPreviewCard({ goals }: GoalsPreviewCardProps) {
+export function GoalsPreviewCard({ goals, onAddGoalClick }: GoalsPreviewCardProps) {
   const activeGoals = goals.filter((g) => g.status !== 'completed');
 
   return (
@@ -22,23 +23,56 @@ export function GoalsPreviewCard({ goals }: GoalsPreviewCardProps) {
             Savings Goals
           </h3>
         </div>
-        <Link
-          href="/goals"
-          className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center"
-        >
-          <span>View All</span>
-          <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-        </Link>
+        <div className="flex items-center gap-2">
+          {onAddGoalClick && (
+            <button
+              onClick={onAddGoalClick}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold hover:bg-emerald-100 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+              <span>New</span>
+            </button>
+          )}
+          <Link
+            href="/goals"
+            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center"
+          >
+            <span>View All</span>
+            <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+          </Link>
+        </div>
       </div>
 
       {activeGoals.length === 0 ? (
-        <p className="text-xs text-slate-400 py-3 text-center">No active goals. Tap View All to create one.</p>
+        <div className="py-6 text-center space-y-2">
+          <p className="text-xs text-slate-400">No active savings goals set.</p>
+          {onAddGoalClick ? (
+            <button
+              onClick={onAddGoalClick}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create First Goal</span>
+            </button>
+          ) : (
+            <Link
+              href="/goals"
+              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+            >
+              + Create Savings Goal
+            </Link>
+          )}
+        </div>
       ) : (
         <div className="space-y-3">
           {activeGoals.slice(0, 3).map((goal) => {
-            const pct = goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
+            const pct =
+              goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
             return (
-              <div key={goal.id} className="space-y-1.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+              <div
+                key={goal.id}
+                className="space-y-1.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800"
+              >
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <span className="text-slate-900 dark:text-white truncate">{goal.name}</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold">

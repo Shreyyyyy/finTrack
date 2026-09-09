@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Edit2 } from 'lucide-react';
 
 interface StatCardProps {
   label: string;
@@ -8,9 +9,19 @@ interface StatCardProps {
   subtext?: string;
   icon?: React.ReactNode;
   variant?: 'default' | 'emerald' | 'rose' | 'amber';
+  onClick?: () => void;
+  editable?: boolean;
 }
 
-export function StatCard({ label, value, subtext, icon, variant = 'default' }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  subtext,
+  icon,
+  variant = 'default',
+  onClick,
+  editable,
+}: StatCardProps) {
   const getColors = () => {
     switch (variant) {
       case 'emerald':
@@ -25,12 +36,29 @@ export function StatCard({ label, value, subtext, icon, variant = 'default' }: S
   };
 
   return (
-    <div className={`p-4 rounded-2xl border shadow-sm transition-all ${getColors()}`}>
+    <div
+      onClick={onClick}
+      className={`p-4 rounded-2xl border shadow-sm transition-all relative group ${getColors()} ${
+        onClick
+          ? 'cursor-pointer hover:border-emerald-500/60 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]'
+          : ''
+      }`}
+    >
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          {label}
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+          <span>{label}</span>
+          {editable && (
+            <span className="opacity-60 group-hover:opacity-100 transition-opacity text-[10px] text-emerald-600 dark:text-emerald-400 font-bold ml-1">
+              (tap to edit)
+            </span>
+          )}
         </span>
-        {icon && <div className="text-slate-400 dark:text-slate-500">{icon}</div>}
+        <div className="flex items-center gap-1.5">
+          {editable && (
+            <Edit2 className="w-3 h-3 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
+          {icon && <div className="text-slate-400 dark:text-slate-500">{icon}</div>}
+        </div>
       </div>
       <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
         {value}

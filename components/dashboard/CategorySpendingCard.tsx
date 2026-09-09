@@ -1,8 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Expense, Category } from '@/types';
 import { formatINR, formatPercentage } from '@/lib/formatting/formatters';
+import { PieChart as PieIcon, ListFilter, PlusCircle } from 'lucide-react';
 
 interface CategorySpendingCardProps {
   expenses: Expense[];
@@ -17,6 +20,8 @@ export function CategorySpendingCard({
   month,
   year,
 }: CategorySpendingCardProps) {
+  const [viewMode, setViewMode] = useState<'bars' | 'donut'>('bars');
+
   // Filter for month
   const monthExpenses = expenses.filter((e) => {
     if (!e.expense_date) return false;
@@ -42,19 +47,112 @@ export function CategorySpendingCard({
     .filter((c) => c.spent > 0)
     .sort((a, b) => b.spent - a.spent);
 
+  const pieData = sortedCategories.map((c) => ({
+    name: c.name,
+    icon: c.icon,
+    value: c.spent,
+    color: c.color || '#10b981',
+  }));
+
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           Category Spending
         </h3>
-        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
-          {sortedCategories.length} Active
-        </span>
+
+        {sortedCategories.length > 0 && (
+          <div className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5">
+            <button
+              onClick={() => setViewMode('bars')}
+              className={`p-1 rounded-md text-xs transition-colors ${
+                viewMode === 'bars'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-400'
+              }`}
+              title="List View"
+            >
+              <ListFilter className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode('donut')}
+              className={`p-1 rounded-md text-xs transition-colors ${
+                viewMode === 'donut'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-400'
+              }`}
+              title="Donut Chart View"
+            >
+              <PieIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {sortedCategories.length === 0 ? (
-        <p className="text-xs text-slate-400 py-4 text-center">No categorized spending this month.</p>
+        <div className="py-6 text-center space-y-2">
+          <p className="text-xs text-slate-400">No categorized spending this month.</p>
+          <Link
+            href="/add"
+            className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>Add Expense</span>
+          </Link>
+        </div>
+      ) : viewMode === 'donut' ? (
+        <div className="space-y-3">
+          <div className="h-44 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={68}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const item = payload[0].payload;
+                      return (
+                        <div className="bg-slate-950 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg border border-slate-800">
+                          <div>
+                            {item.icon} {item.name}
+                          </div>
+                          <div className="text-emerald-400">{formatINR(item.value)}</div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="flex flex-wrap gap-2 justify-center pt-1">
+            {sortedCategories.slice(0, 4).map((cat) => (
+              <div
+                key={cat.id}
+                className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-400 font-medium"
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: cat.color || '#10b981' }}
+                />
+                <span>{cat.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
         <div className="space-y-3">
           {sortedCategories.slice(0, 5).map((cat) => (
@@ -65,7 +163,9 @@ export function CategorySpendingCard({
                   <span className="text-slate-800 dark:text-slate-200">{cat.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-900 dark:text-white font-bold">{formatINR(cat.spent)}</span>
+                  <span className="text-slate-900 dark:text-white font-bold">
+                    {formatINR(cat.spent)}
+                  </span>
                   <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">
                     ({formatPercentage(cat.percentage)})
                   </span>
