@@ -6,6 +6,9 @@ export interface Profile {
   currency: string;
   default_payment_method: string;
   role?: 'admin' | 'member';
+  monthly_income?: number;
+  monthly_budget?: number;
+  savings_target?: number;
   created_at?: string;
   updated_at?: string;
 }

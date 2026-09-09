@@ -52,7 +52,6 @@ export function QuickGoalModal({ isOpen, onClose, onGoalSaved }: QuickGoalModalP
     setIsSaving(true);
     try {
       await saveGoal({
-        id: `goal-${Date.now()}`,
         name: name.trim(),
         target_amount: parseFloat(targetAmount) || 0,
         current_amount: parseFloat(currentAmount) || 0,

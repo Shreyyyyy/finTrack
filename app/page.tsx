@@ -8,7 +8,9 @@ import {
   ChevronRight,
   FileSpreadsheet,
   Smartphone,
-  Sliders,
+  Calendar,
+  Sparkles,
+  Shield,
 } from 'lucide-react';
 import { Expense, Category, PaymentMethod, MonthlySetting, Goal, Profile } from '@/types';
 import {
@@ -22,6 +24,7 @@ import {
 } from '@/lib/data/store';
 import { calculateDashboardSummary } from '@/lib/calculations/financial';
 import { MONTH_NAMES } from '@/lib/formatting/formatters';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { CashFlowHeroCard } from '@/components/dashboard/CashFlowHeroCard';
 import { BudgetHealthCard } from '@/components/dashboard/BudgetHealthCard';
 import { CategorySpendingCard } from '@/components/dashboard/CategorySpendingCard';
@@ -36,8 +39,16 @@ import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
 export default function DashboardPage() {
-  const [selectedMonth, setSelectedMonth] = useState<number>(9); // September
-  const [selectedYear, setSelectedYear] = useState<number>(2026);
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
+
+  // Dynamic date state
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
+
+  const [selectedMonth, setSelectedMonth] = useState<number>(currentMonth);
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [showBackTapModal, setShowBackTapModal] = useState<boolean>(false);
@@ -48,12 +59,12 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [monthlySetting, setMonthlySetting] = useState<MonthlySetting>({
-    id: 'ms-9-2026',
-    month: 9,
-    year: 2026,
-    income: 54000,
-    monthly_budget: 35000,
-    savings_target: 19000,
+    id: `ms-${currentMonth}-${currentYear}`,
+    month: currentMonth,
+    year: currentYear,
+    income: 80000,
+    monthly_budget: 50000,
+    savings_target: 30000,
   });
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -61,7 +72,7 @@ export default function DashboardPage() {
   const loadData = useCallback(async () => {
     try {
       const [expList, catList, pmList, setting, goalList, profList] = await Promise.all([
-        getExpenses(selectedUserId),
+        getExpenses(isAdmin ? selectedUserId : undefined),
         getCategories(),
         getPaymentMethods(),
         getMonthlySetting(selectedMonth, selectedYear),
@@ -80,7 +91,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, selectedYear, selectedUserId]);
+  }, [selectedMonth, selectedYear, selectedUserId, isAdmin]);
 
   useEffect(() => {
     loadData();
@@ -112,9 +123,21 @@ export default function DashboardPage() {
     }
   };
 
+  const isCurrentMonthView = selectedMonth === currentMonth && selectedYear === currentYear;
+  const handleJumpToToday = () => {
+    setSelectedMonth(currentMonth);
+    setSelectedYear(currentYear);
+  };
+
   // Calculations
   const summary = calculateDashboardSummary(expenses, monthlySetting, categories);
   const daysRemaining = Math.max(1, summary.daysInMonth - summary.daysElapsed);
+
+  // Compute Today's exact spend
+  const todayStr = currentDate.toISOString().split('T')[0];
+  const todaySpent = expenses
+    .filter((e) => e.expense_date === todayStr)
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
   const handleExportMonth = () => {
     try {
@@ -129,7 +152,7 @@ export default function DashboardPage() {
         goals,
         scope: 'month',
       });
-      showToast('Excel exported ✓', 'success');
+      showToast('Excel report generated successfully ✓', 'success');
     } catch {
       showToast('Export failed', 'error');
     }
@@ -163,7 +186,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* 1. Header, Person Selector, Month Navigator & Salary/Budget Setup */}
+      {/* 1. Header & Context Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -171,60 +194,73 @@ export default function DashboardPage() {
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
               Financial Control Center
             </span>
+            {isAdmin && (
+              <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+                <Shield className="w-2.5 h-2.5" />
+                <span>Admin View</span>
+              </span>
+            )}
           </div>
+
           <div className="flex flex-wrap items-center gap-2.5 mt-1.5">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
               {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
             </h1>
+
+            {/* Month Stepper Navigator */}
             <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0.5 shadow-sm">
               <button
                 onClick={handlePrevMonth}
-                className="p-1 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Previous month"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={handleNextMonth}
-                className="p-1 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Next month"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Customize Salary & Budget CTA */}
-            <button
-              onClick={() => setShowSalaryModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-emerald-300 dark:border-emerald-800/80 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all active:scale-95 shadow-sm"
-              title="Set your monthly salary, spending limit, and savings target"
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>Set Salary & Budget</span>
-            </button>
+            {/* Jump to Today Button (if not viewing current month) */}
+            {!isCurrentMonthView && (
+              <button
+                onClick={handleJumpToToday}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-xs"
+                title="Jump to current month"
+              >
+                <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Today</span>
+              </button>
+            )}
 
-            {/* Central DB Multi-Person Selector */}
-            <PersonSelector
-              profiles={profiles}
-              selectedUserId={selectedUserId}
-              onSelectUser={setSelectedUserId}
-            />
+            {/* Admin Multi-Person Selector (Only shown to admins) */}
+            {isAdmin && (
+              <PersonSelector
+                profiles={profiles}
+                selectedUserId={selectedUserId}
+                onSelectUser={setSelectedUserId}
+              />
+            )}
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 self-start md:self-auto">
+        {/* Primary Action Buttons */}
+        <div className="flex items-center gap-2.5 self-start md:self-auto">
           <button
             onClick={handleExportMonth}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Export Excel</span>
           </button>
 
           <Link
             href="/add"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Add Expense</span>
@@ -239,6 +275,7 @@ export default function DashboardPage() {
         totalSpent={summary.totalSpent}
         savingsTarget={monthlySetting.savings_target}
         daysRemaining={daysRemaining}
+        todaySpent={todaySpent}
         onEditPlan={() => setShowSalaryModal(true)}
       />
 
@@ -252,7 +289,7 @@ export default function DashboardPage() {
           daysInMonth={summary.daysInMonth}
         />
 
-        {/* Pillar 2: Category Spending & Donut */}
+        {/* Pillar 2: Category Spending with Interactive Donut & Quick Log */}
         <CategorySpendingCard
           expenses={expenses}
           categories={categories}
@@ -267,24 +304,20 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* 4. Bottom Analytical Grid: Daily Spending Pulse + Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Daily Spending Pulse (compact 1-30 days) */}
-        <div className="lg:col-span-2">
-          <DailySpendingChart
-            expenses={expenses}
-            month={selectedMonth}
-            year={selectedYear}
-          />
-        </div>
+      {/* 4. Daily Spending Pulse */}
+      <DailySpendingChart
+        expenses={expenses}
+        month={selectedMonth}
+        year={selectedYear}
+      />
 
-        {/* Right 1 Col: Recent Transactions with Avatars */}
-        <div>
-          <RecentExpenses expenses={expenses} limit={6} />
-        </div>
-      </div>
+      {/* 5. Recent Transactions Feed */}
+      <RecentExpenses
+        expenses={expenses}
+        limit={10}
+      />
 
-      {/* Salary & Budget Customization Modal */}
+      {/* Modals */}
       <SalaryBudgetModal
         isOpen={showSalaryModal}
         onClose={() => setShowSalaryModal(false)}
@@ -297,14 +330,15 @@ export default function DashboardPage() {
         }}
       />
 
-      {/* Quick Goal Creation Modal */}
       <QuickGoalModal
         isOpen={showGoalModal}
         onClose={() => setShowGoalModal(false)}
-        onGoalSaved={loadData}
+        onGoalSaved={() => {
+          setShowGoalModal(false);
+          loadData();
+        }}
       />
 
-      {/* iPhone Back Tap Setup Modal */}
       <BackTapSetupModal
         isOpen={showBackTapModal}
         onClose={() => setShowBackTapModal(false)}

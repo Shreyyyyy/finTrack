@@ -90,15 +90,27 @@ export function CategorySpendingCard({
       </div>
 
       {sortedCategories.length === 0 ? (
-        <div className="py-6 text-center space-y-2">
-          <p className="text-xs text-slate-400">No categorized spending this month.</p>
-          <Link
-            href="/add"
-            className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>Add Expense</span>
-          </Link>
+        <div className="py-4 text-center space-y-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            No spending recorded for this month yet.
+          </p>
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Quick Log by Category:
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              {categories.slice(0, 6).map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/add?category=${encodeURIComponent(cat.id)}`}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/40 border border-slate-200/80 dark:border-slate-700/80 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all active:scale-95"
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.name}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       ) : viewMode === 'donut' ? (
         <div className="space-y-3">

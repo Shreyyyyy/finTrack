@@ -35,16 +35,10 @@ const STORAGE_KEYS = {
 
 export const DATA_CHANGE_EVENT = 'fintrack_store_change';
 
-// Auto-purge any stale mock/dummy data on client boot
-if (typeof window !== 'undefined') {
-  const PURGE_KEY = 'fintrack_clean_slate_purged_v1';
-  if (!localStorage.getItem(PURGE_KEY)) {
-    localStorage.removeItem(STORAGE_KEYS.EXPENSES);
-    localStorage.removeItem(STORAGE_KEYS.GOALS);
-    localStorage.removeItem(STORAGE_KEYS.GOAL_TRANSACTIONS);
-    localStorage.removeItem(STORAGE_KEYS.PROFILES);
-    localStorage.setItem(PURGE_KEY, 'true');
-  }
+// Helper to check for standard UUID syntax
+export function isValidUUID(str: string): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
 }
 
 function emitChange() {
@@ -89,8 +83,8 @@ export async function getProfiles(): Promise<Profile[]> {
       if (!error && data && data.length > 0) {
         return data as Profile[];
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn('Supabase getProfiles failed, using local', err);
     }
   }
   return getLocalItem<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
@@ -144,6 +138,9 @@ export async function saveProfile(profile: Partial<Profile> & { id: string }): P
       avatar_url: profile.avatar_url,
       currency: profile.currency || 'INR',
       default_payment_method: profile.default_payment_method || 'UPI',
+      monthly_income: profile.monthly_income || 80000,
+      monthly_budget: profile.monthly_budget || 50000,
+      savings_target: profile.savings_target || 30000,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -205,6 +202,61 @@ export async function getExpenses(filterUserId?: string): Promise<Expense[]> {
 }
 
 export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): Promise<Expense> {
+  const categories = await getCategories();
+  const paymentMethods = await getPaymentMethods();
+
+  // Validate or map UUIDs for Supabase foreign keys
+  let categoryId = expense.category_id;
+  if (categoryId && !isValidUUID(categoryId)) {
+    const matched = categories.find((c) => c.id === categoryId || c.name.toLowerCase() === categoryId?.toLowerCase());
+    categoryId = matched && isValidUUID(matched.id) ? matched.id : null;
+  }
+
+  let paymentMethodId = expense.payment_method_id;
+  if (paymentMethodId && !isValidUUID(paymentMethodId)) {
+    const matched = paymentMethods.find((pm) => pm.id === paymentMethodId || pm.name.toLowerCase() === paymentMethodId?.toLowerCase());
+    paymentMethodId = matched && isValidUUID(matched.id) ? matched.id : null;
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        const { data, error } = await supabase
+          .from('expenses')
+          .insert({
+            user_id: userId,
+            amount: Number(expense.amount),
+            category_id: categoryId,
+            payment_method_id: paymentMethodId,
+            merchant: expense.merchant?.trim() || null,
+            note: expense.note?.trim() || null,
+            expense_date: expense.expense_date,
+          })
+          .select(`
+            *,
+            category:categories(*),
+            payment_method:payment_methods(*)
+          `)
+          .single();
+
+        if (!error && data) {
+          emitChange();
+          return data as Expense;
+        }
+        if (error) {
+          console.warn('Supabase insert expense failed, storing locally', error);
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase insert failed, storing locally', err);
+    }
+  }
+
+  // Local storage fallback
   const newId = 'exp-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
   const newExpense: Expense = {
     ...expense,
@@ -213,34 +265,6 @@ export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): P
     created_at: new Date().toISOString(),
   };
 
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('expenses')
-        .insert({
-          amount: newExpense.amount,
-          category_id: newExpense.category_id,
-          payment_method_id: newExpense.payment_method_id,
-          merchant: newExpense.merchant,
-          note: newExpense.note,
-          expense_date: newExpense.expense_date,
-        })
-        .select(`
-          *,
-          category:categories(*),
-          payment_method:payment_methods(*)
-        `)
-        .single();
-      if (!error && data) {
-        emitChange();
-        return data as Expense;
-      }
-    } catch (err) {
-      console.warn('Supabase insert failed, storing locally', err);
-    }
-  }
-
   const list = getLocalItem<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_EXPENSES);
   const updatedList = [newExpense, ...list];
   setLocalItem(STORAGE_KEYS.EXPENSES, updatedList);
@@ -248,15 +272,15 @@ export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): P
 }
 
 export async function updateExpense(id: string, updates: Partial<Expense>): Promise<Expense | null> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseConfigured() && isValidUUID(id)) {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('expenses')
         .update({
           amount: updates.amount !== undefined ? Number(updates.amount) : undefined,
-          category_id: updates.category_id,
-          payment_method_id: updates.payment_method_id,
+          category_id: updates.category_id && isValidUUID(updates.category_id) ? updates.category_id : undefined,
+          payment_method_id: updates.payment_method_id && isValidUUID(updates.payment_method_id) ? updates.payment_method_id : undefined,
           merchant: updates.merchant,
           note: updates.note,
           expense_date: updates.expense_date,
@@ -269,6 +293,7 @@ export async function updateExpense(id: string, updates: Partial<Expense>): Prom
           payment_method:payment_methods(*)
         `)
         .single();
+
       if (!error && data) {
         emitChange();
         return data as Expense;
@@ -293,7 +318,7 @@ export async function updateExpense(id: string, updates: Partial<Expense>): Prom
 }
 
 export async function deleteExpense(id: string): Promise<boolean> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseConfigured() && isValidUUID(id)) {
     try {
       const supabase = createClient();
       const { error } = await supabase.from('expenses').delete().eq('id', id);
@@ -323,15 +348,88 @@ export async function getCategories(): Promise<Category[]> {
       if (!error && data && data.length > 0) {
         return data as Category[];
       }
-    } catch {
-      // Fallback
+
+      // Auto-seed default categories in Supabase if user has none
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (userId && (!data || data.length === 0)) {
+        const seedCategories = [
+          { user_id: userId, name: 'Food & Dining', icon: '🍔', color: '#f97316', budget_amount: 10000, is_default: true },
+          { user_id: userId, name: 'Transportation', icon: '🚗', color: '#06b6d4', budget_amount: 5000, is_default: true },
+          { user_id: userId, name: 'Shopping & Clothes', icon: '🛍', color: '#ec4899', budget_amount: 8000, is_default: true },
+          { user_id: userId, name: 'Bills & Utilities', icon: '🏠', color: '#ef4444', budget_amount: 12000, is_default: true },
+          { user_id: userId, name: 'Entertainment & Fun', icon: '🎬', color: '#8b5cf6', budget_amount: 3000, is_default: true },
+          { user_id: userId, name: 'Health & Medical', icon: '🏥', color: '#10b981', budget_amount: 4000, is_default: true },
+          { user_id: userId, name: 'Groceries & Mart', icon: '🛒', color: '#14b8a6', budget_amount: 8000, is_default: true },
+          { user_id: userId, name: 'Subscriptions', icon: '🔄', color: '#6366f1', budget_amount: 2000, is_default: true },
+          { user_id: userId, name: 'Personal Care', icon: '❤️', color: '#f43f5e', budget_amount: 3000, is_default: true },
+          { user_id: userId, name: 'General / Other', icon: '💰', color: '#94a3b8', budget_amount: 2000, is_default: true },
+        ];
+        const { data: seeded } = await supabase.from('categories').insert(seedCategories).select();
+        if (seeded && seeded.length > 0) {
+          return seeded as Category[];
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase getCategories error:', err);
     }
   }
   return getLocalItem<Category[]>(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES);
 }
 
 export async function saveCategory(category: Partial<Category> & { name: string }): Promise<Category> {
-  const isEdit = Boolean(category.id);
+  const isEdit = Boolean(category.id && isValidUUID(category.id));
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        if (isEdit) {
+          const { data } = await supabase
+            .from('categories')
+            .update({
+              name: category.name,
+              icon: category.icon || '💰',
+              color: category.color || '#10b981',
+              budget_amount: Number(category.budget_amount) || 0,
+            })
+            .eq('id', category.id)
+            .select()
+            .single();
+
+          if (data) {
+            emitChange();
+            return data as Category;
+          }
+        } else {
+          const { data } = await supabase
+            .from('categories')
+            .insert({
+              user_id: userId,
+              name: category.name,
+              icon: category.icon || '💰',
+              color: category.color || '#10b981',
+              budget_amount: Number(category.budget_amount) || 0,
+              is_default: false,
+            })
+            .select()
+            .single();
+
+          if (data) {
+            emitChange();
+            return data as Category;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase saveCategory error:', err);
+    }
+  }
+
+  // Local fallback
   const id = category.id || 'cat-' + Date.now();
   const fullCategory: Category = {
     id,
@@ -343,32 +441,6 @@ export async function saveCategory(category: Partial<Category> & { name: string 
     created_at: category.created_at || new Date().toISOString(),
   };
 
-  if (isSupabaseConfigured()) {
-    try {
-      const supabase = createClient();
-      if (isEdit) {
-        const { data } = await supabase
-          .from('categories')
-          .update(fullCategory)
-          .eq('id', id)
-          .select()
-          .single();
-        if (data) {
-          emitChange();
-          return data as Category;
-        }
-      } else {
-        const { data } = await supabase.from('categories').insert(fullCategory).select().single();
-        if (data) {
-          emitChange();
-          return data as Category;
-        }
-      }
-    } catch {
-      // Fallback
-    }
-  }
-
   const categories = getLocalItem<Category[]>(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES);
   const index = categories.findIndex((c) => c.id === id);
   if (index >= 0) {
@@ -377,20 +449,23 @@ export async function saveCategory(category: Partial<Category> & { name: string 
     categories.push(fullCategory);
   }
   setLocalItem(STORAGE_KEYS.CATEGORIES, [...categories]);
+  emitChange();
   return fullCategory;
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
-  if (isSupabaseConfigured()) {
+  if (isSupabaseConfigured() && isValidUUID(id)) {
     try {
       const supabase = createClient();
       await supabase.from('categories').delete().eq('id', id);
-    } catch {
-      // Fallback
+      emitChange();
+    } catch (err) {
+      console.warn('Supabase deleteCategory error:', err);
     }
   }
   const categories = getLocalItem<Category[]>(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES);
   setLocalItem(STORAGE_KEYS.CATEGORIES, categories.filter((c) => c.id !== id));
+  emitChange();
   return true;
 }
 
@@ -405,14 +480,80 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
       if (!error && data && data.length > 0) {
         return data as PaymentMethod[];
       }
-    } catch {
-      // Fallback
+
+      // Auto-seed default payment methods in Supabase if user has none
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (userId && (!data || data.length === 0)) {
+        const seedMethods = [
+          { user_id: userId, name: 'UPI', type: 'upi', is_default: true },
+          { user_id: userId, name: 'Credit Card', type: 'card', is_default: false },
+          { user_id: userId, name: 'Debit Card', type: 'card', is_default: false },
+          { user_id: userId, name: 'Cash', type: 'cash', is_default: false },
+          { user_id: userId, name: 'Net Banking', type: 'bank', is_default: false },
+        ];
+        const { data: seeded } = await supabase.from('payment_methods').insert(seedMethods).select();
+        if (seeded && seeded.length > 0) {
+          return seeded as PaymentMethod[];
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase getPaymentMethods error:', err);
     }
   }
   return getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
 }
 
 export async function savePaymentMethod(method: Partial<PaymentMethod> & { name: string }): Promise<PaymentMethod> {
+  const isEdit = Boolean(method.id && isValidUUID(method.id));
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        if (isEdit) {
+          const { data } = await supabase
+            .from('payment_methods')
+            .update({
+              name: method.name,
+              type: method.type || 'other',
+              is_default: method.is_default || false,
+            })
+            .eq('id', method.id)
+            .select()
+            .single();
+
+          if (data) {
+            emitChange();
+            return data as PaymentMethod;
+          }
+        } else {
+          const { data } = await supabase
+            .from('payment_methods')
+            .insert({
+              user_id: userId,
+              name: method.name,
+              type: method.type || 'other',
+              is_default: method.is_default || false,
+            })
+            .select()
+            .single();
+
+          if (data) {
+            emitChange();
+            return data as PaymentMethod;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase savePaymentMethod error:', err);
+    }
+  }
+
+  // Local fallback
   const id = method.id || 'pm-' + Date.now();
   const fullMethod: PaymentMethod = {
     id,
@@ -423,7 +564,6 @@ export async function savePaymentMethod(method: Partial<PaymentMethod> & { name:
   };
 
   const methods = getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
-  // If set to default, clear default on other methods
   if (fullMethod.is_default) {
     methods.forEach((m) => {
       m.is_default = false;
@@ -437,25 +577,137 @@ export async function savePaymentMethod(method: Partial<PaymentMethod> & { name:
     methods.push(fullMethod);
   }
   setLocalItem(STORAGE_KEYS.PAYMENT_METHODS, [...methods]);
+  emitChange();
   return fullMethod;
 }
 
 export async function deletePaymentMethod(id: string): Promise<boolean> {
+  if (isSupabaseConfigured() && isValidUUID(id)) {
+    try {
+      const supabase = createClient();
+      await supabase.from('payment_methods').delete().eq('id', id);
+      emitChange();
+    } catch (err) {
+      console.warn('Supabase deletePaymentMethod error:', err);
+    }
+  }
   const methods = getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
   setLocalItem(STORAGE_KEYS.PAYMENT_METHODS, methods.filter((m) => m.id !== id));
+  emitChange();
   return true;
 }
 
 // -------------------------------------------------------------
-// MONTHLY SETTINGS (INCOME, BUDGET, SAVINGS)
+// MONTHLY SETTINGS (INCOME, BUDGET, SAVINGS) - REAL DB
 // -------------------------------------------------------------
 export async function getMonthlySetting(month: number, year: number): Promise<MonthlySetting> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        // 1. Check exact setting for this user, month, year
+        const { data, error } = await supabase
+          .from('monthly_settings')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('month', month)
+          .eq('year', year)
+          .maybeSingle();
+
+        if (!error && data) {
+          return {
+            id: data.id,
+            user_id: data.user_id,
+            month: data.month,
+            year: data.year,
+            income: Number(data.income),
+            monthly_budget: Number(data.monthly_budget),
+            savings_target: Number(data.savings_target),
+            created_at: data.created_at,
+            updated_at: data.updated_at,
+          };
+        }
+
+        // 2. If not found, inherit from the latest previous monthly setting
+        const { data: latest } = await supabase
+          .from('monthly_settings')
+          .select('*')
+          .eq('user_id', userId)
+          .order('year', { ascending: false })
+          .order('month', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latest) {
+          const inherited: MonthlySetting = {
+            id: `ms-${month}-${year}`,
+            user_id: userId,
+            month,
+            year,
+            income: Number(latest.income),
+            monthly_budget: Number(latest.monthly_budget),
+            savings_target: Number(latest.savings_target),
+          };
+
+          // Save inherited setting to database for this month
+          await supabase.from('monthly_settings').upsert({
+            user_id: userId,
+            month,
+            year,
+            income: inherited.income,
+            monthly_budget: inherited.monthly_budget,
+            savings_target: inherited.savings_target,
+          }, { onConflict: 'user_id,month,year' });
+
+          return inherited;
+        }
+
+        // 3. Fallback to profile defaults
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('monthly_income, monthly_budget, savings_target')
+          .eq('id', userId)
+          .maybeSingle();
+
+        const defaultIncome = Number(profile?.monthly_income) || 80000;
+        const defaultBudget = Number(profile?.monthly_budget) || 50000;
+        const defaultSavings = Number(profile?.savings_target) || Math.max(0, defaultIncome - defaultBudget);
+
+        const initial: MonthlySetting = {
+          id: `ms-${month}-${year}`,
+          user_id: userId,
+          month,
+          year,
+          income: defaultIncome,
+          monthly_budget: defaultBudget,
+          savings_target: defaultSavings,
+        };
+
+        await supabase.from('monthly_settings').upsert({
+          user_id: userId,
+          month,
+          year,
+          income: initial.income,
+          monthly_budget: initial.monthly_budget,
+          savings_target: initial.savings_target,
+        }, { onConflict: 'user_id,month,year' });
+
+        return initial;
+      }
+    } catch (err) {
+      console.warn('Supabase getMonthlySetting error:', err);
+    }
+  }
+
+  // Fallback to local storage
   const settings = getLocalItem<MonthlySetting[]>(STORAGE_KEYS.MONTHLY_SETTINGS, DEFAULT_MONTHLY_SETTINGS);
   const found = settings.find((s) => s.month === month && s.year === year);
   if (found) return found;
 
-  // Return default setting for this month
-  const defaultSetting: MonthlySetting = {
+  return {
     id: `ms-${month}-${year}`,
     month,
     year,
@@ -463,10 +715,63 @@ export async function getMonthlySetting(month: number, year: number): Promise<Mo
     monthly_budget: 50000,
     savings_target: 30000,
   };
-  return defaultSetting;
 }
 
 export async function saveMonthlySetting(setting: MonthlySetting): Promise<MonthlySetting> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        const { data, error } = await supabase
+          .from('monthly_settings')
+          .upsert(
+            {
+              user_id: userId,
+              month: setting.month,
+              year: setting.year,
+              income: Number(setting.income),
+              monthly_budget: Number(setting.monthly_budget),
+              savings_target: Number(setting.savings_target),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id,month,year' }
+          )
+          .select()
+          .single();
+
+        // Also update profile default financial parameters
+        await supabase
+          .from('profiles')
+          .update({
+            monthly_income: Number(setting.income),
+            monthly_budget: Number(setting.monthly_budget),
+            savings_target: Number(setting.savings_target),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId);
+
+        if (!error && data) {
+          emitChange();
+          return {
+            id: data.id,
+            user_id: data.user_id,
+            month: data.month,
+            year: data.year,
+            income: Number(data.income),
+            monthly_budget: Number(data.monthly_budget),
+            savings_target: Number(data.savings_target),
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase saveMonthlySetting error:', err);
+    }
+  }
+
+  // Fallback to local storage
   const settings = getLocalItem<MonthlySetting[]>(STORAGE_KEYS.MONTHLY_SETTINGS, DEFAULT_MONTHLY_SETTINGS);
   const index = settings.findIndex((s) => s.month === setting.month && s.year === setting.year);
   if (index >= 0) {
@@ -475,17 +780,104 @@ export async function saveMonthlySetting(setting: MonthlySetting): Promise<Month
     settings.push({ ...setting, created_at: new Date().toISOString() });
   }
   setLocalItem(STORAGE_KEYS.MONTHLY_SETTINGS, [...settings]);
+  emitChange();
   return setting;
 }
 
 // -------------------------------------------------------------
-// GOALS
+// GOALS (REAL DB)
 // -------------------------------------------------------------
 export async function getGoals(): Promise<Goal[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        return data.map((g: any) => ({
+          ...g,
+          target_amount: Number(g.target_amount),
+          current_amount: Number(g.current_amount) || 0,
+          monthly_contribution: Number(g.monthly_contribution) || 0,
+        })) as Goal[];
+      }
+    } catch (err) {
+      console.warn('Supabase getGoals failed, falling back to local', err);
+    }
+  }
   return getLocalItem<Goal[]>(STORAGE_KEYS.GOALS, DEFAULT_GOALS);
 }
 
 export async function saveGoal(goal: Partial<Goal> & { name: string; target_amount: number }): Promise<Goal> {
+  const isEdit = Boolean(goal.id && isValidUUID(goal.id));
+
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        if (isEdit) {
+          const { data, error } = await supabase
+            .from('goals')
+            .update({
+              name: goal.name,
+              target_amount: Number(goal.target_amount),
+              current_amount: Number(goal.current_amount) || 0,
+              deadline: goal.deadline || null,
+              monthly_contribution: Number(goal.monthly_contribution) || 0,
+              status: goal.status || 'in_progress',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', goal.id)
+            .select()
+            .single();
+
+          if (!error && data) {
+            emitChange();
+            return {
+              ...data,
+              target_amount: Number(data.target_amount),
+              current_amount: Number(data.current_amount),
+              monthly_contribution: Number(data.monthly_contribution),
+            } as Goal;
+          }
+        } else {
+          const { data, error } = await supabase
+            .from('goals')
+            .insert({
+              user_id: userId,
+              name: goal.name,
+              target_amount: Number(goal.target_amount),
+              current_amount: Number(goal.current_amount) || 0,
+              deadline: goal.deadline || null,
+              monthly_contribution: Number(goal.monthly_contribution) || 0,
+              status: goal.status || 'in_progress',
+            })
+            .select()
+            .single();
+
+          if (!error && data) {
+            emitChange();
+            return {
+              ...data,
+              target_amount: Number(data.target_amount),
+              current_amount: Number(data.current_amount),
+              monthly_contribution: Number(data.monthly_contribution),
+            } as Goal;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase saveGoal error:', err);
+    }
+  }
+
+  // Local fallback
   const id = goal.id || 'goal-' + Date.now();
   const fullGoal: Goal = {
     id,
@@ -507,12 +899,23 @@ export async function saveGoal(goal: Partial<Goal> & { name: string; target_amou
     goals.push(fullGoal);
   }
   setLocalItem(STORAGE_KEYS.GOALS, [...goals]);
+  emitChange();
   return fullGoal;
 }
 
 export async function deleteGoal(id: string): Promise<boolean> {
+  if (isSupabaseConfigured() && isValidUUID(id)) {
+    try {
+      const supabase = createClient();
+      await supabase.from('goals').delete().eq('id', id);
+      emitChange();
+    } catch (err) {
+      console.warn('Supabase deleteGoal error:', err);
+    }
+  }
   const goals = getLocalItem<Goal[]>(STORAGE_KEYS.GOALS, DEFAULT_GOALS);
   setLocalItem(STORAGE_KEYS.GOALS, goals.filter((g) => g.id !== id));
+  emitChange();
   return true;
 }
 
@@ -522,11 +925,66 @@ export async function addGoalTransaction(
   type: 'deposit' | 'withdraw',
   note?: string
 ): Promise<Goal | null> {
+  const numericAmount = Math.abs(Number(amount));
+
+  if (isSupabaseConfigured() && isValidUUID(goalId)) {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        const { data: currentGoal } = await supabase
+          .from('goals')
+          .select('*')
+          .eq('id', goalId)
+          .single();
+
+        if (currentGoal) {
+          let newCurrent = Number(currentGoal.current_amount) || 0;
+          if (type === 'deposit') {
+            newCurrent += numericAmount;
+          } else {
+            newCurrent = Math.max(0, newCurrent - numericAmount);
+          }
+
+          const target = Number(currentGoal.target_amount);
+          const newStatus = newCurrent >= target ? 'completed' : 'in_progress';
+
+          const { data: updatedGoal } = await supabase
+            .from('goals')
+            .update({
+              current_amount: newCurrent,
+              status: newStatus,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', goalId)
+            .select()
+            .single();
+
+          await supabase.from('goal_transactions').insert({
+            user_id: userId,
+            goal_id: goalId,
+            amount: numericAmount,
+            type,
+            date: new Date().toISOString().split('T')[0],
+            note,
+          });
+
+          emitChange();
+          return updatedGoal as Goal;
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase addGoalContribution error:', err);
+    }
+  }
+
+  // Local fallback
   const goals = getLocalItem<Goal[]>(STORAGE_KEYS.GOALS, DEFAULT_GOALS);
   const goalIndex = goals.findIndex((g) => g.id === goalId);
   if (goalIndex === -1) return null;
 
-  const numericAmount = Math.abs(Number(amount));
   let newCurrent = goals[goalIndex].current_amount;
   if (type === 'deposit') {
     newCurrent += numericAmount;
@@ -543,7 +1001,6 @@ export async function addGoalTransaction(
 
   setLocalItem(STORAGE_KEYS.GOALS, [...goals]);
 
-  // Log transaction
   const transactions = getLocalItem<GoalTransaction[]>(STORAGE_KEYS.GOAL_TRANSACTIONS, []);
   transactions.push({
     id: 'gt-' + Date.now(),
@@ -555,7 +1012,7 @@ export async function addGoalTransaction(
     created_at: new Date().toISOString(),
   });
   setLocalItem(STORAGE_KEYS.GOAL_TRANSACTIONS, transactions);
-
+  emitChange();
   return goals[goalIndex];
 }
 
@@ -609,7 +1066,7 @@ export async function getAllUsersSummary(): Promise<UserSummary[]> {
     profiles.map(async (prof) => {
       const userExpenses = allExpenses.filter((e) => e.user_id === prof.id);
       const userGoals = allGoals.filter((g) => g.user_id === prof.id);
-      const setting = await getMonthlySetting(9, 2026);
+      const setting = await getMonthlySetting(new Date().getMonth() + 1, new Date().getFullYear());
 
       const totalSpent = userExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
       const latestExpense = userExpenses[0];
@@ -671,7 +1128,6 @@ export async function deleteUserAccount(userId: string): Promise<boolean> {
   const profiles = getLocalItem<Profile[]>(STORAGE_KEYS.PROFILES, DEFAULT_PROFILES);
   setLocalItem(STORAGE_KEYS.PROFILES, profiles.filter((p) => p.id !== userId));
 
-  // Also purge expenses
   const expenses = getLocalItem<Expense[]>(STORAGE_KEYS.EXPENSES, DEFAULT_EXPENSES);
   setLocalItem(STORAGE_KEYS.EXPENSES, expenses.filter((e) => e.user_id !== userId));
 
@@ -681,4 +1137,3 @@ export async function deleteUserAccount(userId: string): Promise<boolean> {
 export async function getAllExpensesMaster(): Promise<Expense[]> {
   return getExpenses('all');
 }
-
