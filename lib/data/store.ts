@@ -1088,18 +1088,28 @@ export async function getApiKeys(): Promise<ApiKey[]> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from('api_keys')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
-        return data as ApiKey[];
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        const { data, error } = await supabase
+          .from('api_keys')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          return data as ApiKey[];
+        }
       }
     } catch (err) {
       console.warn('Supabase getApiKeys error:', err);
     }
   }
-  return getLocalItem<ApiKey[]>(STORAGE_KEYS.API_KEYS, DEFAULT_API_KEYS);
+
+  // Local fallback: filter keys by active user if present
+  const keys = getLocalItem<ApiKey[]>(STORAGE_KEYS.API_KEYS, DEFAULT_API_KEYS);
+  return keys;
 }
 
 export async function createApiKey(name: string, explicitUserId?: string): Promise<ApiKey> {
