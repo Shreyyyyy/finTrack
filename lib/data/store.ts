@@ -362,45 +362,83 @@ export async function deleteExpense(id: string): Promise<boolean> {
 // -------------------------------------------------------------
 // CATEGORIES
 // -------------------------------------------------------------
+function deduplicateCategories(cats: Category[]): Category[] {
+  const seen = new Set<string>();
+  const result: Category[] = [];
+
+  for (const cat of cats) {
+    if (!cat || !cat.name) continue;
+    const norm = cat.name.trim().toLowerCase();
+    if (!seen.has(norm)) {
+      seen.add(norm);
+      result.push(cat);
+    }
+  }
+
+  return result;
+}
+
+let isSeedingCategories = false;
+
 export async function getCategories(): Promise<Category[]> {
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient();
       const { data, error } = await supabase.from('categories').select('*').order('name');
       if (!error && data && data.length > 0) {
-        return data as Category[];
+        return deduplicateCategories(data as Category[]);
       }
 
-      // Auto-seed default categories in Supabase if user has none
+      // Auto-seed default categories in Supabase only if user has none and not currently seeding
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
-      if (userId && (!data || data.length === 0)) {
-        const seedCategories = [
-          { user_id: userId, name: 'Food & Dining', icon: '🍔', color: '#f97316', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'Transportation', icon: '🚗', color: '#06b6d4', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'Shopping & Clothes', icon: '🛍', color: '#ec4899', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'Bills & Utilities', icon: '🏠', color: '#ef4444', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'Entertainment & Fun', icon: '🎬', color: '#8b5cf6', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'Health & Medical', icon: '🏥', color: '#10b981', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'Groceries & Mart', icon: '🛒', color: '#14b8a6', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'Subscriptions', icon: '🔄', color: '#6366f1', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'Personal Care', icon: '❤️', color: '#f43f5e', budget_amount: 0, is_default: true },
-          { user_id: userId, name: 'General / Other', icon: '💰', color: '#94a3b8', budget_amount: 0, is_default: true },
-        ];
-        const { data: seeded } = await supabase.from('categories').insert(seedCategories).select();
-        if (seeded && seeded.length > 0) {
-          return seeded as Category[];
+      if (userId && (!data || data.length === 0) && !isSeedingCategories) {
+        isSeedingCategories = true;
+        try {
+          // Double check before inserting
+          const { data: check } = await supabase.from('categories').select('id').limit(1);
+          if (!check || check.length === 0) {
+            const seedCategories = [
+              { user_id: userId, name: 'Food & Dining', icon: '🍔', color: '#f97316', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Transportation', icon: '🚗', color: '#06b6d4', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Shopping', icon: '🛍', color: '#ec4899', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Bills & Utilities', icon: '🏠', color: '#ef4444', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Entertainment', icon: '🎬', color: '#8b5cf6', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Health & Medical', icon: '🏥', color: '#10b981', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Groceries', icon: '🛒', color: '#14b8a6', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Subscriptions', icon: '🔄', color: '#6366f1', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Personal Care', icon: '❤️', color: '#f43f5e', budget_amount: 0, is_default: true },
+              { user_id: userId, name: 'Other', icon: '💰', color: '#94a3b8', budget_amount: 0, is_default: true },
+            ];
+            const { data: seeded } = await supabase.from('categories').insert(seedCategories).select();
+            if (seeded && seeded.length > 0) {
+              return deduplicateCategories(seeded as Category[]);
+            }
+          }
+        } finally {
+          isSeedingCategories = false;
         }
       }
     } catch (err) {
       console.warn('Supabase getCategories error:', err);
     }
   }
-  return getLocalItem<Category[]>(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES);
+  const rawLocal = getLocalItem<Category[]>(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES);
+  return deduplicateCategories(rawLocal);
 }
 
 export async function saveCategory(category: Partial<Category> & { name: string }): Promise<Category> {
   const isEdit = Boolean(category.id && isValidUUID(category.id));
+
+  // Check existing categories to prevent duplicates
+  const existingCategories = await getCategories();
+  const normName = category.name.trim().toLowerCase();
+  const existingDup = existingCategories.find(
+    (c) => c.name.trim().toLowerCase() === normName && c.id !== category.id
+  );
+  if (existingDup && !isEdit) {
+    return existingDup;
+  }
 
   if (isSupabaseConfigured()) {
     try {
@@ -413,7 +451,7 @@ export async function saveCategory(category: Partial<Category> & { name: string 
           const { data } = await supabase
             .from('categories')
             .update({
-              name: category.name,
+              name: category.name.trim(),
               icon: category.icon || '💰',
               color: category.color || '#10b981',
               budget_amount: Number(category.budget_amount) || 0,
@@ -431,7 +469,7 @@ export async function saveCategory(category: Partial<Category> & { name: string 
             .from('categories')
             .insert({
               user_id: userId,
-              name: category.name,
+              name: category.name.trim(),
               icon: category.icon || '💰',
               color: category.color || '#10b981',
               budget_amount: Number(category.budget_amount) || 0,
