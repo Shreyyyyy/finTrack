@@ -532,6 +532,40 @@ export async function deleteCategory(id: string): Promise<boolean> {
 // -------------------------------------------------------------
 // PAYMENT METHODS
 // -------------------------------------------------------------
+function deduplicatePaymentMethods(pms: PaymentMethod[]): PaymentMethod[] {
+  const seen = new Set<string>();
+  const result: PaymentMethod[] = [];
+  let defaultSet = false;
+
+  for (const pm of pms) {
+    if (!pm || !pm.name) continue;
+    const norm = pm.name.trim().toLowerCase();
+    if (!seen.has(norm)) {
+      seen.add(norm);
+      // Ensure only 1 default payment method is marked true
+      if (pm.is_default) {
+        if (!defaultSet) {
+          defaultSet = true;
+          result.push({ ...pm, name: pm.name.trim() });
+        } else {
+          result.push({ ...pm, name: pm.name.trim(), is_default: false });
+        }
+      } else {
+        result.push({ ...pm, name: pm.name.trim() });
+      }
+    }
+  }
+
+  // If no default was set, set the first item (e.g. UPI) as default
+  if (!defaultSet && result.length > 0) {
+    result[0] = { ...result[0], is_default: true };
+  }
+
+  return result;
+}
+
+let isSeedingPaymentMethods = false;
+
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
   let result: PaymentMethod[] = [];
   if (isSupabaseConfigured()) {
@@ -539,22 +573,27 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
       const supabase = createClient();
       const { data, error } = await supabase.from('payment_methods').select('*').order('created_at');
       if (!error && data && data.length > 0) {
-        result = data as PaymentMethod[];
+        result = deduplicatePaymentMethods(data as PaymentMethod[]);
       } else {
-        // Auto-seed default payment methods in Supabase if user has none
+        // Auto-seed default payment methods in Supabase only if user has none and not currently seeding
         const { data: { session } } = await supabase.auth.getSession();
         const userId = session?.user?.id;
-        if (userId && (!data || data.length === 0)) {
-          const seedMethods = [
-            { user_id: userId, name: 'UPI', type: 'upi', is_default: true },
-            { user_id: userId, name: 'Credit Card', type: 'card', is_default: false },
-            { user_id: userId, name: 'Debit Card', type: 'card', is_default: false },
-            { user_id: userId, name: 'Cash', type: 'cash', is_default: false },
-            { user_id: userId, name: 'Net Banking', type: 'bank', is_default: false },
-          ];
-          const { data: seeded } = await supabase.from('payment_methods').insert(seedMethods).select();
-          if (seeded && seeded.length > 0) {
-            result = seeded as PaymentMethod[];
+        if (userId && (!data || data.length === 0) && !isSeedingPaymentMethods) {
+          isSeedingPaymentMethods = true;
+          try {
+            const seedMethods = [
+              { user_id: userId, name: 'UPI', type: 'upi', is_default: true },
+              { user_id: userId, name: 'Credit Card', type: 'card', is_default: false },
+              { user_id: userId, name: 'Debit Card', type: 'card', is_default: false },
+              { user_id: userId, name: 'Cash', type: 'cash', is_default: false },
+              { user_id: userId, name: 'Net Banking', type: 'bank', is_default: false },
+            ];
+            const { data: seeded } = await supabase.from('payment_methods').insert(seedMethods).select();
+            if (seeded && seeded.length > 0) {
+              result = deduplicatePaymentMethods(seeded as PaymentMethod[]);
+            }
+          } finally {
+            isSeedingPaymentMethods = false;
           }
         }
       }
@@ -563,43 +602,8 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
     }
   }
   if (result.length === 0) {
-    result = getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
-  }
-
-  // Guarantee 'Credit Card' option exists in the payment methods list
-  const hasCreditCard = result.some((p) => p.name.toLowerCase().includes('credit card'));
-  if (!hasCreditCard) {
-    const ccItem: PaymentMethod = {
-      id: 'pm-credit-card',
-      name: 'Credit Card',
-      type: 'card',
-      is_default: false,
-      created_at: new Date().toISOString(),
-    };
-    result.splice(1, 0, ccItem);
-    setLocalItem(STORAGE_KEYS.PAYMENT_METHODS, result);
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = createClient();
-        supabase.auth.getSession().then(({ data }) => {
-          const userId = data?.session?.user?.id;
-          if (userId) {
-            supabase
-              .from('payment_methods')
-              .insert({
-                user_id: userId,
-                name: 'Credit Card',
-                type: 'card',
-                is_default: false,
-              })
-              .then();
-          }
-        });
-      } catch (err) {
-        console.warn('Auto insert credit card to Supabase failed:', err);
-      }
-    }
+    const rawLocal = getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
+    result = deduplicatePaymentMethods(rawLocal);
   }
 
   return result;
@@ -607,6 +611,20 @@ export async function getPaymentMethods(): Promise<PaymentMethod[]> {
 
 export async function savePaymentMethod(method: Partial<PaymentMethod> & { name: string }): Promise<PaymentMethod> {
   const isEdit = Boolean(method.id && isValidUUID(method.id));
+  const cleanName = method.name.trim();
+
+  // Check existing payment methods to prevent duplicates
+  const existingMethods = await getPaymentMethods();
+  const normName = cleanName.toLowerCase();
+  const existingDup = existingMethods.find(
+    (p) => p.name.trim().toLowerCase() === normName && p.id !== method.id
+  );
+  if (existingDup && !isEdit) {
+    if (method.is_default && !existingDup.is_default) {
+      return savePaymentMethod({ ...existingDup, is_default: true });
+    }
+    return existingDup;
+  }
 
   if (isSupabaseConfigured()) {
     try {
@@ -615,11 +633,19 @@ export async function savePaymentMethod(method: Partial<PaymentMethod> & { name:
       const userId = session?.user?.id;
 
       if (userId) {
+        // If setting as default, clear default status on other payment methods
+        if (method.is_default) {
+          await supabase
+            .from('payment_methods')
+            .update({ is_default: false })
+            .eq('user_id', userId);
+        }
+
         if (isEdit) {
           const { data } = await supabase
             .from('payment_methods')
             .update({
-              name: method.name,
+              name: cleanName,
               type: method.type || 'other',
               is_default: method.is_default || false,
             })
@@ -636,7 +662,7 @@ export async function savePaymentMethod(method: Partial<PaymentMethod> & { name:
             .from('payment_methods')
             .insert({
               user_id: userId,
-              name: method.name,
+              name: cleanName,
               type: method.type || 'other',
               is_default: method.is_default || false,
             })
@@ -658,26 +684,26 @@ export async function savePaymentMethod(method: Partial<PaymentMethod> & { name:
   const id = method.id || 'pm-' + Date.now();
   const fullMethod: PaymentMethod = {
     id,
-    name: method.name,
-    type: method.type || 'other',
+    name: cleanName,
+    type: method.type || 'custom',
     is_default: method.is_default || false,
     created_at: method.created_at || new Date().toISOString(),
   };
 
-  const methods = getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
-  if (fullMethod.is_default) {
-    methods.forEach((m) => {
-      m.is_default = false;
-    });
+  const list = getLocalItem<PaymentMethod[]>(STORAGE_KEYS.PAYMENT_METHODS, DEFAULT_PAYMENT_METHODS);
+  let updatedList = [...list];
+  if (method.is_default) {
+    updatedList = updatedList.map((p) => ({ ...p, is_default: false }));
   }
 
-  const index = methods.findIndex((m) => m.id === id);
+  const index = updatedList.findIndex((p) => p.id === id);
   if (index >= 0) {
-    methods[index] = fullMethod;
+    updatedList[index] = fullMethod;
   } else {
-    methods.push(fullMethod);
+    updatedList.push(fullMethod);
   }
-  setLocalItem(STORAGE_KEYS.PAYMENT_METHODS, [...methods]);
+
+  setLocalItem(STORAGE_KEYS.PAYMENT_METHODS, deduplicatePaymentMethods(updatedList));
   emitChange();
   return fullMethod;
 }
