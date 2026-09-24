@@ -229,8 +229,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     if (!isConfigured) {
+      const demoMsg =
+        'Google sign-in requires Supabase credentials (NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY) in .env.local. Currently running in Local Demo Mode where you can sign in with Email or DB Admin.';
       showToast('Supabase is running in demo mode.', 'info');
-      return;
+      throw new Error(demoMsg);
     }
 
     try {
@@ -248,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ? `${callbackBase}?next=${encodeURIComponent(nextParam)}`
         : callbackBase;
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
@@ -261,10 +263,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         showToast(error.message, 'error');
+        throw error;
       }
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to start Google sign in', 'error');
+
+      if (data?.url && typeof window !== 'undefined') {
+        window.location.assign(data.url);
+      }
+    } catch (err: any) {
+      console.error('Google sign in error:', err);
+      showToast(err?.message || 'Failed to start Google sign in', 'error');
+      throw err;
     }
   };
 
