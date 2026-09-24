@@ -20,7 +20,7 @@ import {
   DATA_CHANGE_EVENT,
 } from '@/lib/data/store';
 import { calculateDashboardSummary } from '@/lib/calculations/financial';
-import { MONTH_NAMES } from '@/lib/formatting/formatters';
+import { MONTH_NAMES, formatINR } from '@/lib/formatting/formatters';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { CashFlowHeroCard } from '@/components/dashboard/CashFlowHeroCard';
 import { BudgetHealthCard } from '@/components/dashboard/BudgetHealthCard';
@@ -182,93 +182,73 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="w-full max-w-[1700px] mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 space-y-6">
-      {/* 0. iPhone Back Tap Quick Setup Banner */}
-      <div className="p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-sky-500/15 via-blue-500/10 to-transparent border border-sky-200 dark:border-emerald-500/30 flex items-center justify-between gap-3 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-2xl bg-sky-600 dark:bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-sky-600/30">
-            <Smartphone className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-black dark:text-white flex items-center gap-1.5">
-              <span>iPhone Back Tap Integration</span>
-              <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-sky-100 dark:bg-emerald-950 text-sky-800 dark:text-emerald-300 border border-sky-200 dark:border-emerald-800">
-                &lt; 5s Entry
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-700 dark:text-slate-400 font-medium">
-              Double-tap the back of your iPhone to record expenses directly into your database.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowBackTapModal(true)}
-          className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 dark:bg-emerald-600 text-white text-xs font-bold shrink-0 shadow-sm transition-all active:scale-95"
-        >
-          Setup Tap
-        </button>
-      </div>
-
-      {/* 1. Header & Context Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+      {/* 1. Subtle, Minimal Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200/70 dark:border-slate-800">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-sky-500 dark:bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
-              Financial Control Center
-            </span>
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <span>finTrack</span>
+            <span>•</span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300">Financial Overview</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 mt-1.5">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white uppercase">
+          <div className="flex items-center gap-3 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
             </h1>
 
-            {/* Month Stepper Navigator */}
-            <div className="flex items-center rounded-xl border border-sky-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-0.5 shadow-sm">
+            {/* Subtle Month Stepper */}
+            <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0.5 shadow-2xs">
               <button
                 onClick={handlePrevMonth}
-                className="p-1.5 rounded-lg text-black hover:text-sky-600 dark:text-slate-300 dark:hover:text-white hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors"
+                className="p-1 rounded text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Previous month"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={handleNextMonth}
-                className="p-1.5 rounded-lg text-black hover:text-sky-600 dark:text-slate-300 dark:hover:text-white hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors"
+                className="p-1 rounded text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Next month"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Jump to Today Button */}
             {!isCurrentMonthView && (
               <button
                 onClick={handleJumpToToday}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold border border-sky-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-black dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors shadow-xs"
-                title="Jump to current month"
+                className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-2xs"
               >
-                <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-emerald-500" />
+                <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-emerald-400" />
                 <span>Today</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Primary Action Buttons */}
-        <div className="flex items-center gap-2.5 self-start md:self-auto">
+        {/* Minimal Header Actions */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={() => setShowBackTapModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-2xs"
+            title="Setup iPhone Back Tap"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-slate-500" />
+            <span className="hidden sm:inline">iPhone Tap</span>
+          </button>
+
           <button
             onClick={handleExportMonth}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold border border-sky-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-black dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-2xs"
           >
-            <FileSpreadsheet className="w-4 h-4 text-sky-600 dark:text-emerald-400" />
-            <span>Export Excel</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Export</span>
           </button>
 
           <Link
             href="/add"
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-md shadow-sky-600/20 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black shadow-xs active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Add Transaction</span>
@@ -285,7 +265,7 @@ export default function DashboardPage() {
 
       {/* 3. TAB CONTENTS */}
 
-      {/* OVERVIEW TAB */}
+      {/* OVERVIEW TAB - SUBTLE & SIMPLE */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
           {/* MOBILE MINIMAL VIEW (Phone screens) */}
@@ -303,11 +283,87 @@ export default function DashboardPage() {
             onEditPlan={() => setShowSalaryModal(true)}
           />
 
-          {/* LAPTOP / DESKTOP FULL EXPANDED VIEW */}
+          {/* TABLET / DESKTOP CLEAN DASHBOARD */}
           <div className="hidden md:block space-y-6">
-            {/* Top Hero Layout: Financial Cash Flow Summary (Left) + Interactive Pie Chart (Right) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-              <div className="lg:col-span-7 flex flex-col justify-between">
+            {/* Subtle 4-Card KPI Strip */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Spent */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-medium">Total Spent</span>
+                  <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                    {summary.budgetUtilization.toFixed(0)}% of limit
+                  </span>
+                </div>
+                <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  {formatINR(summary.totalSpent)}
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${Math.min(100, summary.budgetUtilization)}%` }}
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      summary.budgetUtilization > 90 ? 'bg-rose-500' : 'bg-slate-900 dark:bg-slate-100'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Card 2: Remaining & Allowance */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-medium">Remaining Budget</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {daysRemaining}d left
+                  </span>
+                </div>
+                <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  {formatINR(summary.remainingBudget)}
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Safe: <strong className="text-slate-900 dark:text-slate-200 font-semibold">{formatINR(safeDailyAllowance)}</strong>/day
+                </div>
+              </div>
+
+              {/* Card 3: Inflow */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-medium">Monthly Inflow</span>
+                  <button
+                    onClick={() => setShowSalaryModal(true)}
+                    className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline font-semibold"
+                  >
+                    Adjust
+                  </button>
+                </div>
+                <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  {formatINR(summary.income)}
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  {monthExpenses.length} entries registered
+                </div>
+              </div>
+
+              {/* Card 4: Net Surplus / Savings */}
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-medium">Net Savings</span>
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    {summary.savingsRate.toFixed(0)}% saved
+                  </span>
+                </div>
+                <div className="text-xl sm:text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {formatINR(summary.netCashflow)}
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Free operating surplus
+                </div>
+              </div>
+            </div>
+
+            {/* Clean Two-Column Core Layout (7 cols Left, 5 cols Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left Column (7 cols): Cashflow Compass & Daily Trajectory */}
+              <div className="lg:col-span-7 space-y-6">
                 <CashFlowHeroCard
                   income={summary.income}
                   monthlyBudget={summary.monthlyBudget}
@@ -318,9 +374,16 @@ export default function DashboardPage() {
                   monthlyCommittedSavingsInvestments={totalMonthlyCommitted}
                   onEditPlan={() => setShowSalaryModal(true)}
                 />
+
+                <DailySpendingChart
+                  expenses={expenses}
+                  month={selectedMonth}
+                  year={selectedYear}
+                />
               </div>
 
-              <div className="lg:col-span-5 flex flex-col justify-between">
+              {/* Right Column (5 cols): Category Breakdown & Recent Expenses */}
+              <div className="lg:col-span-5 space-y-6">
                 <HomePagePieChart
                   expenses={expenses}
                   categories={categories}
@@ -328,82 +391,24 @@ export default function DashboardPage() {
                   year={selectedYear}
                   income={summary.income}
                 />
+
+                <RecentExpenses expenses={expenses} limit={8} />
               </div>
             </div>
-
-            {/* Financial Health Score (50/30/20) & Subscriptions Radar */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-              <div className="lg:col-span-7 flex flex-col justify-between">
-                <FinancialHealthScoreCard
-                  score={summary.financialHealthScore}
-                  savingsRate={summary.savingsRate}
-                  budgetUtilization={summary.budgetUtilization}
-                  needsRatio={summary.income > 0 ? (summary.needsSpent / summary.income) * 100 : 0}
-                  wantsRatio={summary.income > 0 ? (summary.wantsSpent / summary.income) * 100 : 0}
-                  recurringTotal={summary.recurringTotal}
-                />
-              </div>
-
-              <div className="lg:col-span-5 flex flex-col justify-between">
-                <SubscriptionsRadarCard
-                  expenses={expenses}
-                  income={summary.income}
-                />
-              </div>
-            </div>
-
-            {/* Cash, Savings & Investments Full Breakdown Section */}
-            <SavingsInvestmentsSection
-              goals={goals}
-              income={summary.income}
-              totalSpent={summary.totalSpent}
-              monthlyBudget={summary.monthlyBudget}
-              monthlyBurnRate={summary.totalSpent}
-              onRefresh={loadData}
-            />
-
-            {/* Live Financial Vitality & Health Pulse Widget */}
-            <FinancialPulseWidget
-              expenses={expenses}
-              income={summary.income}
-              monthlyBudget={summary.monthlyBudget}
-              selectedMonth={selectedMonth}
-              selectedYear={selectedYear}
-            />
-
-            {/* Core Pillars Grid - Expanded Full Width */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <BudgetHealthCard
-                totalSpent={summary.totalSpent}
-                monthlyBudget={summary.monthlyBudget}
-                daysElapsed={summary.daysElapsed}
-                daysInMonth={summary.daysInMonth}
-              />
-
-              <CategorySpendingCard
-                expenses={expenses}
-                categories={categories}
-                month={selectedMonth}
-                year={selectedYear}
-              />
-
-              <GoalsPreviewCard
-                goals={goals}
-                onAddGoalClick={() => setShowGoalModal(true)}
-              />
-            </div>
-
-            {/* Daily Spending Pulse */}
-            <DailySpendingChart
-              expenses={expenses}
-              month={selectedMonth}
-              year={selectedYear}
-            />
-
-            {/* Recent Expenses Feed */}
-            <RecentExpenses expenses={expenses} limit={10} />
           </div>
         </div>
+      )}
+
+      {/* PORTFOLIO & WEALTH VAULTS TAB */}
+      {activeTab === 'portfolio' && (
+        <SavingsInvestmentsSection
+          goals={goals}
+          income={summary.income}
+          totalSpent={summary.totalSpent}
+          monthlyBudget={summary.monthlyBudget}
+          monthlyBurnRate={summary.totalSpent}
+          onRefresh={loadData}
+        />
       )}
 
       {/* BALANCE SHEETS & ARCHIVE TAB */}
@@ -421,16 +426,27 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* ANALYTICS MIX TAB */}
+      {/* ANALYTICS & DEEP DIVES TAB */}
       {activeTab === 'analytics' && (
         <div className="space-y-6">
-          <HomePagePieChart
-            expenses={expenses}
-            categories={categories}
-            month={selectedMonth}
-            year={selectedYear}
-            income={summary.income}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div className="lg:col-span-7">
+              <FinancialHealthScoreCard
+                score={summary.financialHealthScore}
+                savingsRate={summary.savingsRate}
+                budgetUtilization={summary.budgetUtilization}
+                needsRatio={summary.income > 0 ? (summary.needsSpent / summary.income) * 100 : 0}
+                wantsRatio={summary.income > 0 ? (summary.wantsSpent / summary.income) * 100 : 0}
+                recurringTotal={summary.recurringTotal}
+              />
+            </div>
+            <div className="lg:col-span-5">
+              <SubscriptionsRadarCard
+                expenses={expenses}
+                income={summary.income}
+              />
+            </div>
+          </div>
 
           <FinancialPulseWidget
             expenses={expenses}
@@ -440,13 +456,14 @@ export default function DashboardPage() {
             selectedYear={selectedYear}
           />
 
-          <DailySpendingChart
-            expenses={expenses}
-            month={selectedMonth}
-            year={selectedYear}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <BudgetHealthCard
+              totalSpent={summary.totalSpent}
+              monthlyBudget={summary.monthlyBudget}
+              daysElapsed={summary.daysElapsed}
+              daysInMonth={summary.daysInMonth}
+            />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CategorySpendingCard
               expenses={expenses}
               categories={categories}
@@ -454,11 +471,9 @@ export default function DashboardPage() {
               year={selectedYear}
             />
 
-            <BudgetHealthCard
-              totalSpent={summary.totalSpent}
-              monthlyBudget={summary.monthlyBudget}
-              daysElapsed={summary.daysElapsed}
-              daysInMonth={summary.daysInMonth}
+            <GoalsPreviewCard
+              goals={goals}
+              onAddGoalClick={() => setShowGoalModal(true)}
             />
           </div>
         </div>

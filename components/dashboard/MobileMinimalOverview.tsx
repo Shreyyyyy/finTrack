@@ -5,9 +5,7 @@ import { Expense, Category, MonthlySetting, Goal } from '@/types';
 import { formatINR } from '@/lib/formatting/formatters';
 import { HomePagePieChart } from './HomePagePieChart';
 import { RecentExpenses } from './RecentExpenses';
-import { FinancialPulseWidget } from './FinancialPulseWidget';
-import { SavingsInvestmentsSection } from './SavingsInvestmentsSection';
-import { Wallet, TrendingDown, PiggyBank, Scale, Sliders, Coins } from 'lucide-react';
+import { Wallet, TrendingDown, PiggyBank, Sliders, Coins } from 'lucide-react';
 
 interface MobileMinimalOverviewProps {
   expenses: Expense[];
@@ -61,24 +59,6 @@ export function MobileMinimalOverview({
         month={selectedMonth}
         year={selectedYear}
         income={monthlySetting.income}
-      />
-
-      {/* 1.2 Unified Cash, Savings & Investments Wealth Breakdown */}
-      <SavingsInvestmentsSection
-        goals={goals}
-        income={monthlySetting.income}
-        totalSpent={totalSpent}
-        monthlyBudget={remainingBudget + totalSpent}
-        monthlyBurnRate={totalSpent}
-      />
-
-      {/* 1.5 Live Financial Vitality & Habits Pulse */}
-      <FinancialPulseWidget
-        expenses={expenses}
-        income={monthlySetting.income}
-        monthlyBudget={monthlySetting.monthly_budget}
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
       />
 
       {/* 2. Salary Breakdown Numbers Grid (Salary, Spent, Saved & Invested, Free Cash) */}

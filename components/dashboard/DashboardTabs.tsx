@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { LayoutDashboard, BarChart3, ReceiptText, Wallet, ScrollText } from 'lucide-react';
+import { LayoutDashboard, BarChart3, ReceiptText, Wallet, ScrollText, Landmark } from 'lucide-react';
 
-export type DashboardTabType = 'overview' | 'analytics' | 'transactions' | 'salary' | 'balance-sheet';
+export type DashboardTabType = 'overview' | 'portfolio' | 'balance-sheet' | 'analytics' | 'transactions' | 'salary';
 
 interface DashboardTabsProps {
   activeTab: DashboardTabType;
@@ -14,10 +14,11 @@ interface DashboardTabsProps {
 export function DashboardTabs({ activeTab, onChangeTab, transactionCount = 0 }: DashboardTabsProps) {
   const tabs: { id: DashboardTabType; label: string; icon: React.ElementType; badge?: string | number }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'balance-sheet', label: 'Balance Sheets', icon: ScrollText, badge: 'Monthly Archive' },
-    { id: 'analytics', label: 'Analytics Mix', icon: BarChart3, badge: 'Pie & Trends' },
+    { id: 'portfolio', label: 'Portfolio & Vaults', icon: Landmark, badge: 'Vaults' },
+    { id: 'balance-sheet', label: 'Balance Sheets', icon: ScrollText, badge: 'Archive' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'transactions', label: 'Transactions', icon: ReceiptText, badge: transactionCount > 0 ? transactionCount : undefined },
-    { id: 'salary', label: 'Salary & Budget', icon: Wallet },
+    { id: 'salary', label: 'Salary Plan', icon: Wallet },
   ];
 
   return (
