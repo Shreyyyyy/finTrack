@@ -258,18 +258,18 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-lg mx-auto">
       {/* 1. Transaction Type Toggle (Expense vs Income) */}
-      <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+      <div className="grid grid-cols-2 p-1 rounded-2xl bg-amber-100/50 dark:bg-stone-900/80 border-2 border-double border-amber-800/30 dark:border-amber-700/40 font-serif">
         <button
           type="button"
           onClick={() => handleTypeChange('expense')}
           className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-all ${
             transactionType === 'expense'
-              ? 'bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 shadow-sm border border-slate-200 dark:border-slate-700'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-[#7a2828] text-white shadow-sm border border-amber-700/40'
+              : 'text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-amber-100'
           }`}
         >
-          <ArrowDownLeft className="w-4 h-4" />
-          <span>Expense (Money Out)</span>
+          <ArrowDownLeft className="w-4 h-4 stroke-[2.5]" />
+          <span>Disbursement (Outflow)</span>
         </button>
 
         <button
@@ -277,29 +277,29 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
           onClick={() => handleTypeChange('income')}
           className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs transition-all ${
             transactionType === 'income'
-              ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200 dark:border-slate-700'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-[#24543d] text-white shadow-sm border border-amber-700/40'
+              : 'text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-amber-100'
           }`}
         >
-          <ArrowUpRight className="w-4 h-4" />
-          <span>Income (Money In)</span>
+          <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+          <span>Deposit (Inflow)</span>
         </button>
       </div>
 
-      {/* 2. Large Amount Input */}
+      {/* 2. Large Amount Input - 1940s Banknote Voucher Frame */}
       <div
-        className={`bg-white dark:bg-slate-900 rounded-3xl p-6 border shadow-sm text-center transition-all ${
+        className={`bg-[#faf6ed] dark:bg-[#1a1510] rounded-3xl p-6 border-2 border-double shadow-md text-center transition-all ${
           transactionType === 'income'
-            ? 'border-emerald-200 dark:border-emerald-800/60 shadow-emerald-500/5'
-            : 'border-sky-100 dark:border-slate-800 shadow-sky-500/5'
+            ? 'border-emerald-700/50 dark:border-emerald-600/50'
+            : 'border-amber-800/40 dark:border-amber-700/50'
         }`}
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
-            {transactionType === 'income' ? 'Income Amount' : 'Expense Amount'}
+          <span className="text-[10px] uppercase tracking-widest font-serif font-black text-amber-900 dark:text-amber-300">
+            {transactionType === 'income' ? '★ TREASURY DEPOSIT AMOUNT' : '★ TREASURY DISBURSEMENT AMOUNT'}
           </span>
           {detectedCategoryName && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">
+            <span className="inline-flex items-center gap-1 text-[10px] font-serif font-bold text-emerald-700 dark:text-emerald-400">
               <Sparkles className="w-3 h-3" /> Auto-detected {detectedCategoryName}
             </span>
           )}
@@ -632,25 +632,21 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
         <button
           type="submit"
           disabled={loading}
-          className={`flex-1 py-4 px-6 rounded-2xl text-white font-black text-base active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg ${
-            transactionType === 'income'
-              ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30'
-              : 'bg-sky-600 hover:bg-sky-500 shadow-sky-600/30'
-          }`}
+          className="flex-1 py-4 px-6 rounded-2xl text-amber-50 font-serif font-black text-base active:scale-98 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-amber-950/30 bg-gradient-to-r from-amber-700 via-amber-800 to-amber-900 hover:from-amber-600 hover:to-amber-800 border border-amber-500/50"
         >
           {loading ? (
-            <span>Saving...</span>
+            <span>Authorizing Voucher...</span>
           ) : (
             <>
               <Check className="w-5 h-5 stroke-[2.5]" />
               <span>
                 {initialExpense
                   ? transactionType === 'income'
-                    ? 'Update Income'
-                    : 'Update Expense'
+                    ? 'Authorize Updated Deposit'
+                    : 'Authorize Updated Voucher'
                   : transactionType === 'income'
-                  ? `Save Income (${amount ? `+₹${parseFloat(amount).toLocaleString('en-IN')}` : ''})`
-                  : `Save Expense (${amount ? `₹${parseFloat(amount).toLocaleString('en-IN')}` : ''})`}
+                  ? `Authorize Deposit (${amount ? `+₹${parseFloat(amount).toLocaleString('en-IN')}` : ''})`
+                  : `Authorize Voucher (${amount ? `₹${parseFloat(amount).toLocaleString('en-IN')}` : ''})`}
               </span>
             </>
           )}

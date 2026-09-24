@@ -42,60 +42,65 @@ export function RecentExpenses({ expenses, limit = 8 }: RecentExpensesProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
-          Recent Expenses
-        </h3>
-        <span className="text-xs font-bold text-slate-600 dark:text-slate-500">
-          Showing latest {displayList.length}
+    <div className="bg-[#faf6ed] dark:bg-[#1a1510] rounded-3xl p-5 border-2 border-double border-amber-800/30 dark:border-amber-700/40 shadow-sm space-y-4 text-stone-900 dark:text-amber-100">
+      <div className="flex items-center justify-between border-b-2 border-double border-amber-800/20 dark:border-amber-700/30 pb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-amber-900 dark:text-amber-400 font-serif">
+            ★ TELLER VOUCHER REGISTER ★
+          </span>
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-200 text-amber-950 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+            AUDITED
+          </span>
+        </div>
+        <span className="text-xs font-serif font-bold text-stone-600 dark:text-stone-400">
+          Latest {displayList.length} vouchers
         </span>
       </div>
 
       {displayList.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No expenses recorded yet.</p>
+          <p className="text-xs font-serif italic text-stone-600 dark:text-stone-400">No vouchers registered in this ledger period.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(grouped).map(([dateLabel, items]) => (
             <div key={dateLabel} className="space-y-2">
-              <div className="text-[11px] font-bold tracking-wider text-slate-600 dark:text-slate-500 uppercase px-1">
-                {dateLabel}
+              <div className="text-[10px] font-serif font-bold tracking-widest text-amber-900/80 dark:text-amber-400/80 uppercase px-1">
+                § {dateLabel}
               </div>
               <div className="space-y-1.5">
                 {items.map((exp) => (
                   <div
                     key={exp.id}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-sky-50/70 dark:bg-slate-800/40 hover:bg-sky-100/70 dark:hover:bg-slate-800 transition-colors group shadow-2xs"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-amber-50/70 dark:bg-stone-900/60 hover:bg-amber-100/70 dark:hover:bg-stone-800/80 transition-colors group border border-amber-800/15 dark:border-amber-700/25 shadow-2xs"
                   >
                     {/* Left: Icon & Details */}
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-sm"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-2xs border border-amber-700/30"
                         style={{
                           backgroundColor: exp.category?.color
-                            ? `${exp.category.color}20`
-                            : '#e0f2fe',
+                            ? `${exp.category.color}25`
+                            : '#fde68a',
                         }}
                       >
                         {exp.category?.icon || '💰'}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-sm text-black dark:text-white truncate">
-                          {exp.merchant || exp.category?.name || 'General Expense'}
+                        <div className="font-serif font-bold text-sm text-stone-950 dark:text-amber-50 truncate">
+                          {exp.merchant || exp.category?.name || 'General Voucher'}
                         </div>
-                        <div className="text-xs text-slate-700 dark:text-slate-400 truncate flex items-center gap-1.5 font-medium">
-                          <span>{exp.category?.name || 'Other'}</span>
+                        <div className="text-[11px] font-serif text-stone-600 dark:text-stone-400 truncate flex items-center gap-1.5">
+                          <span className="font-semibold">{exp.category?.name || 'Other'}</span>
                           <span>·</span>
                           <span className="flex items-center gap-1">
-                            <CreditCard className="w-3 h-3" />
-                            {exp.payment_method?.name || 'UPI'}
+                            <CreditCard className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+                            {exp.payment_method?.name || 'Cash Voucher'}
                           </span>
                           {exp.note && (
                             <>
                               <span>·</span>
-                              <span className="truncate max-w-[140px]">{exp.note}</span>
+                              <span className="italic truncate max-w-[140px]">{exp.note}</span>
                             </>
                           )}
                         </div>
@@ -104,23 +109,27 @@ export function RecentExpenses({ expenses, limit = 8 }: RecentExpensesProps) {
 
                     {/* Right: Amount & Action buttons */}
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-black text-black dark:text-white">
-                        {formatINR(exp.amount)}
+                      <span className={`text-sm font-mono font-black ${
+                        exp.type === 'income'
+                          ? 'text-[#24543d] dark:text-emerald-400'
+                          : 'text-stone-950 dark:text-amber-100'
+                      }`}>
+                        {exp.type === 'income' ? '+' : ''}{formatINR(exp.amount)}
                       </span>
 
                       <div className="flex items-center gap-1 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setEditingExpense(exp)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
-                          title="Edit expense"
+                          className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 dark:hover:text-white hover:bg-amber-200/50 dark:hover:bg-stone-700"
+                          title="Edit voucher"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(exp.id)}
                           disabled={deletingId === exp.id}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-                          title="Delete expense"
+                          className="p-1.5 rounded-lg text-stone-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                          title="Delete voucher"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -137,9 +146,9 @@ export function RecentExpenses({ expenses, limit = 8 }: RecentExpensesProps) {
       {/* Edit Modal */}
       {editingExpense && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-sky-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-black text-black dark:text-white mb-4">
-              Edit Expense
+          <div className="bg-[#faf6ed] dark:bg-[#1a1510] rounded-3xl max-w-lg w-full p-6 shadow-2xl border-2 border-double border-amber-800/40 dark:border-amber-700/50 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-serif font-black text-stone-950 dark:text-amber-50 mb-4 border-b-2 border-double border-amber-800/20 pb-2">
+              Edit Voucher #{editingExpense.id.slice(0, 6).toUpperCase()}
             </h3>
             <ExpenseForm
               initialExpense={editingExpense}

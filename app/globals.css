@@ -1,59 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;0,900;1,500;1,700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f0f7ff;
-  --foreground: #000000;
+  --background: #fbf7ed;
+  --foreground: #1c1713;
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: #1c1713;
   --popover: #ffffff;
-  --popover-foreground: #000000;
-  --primary: #0284c7;
+  --popover-foreground: #1c1713;
+  --primary: #9b6a28;
   --primary-foreground: #ffffff;
-  --secondary: #e0f2fe;
-  --secondary-foreground: #000000;
-  --muted: #f0f7ff;
-  --muted-foreground: #1e293b;
-  --accent: #e0f2fe;
-  --accent-foreground: #000000;
-  --destructive: #ef4444;
+  --secondary: #f4ecdc;
+  --secondary-foreground: #2d231b;
+  --muted: #f4ecdc;
+  --muted-foreground: #5e4f43;
+  --accent: #eee3cd;
+  --accent-foreground: #1c1713;
+  --destructive: #8b251e;
   --destructive-foreground: #ffffff;
-  --border: #dbeafe;
-  --input: #dbeafe;
-  --ring: #0284c7;
+  --border: #dfd1b8;
+  --input: #e6d8c0;
+  --ring: #b8860b;
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: #090d16;
-  --foreground: #f8fafc;
-  --card: #0f172a;
-  --card-foreground: #f8fafc;
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
-  --primary: #10b981;
-  --primary-foreground: #041f17;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #131b2e;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
-  --destructive: #f43f5e;
+  --background: #14100c;
+  --foreground: #f6eedb;
+  --card: #1c1712;
+  --card-foreground: #f6eedb;
+  --popover: #1c1712;
+  --popover-foreground: #f6eedb;
+  --primary: #cba153;
+  --primary-foreground: #14100c;
+  --secondary: #27201a;
+  --secondary-foreground: #e6dac1;
+  --muted: #221b15;
+  --muted-foreground: #a69581;
+  --accent: #2e241c;
+  --accent-foreground: #f6eedb;
+  --destructive: #b33939;
   --destructive-foreground: #ffffff;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #10b981;
+  --border: #3d3023;
+  --input: #382c20;
+  --ring: #cba153;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+}
+
+/* 1940s Vintage Typography & Ledger Utilities */
+.font-serif {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+
+.font-cinzel {
+  font-family: 'Cinzel', Georgia, serif;
+}
+
+.font-mono, .font-typewriter {
+  font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+}
+
+/* Vintage 1940s Paper Grain & Filigree Accents */
+.vintage-parchment {
+  background-color: #fbf7ed;
+  background-image: radial-gradient(#d3c4a8 0.6px, transparent 0.6px);
+  background-size: 16px 16px;
+}
+
+.dark .vintage-parchment {
+  background-color: #14100c;
+  background-image: radial-gradient(#2d2319 0.6px, transparent 0.6px);
+  background-size: 16px 16px;
+}
+
+.border-engraved {
+  border-style: double;
+  border-width: 3px;
 }
 
 /* iOS Safe Areas */

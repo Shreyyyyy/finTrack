@@ -16,14 +16,14 @@ interface HomePagePieChartProps {
 }
 
 const LUXURY_PALETTE = [
-  '#6366f1', // Indigo
-  '#f59e0b', // Amber
-  '#10b981', // Emerald
-  '#f43f5e', // Rose
-  '#06b6d4', // Cyan
-  '#8b5cf6', // Violet
-  '#ec4899', // Pink
-  '#3b82f6', // Sky/Blue
+  '#b8860b', // Antique Gilded Gold
+  '#24543d', // Banknote Mint / Hunter Green
+  '#7a2828', // Vintage Oxblood / Burgundy
+  '#1b365d', // Deep Ledger Navy Ink
+  '#9c6644', // Warm Sepia
+  '#855b1a', // Burnished Brass
+  '#4a5568', // Slate Charcoal Ink
+  '#6b21a8', // Imperial Tyrian Purple
 ];
 
 export function HomePagePieChart({
@@ -110,51 +110,47 @@ export function HomePagePieChart({
   const monthName = MONTH_NAMES[month - 1] || 'Month';
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl text-slate-900 dark:text-white border border-slate-200/80 dark:border-white/[0.08] shadow-xl shadow-slate-950/5 p-5 sm:p-7 space-y-5 h-full flex flex-col justify-between">
-      {/* Subtle ambient lighting glows */}
-      <div className="absolute top-0 right-0 w-72 h-72 bg-sky-500/10 dark:bg-sky-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-
+    <div className="relative overflow-hidden rounded-3xl bg-[#faf6ed] dark:bg-[#1a1510] border-2 border-double border-amber-800/30 dark:border-amber-700/40 text-stone-950 dark:text-amber-100 shadow-md p-5 sm:p-7 space-y-5 h-full flex flex-col justify-between">
       {/* Header with Title and Mode Switcher */}
-      <div className="relative flex items-center justify-between gap-2 flex-wrap">
+      <div className="relative flex items-center justify-between gap-2 flex-wrap border-b-2 border-double border-amber-800/20 dark:border-amber-700/30 pb-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse shadow-sm shadow-sky-500/50" />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-              Category Spending
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-900 dark:text-amber-400 font-serif">
+              ★ CATEGORY ALLOTMENT GAUGE ★
             </span>
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+          <div className="text-xs font-serif text-stone-600 dark:text-stone-400 italic mt-0.5">
             {hasData
-              ? `${categoryData.length} ${categoryData.length === 1 ? 'category' : 'categories'} in ${monthName}`
-              : `${monthName} ${year} Overview`}
+              ? `${categoryData.length} ${categoryData.length === 1 ? 'allotment' : 'allotments'} in ${monthName}`
+              : `${monthName} ${year} Chronicle`}
           </div>
         </div>
 
         {/* View Mode Toggle: Donut and List */}
-        <div className="flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-white/[0.06] p-1 border border-slate-200/80 dark:border-white/10 shadow-2xs">
+        <div className="flex items-center gap-1 rounded-xl bg-amber-100/50 dark:bg-stone-900/60 p-1 border border-amber-800/20 dark:border-amber-700/30 shadow-2xs font-serif">
           <button
             type="button"
             onClick={() => setViewMode('donut')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'donut'
-                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200/80 dark:border-white/10'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-amber-800 text-amber-50 shadow-xs border border-amber-600/50'
+                : 'text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-amber-100'
             }`}
           >
-            <CircleDot className="w-3.5 h-3.5 text-sky-500" />
-            <span>Donut</span>
+            <CircleDot className="w-3.5 h-3.5 text-amber-300" />
+            <span>Gauge</span>
           </button>
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'list'
-                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200/80 dark:border-white/10'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-amber-800 text-amber-50 shadow-xs border border-amber-600/50'
+                : 'text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-amber-100'
             }`}
           >
-            <List className="w-3.5 h-3.5 text-sky-500" />
-            <span>List</span>
+            <List className="w-3.5 h-3.5 text-amber-300" />
+            <span>Register</span>
           </button>
         </div>
       </div>

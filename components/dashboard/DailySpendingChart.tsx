@@ -47,31 +47,36 @@ export function DailySpendingChart({ expenses, month, year }: DailySpendingChart
     : chartData;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-sky-100 dark:border-slate-800 shadow-sm space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400">
-          Daily Spending Trend
-        </h3>
-        <span className="text-xs font-bold text-slate-600 dark:text-slate-500">
-          Day 1 - {filteredData.length}
+    <div className="bg-[#faf6ed] dark:bg-[#1a1510] rounded-3xl p-5 border-2 border-double border-amber-800/30 dark:border-amber-700/40 shadow-sm space-y-3 text-stone-900 dark:text-amber-100">
+      <div className="flex items-center justify-between border-b-2 border-double border-amber-800/20 dark:border-amber-700/30 pb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-amber-900 dark:text-amber-400 font-serif">
+            ★ DAILY EXPENDITURE TRAJECTORY ★
+          </span>
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-200 text-amber-950 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+            DAY 1 - {filteredData.length}
+          </span>
+        </div>
+        <span className="text-xs font-serif font-bold text-stone-600 dark:text-stone-400">
+          Monthly Ledger
         </span>
       </div>
 
       {totalMonthSpend === 0 ? (
-        <div className="h-44 w-full flex flex-col items-center justify-center text-center p-4 rounded-2xl bg-sky-50/50 dark:bg-slate-800/20 border border-dashed border-sky-200 dark:border-slate-800">
-          <Calendar className="w-8 h-8 text-sky-500 dark:text-slate-400 mb-2 stroke-[1.5]" />
-          <p className="text-xs font-bold text-black dark:text-slate-300">
-            No expenses logged for this month yet
+        <div className="h-44 w-full flex flex-col items-center justify-center text-center p-4 rounded-2xl bg-amber-100/40 dark:bg-stone-900/40 border border-dashed border-amber-800/30 dark:border-amber-700/30">
+          <Calendar className="w-8 h-8 text-amber-700 dark:text-amber-400 mb-2 stroke-[1.5]" />
+          <p className="text-xs font-serif font-bold text-stone-950 dark:text-amber-200">
+            No entries recorded for this ledger month
           </p>
-          <p className="text-[11px] text-slate-600 dark:text-slate-500 mt-0.5 max-w-xs font-medium">
-            Add an expense or double-tap your iPhone to start tracking your daily spend.
+          <p className="text-[11px] font-serif italic text-stone-600 dark:text-stone-400 mt-0.5 max-w-xs">
+            Record a voucher to track your daily disbursement trajectory.
           </p>
           <Link
             href="/add"
-            className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-sm transition-all"
+            className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-800 hover:bg-amber-700 text-amber-50 text-xs font-serif font-bold shadow-sm transition-all border border-amber-600/40"
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            <span>Add First Expense</span>
+            <span>Record First Voucher</span>
           </Link>
         </div>
       ) : (
@@ -82,22 +87,22 @@ export function DailySpendingChart({ expenses, month, year }: DailySpendingChart
                 dataKey="day"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 10, fill: '#64748b' }}
+                tick={{ fontSize: 10, fill: '#78716c', fontFamily: 'serif' }}
                 interval={filteredData.length > 15 ? 2 : 0}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 10, fill: '#64748b' }}
+                tick={{ fontSize: 10, fill: '#78716c', fontFamily: 'serif' }}
                 tickFormatter={(val) => (val >= 1000 ? `₹${val / 1000}k` : `₹${val}`)}
               />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-slate-950 text-white px-3 py-1.5 rounded-xl text-xs font-medium shadow-lg border border-slate-800">
-                        <div className="text-slate-400 text-[10px]">Day {payload[0].payload.day}</div>
-                        <div className="font-bold text-sky-400 dark:text-emerald-400">
+                      <div className="bg-[#1c1712] text-amber-100 px-3 py-1.5 rounded-xl text-xs font-serif shadow-lg border border-amber-700/60">
+                        <div className="text-amber-400/80 text-[10px] font-mono">Day {payload[0].payload.day}</div>
+                        <div className="font-mono font-bold text-amber-200">
                           {formatINR(Number(payload[0].value))}
                         </div>
                       </div>
@@ -106,7 +111,7 @@ export function DailySpendingChart({ expenses, month, year }: DailySpendingChart
                   return null;
                 }}
               />
-              <Bar dataKey="amount" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={16} />
+              <Bar dataKey="amount" fill="#b8860b" radius={[4, 4, 0, 0]} maxBarSize={16} />
             </BarChart>
           </ResponsiveContainer>
         </div>

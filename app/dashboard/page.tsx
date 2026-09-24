@@ -182,34 +182,36 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
-      {/* 1. Subtle, Minimal Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200/70 dark:border-slate-800">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 text-stone-900 dark:text-amber-100">
+      {/* 1. 1940s Financial Gazette Masthead */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b-2 border-double border-amber-800/30 dark:border-amber-700/40">
         <div>
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>finTrack</span>
+          <div className="flex items-center gap-2 flex-wrap text-xs font-serif font-bold text-amber-900 dark:text-amber-400">
+            <span>★ THE DAILY FINANCIAL GAZETTE & CASH REGISTER ★</span>
             <span>•</span>
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Financial Overview</span>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-200 text-amber-950 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+              VOL. MCMXL · EST. 1940
+            </span>
           </div>
 
           <div className="flex items-center gap-3 mt-1">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
+            <h1 className="text-xl sm:text-2xl font-serif font-black tracking-tight text-stone-950 dark:text-amber-50">
+              {MONTH_NAMES[selectedMonth - 1]} {selectedYear} Statement
             </h1>
 
-            {/* Subtle Month Stepper */}
-            <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0.5 shadow-2xs">
+            {/* 1940s Stepper */}
+            <div className="flex items-center rounded-lg border border-amber-800/30 dark:border-amber-700/40 bg-[#faf6ed] dark:bg-[#1a1510] p-0.5 shadow-2xs">
               <button
                 onClick={handlePrevMonth}
-                className="p-1 rounded text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                title="Previous month"
+                className="p-1 rounded text-stone-700 hover:text-stone-950 dark:text-stone-300 dark:hover:text-white hover:bg-amber-200/50 dark:hover:bg-stone-800 transition-colors"
+                title="Previous ledger month"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={handleNextMonth}
-                className="p-1 rounded text-slate-600 hover:text-black dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                title="Next month"
+                className="p-1 rounded text-stone-700 hover:text-stone-950 dark:text-stone-300 dark:hover:text-white hover:bg-amber-200/50 dark:hover:bg-stone-800 transition-colors"
+                title="Next ledger month"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -218,40 +220,40 @@ export default function DashboardPage() {
             {!isCurrentMonthView && (
               <button
                 onClick={handleJumpToToday}
-                className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-2xs"
+                className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-serif font-bold border border-amber-800/30 dark:border-amber-700/40 bg-[#faf6ed] dark:bg-[#1a1510] text-amber-950 dark:text-amber-200 hover:bg-amber-200/50 dark:hover:bg-stone-800 transition-colors shadow-2xs"
               >
-                <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-emerald-400" />
+                <Calendar className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                 <span>Today</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Minimal Header Actions */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        {/* 1940s Header Actions */}
+        <div className="flex items-center gap-2 self-start sm:self-auto font-serif">
           <button
             onClick={() => setShowBackTapModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-2xs"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-amber-800/25 dark:border-amber-700/30 bg-[#faf6ed] dark:bg-[#1a1510] text-stone-800 dark:text-amber-200 hover:bg-amber-200/40 dark:hover:bg-stone-800 transition-colors shadow-2xs"
             title="Setup iPhone Back Tap"
           >
-            <Smartphone className="w-3.5 h-3.5 text-slate-500" />
+            <Smartphone className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
             <span className="hidden sm:inline">iPhone Tap</span>
           </button>
 
           <button
             onClick={handleExportMonth}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-2xs"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-amber-800/25 dark:border-amber-700/30 bg-[#faf6ed] dark:bg-[#1a1510] text-stone-800 dark:text-amber-200 hover:bg-amber-200/40 dark:hover:bg-stone-800 transition-colors shadow-2xs"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Export</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+            <span>Treasury Export</span>
           </button>
 
           <Link
             href="/add"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-black shadow-xs active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-serif font-black bg-amber-800 hover:bg-amber-700 text-amber-50 shadow-md shadow-amber-950/25 border border-amber-600/50 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add Transaction</span>
+            <span>+ Record Voucher</span>
           </Link>
         </div>
       </div>
@@ -265,7 +267,7 @@ export default function DashboardPage() {
 
       {/* 3. TAB CONTENTS */}
 
-      {/* OVERVIEW TAB - SUBTLE & SIMPLE */}
+      {/* OVERVIEW TAB - 1940s VINTAGE CHRONICLE */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
           {/* MOBILE MINIMAL VIEW (Phone screens) */}
@@ -285,77 +287,86 @@ export default function DashboardPage() {
 
           {/* TABLET / DESKTOP CLEAN DASHBOARD */}
           <div className="hidden md:block space-y-6">
-            {/* Subtle 4-Card KPI Strip */}
+            {/* 4 COLORFUL 1940s BANKNOTE CARDS */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Card 1: Spent */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Total Spent</span>
-                  <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-                    {summary.budgetUtilization.toFixed(0)}% of limit
+              {/* Card 1: 1940s Burgundy Banknote - Disbursed Ledger */}
+              <div className="bg-gradient-to-br from-rose-100/90 via-rose-50 to-white dark:from-stone-900 dark:via-rose-950/40 dark:to-stone-950 rounded-2xl p-4 sm:p-5 border-2 border-rose-700/50 dark:border-rose-600/40 shadow-sm flex flex-col justify-between space-y-2">
+                <div className="flex items-center justify-between text-xs font-serif">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-rose-950 dark:text-rose-300">
+                    📜 Disbursed Funds
+                  </span>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-rose-200 text-rose-950 border border-rose-300">
+                    {summary.budgetUtilization.toFixed(0)}% LIMIT
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <div className="text-xl sm:text-2xl font-mono font-black tracking-tight text-stone-950 dark:text-amber-50">
                   {formatINR(summary.totalSpent)}
                 </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-rose-200/60 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
                   <div
                     style={{ width: `${Math.min(100, summary.budgetUtilization)}%` }}
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      summary.budgetUtilization > 90 ? 'bg-rose-500' : 'bg-slate-900 dark:bg-slate-100'
-                    }`}
+                    className="h-full rounded-full bg-[#7a2828] transition-all duration-500"
                   />
                 </div>
+                <div className="text-[10px] font-serif italic text-stone-600 dark:text-stone-400">
+                  Outflow in current cycle
+                </div>
               </div>
 
-              {/* Card 2: Remaining & Allowance */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Remaining Budget</span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    {daysRemaining}d left
+              {/* Card 2: 1940s Banknote Mint Green - Treasury Allowance */}
+              <div className="bg-gradient-to-br from-emerald-100/90 via-emerald-50 to-white dark:from-stone-900 dark:via-emerald-950/40 dark:to-stone-950 rounded-2xl p-4 sm:p-5 border-2 border-emerald-600/60 dark:border-emerald-500/50 shadow-sm flex flex-col justify-between space-y-2">
+                <div className="flex items-center justify-between text-xs font-serif">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-300">
+                    💵 Treasury Allowance
+                  </span>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-200 text-emerald-950 border border-emerald-300">
+                    {daysRemaining}D LEFT
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <div className="text-xl sm:text-2xl font-mono font-black tracking-tight text-stone-950 dark:text-amber-50">
                   {formatINR(summary.remainingBudget)}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  Safe: <strong className="text-slate-900 dark:text-slate-200 font-semibold">{formatINR(safeDailyAllowance)}</strong>/day
+                <div className="text-xs font-serif text-stone-600 dark:text-stone-400">
+                  Safe: <strong className="font-mono font-bold text-stone-900 dark:text-stone-200">{formatINR(safeDailyAllowance)}</strong>/day
                 </div>
               </div>
 
-              {/* Card 3: Inflow */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Monthly Inflow</span>
+              {/* Card 3: 1940s Imperial Gold Banknote - Gross Inflow */}
+              <div className="bg-gradient-to-br from-amber-100/90 via-amber-50 to-white dark:from-stone-900 dark:via-amber-950/40 dark:to-stone-950 rounded-2xl p-4 sm:p-5 border-2 border-amber-600/60 dark:border-amber-500/50 shadow-sm flex flex-col justify-between space-y-2">
+                <div className="flex items-center justify-between text-xs font-serif">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-950 dark:text-amber-300">
+                    ⚜️ Monthly Inflow
+                  </span>
                   <button
                     onClick={() => setShowSalaryModal(true)}
-                    className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline font-semibold"
+                    className="text-[10px] font-serif font-bold text-amber-900 dark:text-amber-300 hover:underline"
                   >
-                    Adjust
+                    Adjust Plan
                   </button>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <div className="text-xl sm:text-2xl font-mono font-black tracking-tight text-amber-950 dark:text-amber-100">
                   {formatINR(summary.income)}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  {monthExpenses.length} entries registered
+                <div className="text-xs font-serif italic text-stone-600 dark:text-stone-400">
+                  {monthExpenses.length} vouchers registered
                 </div>
               </div>
 
-              {/* Card 4: Net Surplus / Savings */}
-              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Net Savings</span>
-                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    {summary.savingsRate.toFixed(0)}% saved
+              {/* Card 4: 1940s Sovereign Hunter Green Banknote - Net Surplus */}
+              <div className="bg-gradient-to-br from-teal-100/90 via-teal-50 to-white dark:from-stone-900 dark:via-teal-950/40 dark:to-stone-950 rounded-2xl p-4 sm:p-5 border-2 border-teal-600/60 dark:border-teal-500/50 shadow-sm flex flex-col justify-between space-y-2">
+                <div className="flex items-center justify-between text-xs font-serif">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-teal-950 dark:text-teal-300">
+                    🏛️ Retained Surplus
+                  </span>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-teal-200 text-teal-950 border border-teal-300">
+                    {summary.savingsRate.toFixed(0)}% SAVED
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                <div className="text-xl sm:text-2xl font-mono font-black tracking-tight text-[#24543d] dark:text-emerald-400">
                   {formatINR(summary.netCashflow)}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  Free operating surplus
+                <div className="text-xs font-serif italic text-stone-600 dark:text-stone-400">
+                  Sovereign operating surplus
                 </div>
               </div>
             </div>

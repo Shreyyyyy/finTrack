@@ -17,7 +17,7 @@ export function MobileBottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-950/80 backdrop-blur-xl border-t border-sky-100 dark:border-slate-800/80 pb-safe shadow-lg">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#faf6ed]/95 dark:bg-[#16120e]/90 backdrop-blur-xl border-t-2 border-double border-amber-800/30 dark:border-amber-700/30 pb-safe shadow-lg">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -28,10 +28,10 @@ export function MobileBottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="relative -top-4 flex items-center justify-center w-14 h-14 rounded-full bg-sky-600 dark:bg-emerald-600 text-white shadow-lg shadow-sky-600/30 dark:shadow-emerald-600/30 hover:bg-sky-500 active:scale-95 transition-all"
+                className="relative -top-3.5 flex items-center justify-center w-13 h-13 rounded-2xl bg-gradient-to-br from-amber-700 via-amber-800 to-amber-900 text-amber-100 shadow-lg shadow-amber-950/30 hover:brightness-110 active:scale-95 transition-all border-2 border-amber-500/60"
                 aria-label="Add Expense"
               >
-                <Plus className="w-7 h-7 stroke-[2.5]" />
+                <Plus className="w-6 h-6 stroke-[3]" />
               </Link>
             );
           }
@@ -42,12 +42,12 @@ export function MobileBottomNav() {
               href={item.href}
               className={`flex flex-col items-center justify-center w-16 h-full py-1 text-xs transition-colors ${
                 isActive
-                  ? 'text-sky-600 dark:text-emerald-400 font-black'
-                  : 'text-slate-700 dark:text-slate-400 hover:text-black dark:hover:text-slate-200 font-semibold'
+                  ? 'text-amber-950 dark:text-amber-300 font-serif font-black'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-amber-200 font-serif font-semibold'
               }`}
             >
-              <Icon className={`w-5 h-5 mb-1 ${isActive ? 'stroke-[2.5]' : 'stroke-[1.8]'}`} />
-              <span className="text-[11px] tracking-tight">{item.label}</span>
+              <Icon className={`w-4.5 h-4.5 mb-1 ${isActive ? 'stroke-[2.5] text-amber-800 dark:text-amber-400' : 'stroke-[1.8]'}`} />
+              <span className="text-[10px] tracking-tight">{item.label}</span>
             </Link>
           );
         })}

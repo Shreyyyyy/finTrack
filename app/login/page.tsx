@@ -128,29 +128,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center px-4 py-8 sm:py-12">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-9 border border-sky-100 dark:border-slate-800 shadow-2xl space-y-6">
-        {/* Brand Header */}
+    <div className="min-h-screen w-full flex items-center justify-center px-4 py-8 sm:py-12 bg-[#fbf7ed] dark:bg-[#14100c] text-stone-950 dark:text-amber-100 selection:bg-amber-600/25">
+      <div className="w-full max-w-md bg-[#faf6ed] dark:bg-[#1a1510] rounded-3xl p-6 sm:p-9 border-2 border-double border-amber-800/40 dark:border-amber-700/50 shadow-2xl space-y-6">
+        {/* 1940s Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 via-sky-500 to-blue-400 text-white font-black text-2xl shadow-lg shadow-sky-600/25 mb-1 ring-4 ring-sky-500/10">
-            {isAdminMode ? <ShieldAlert className="w-7 h-7" /> : '₹'}
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-700 via-amber-800 to-amber-900 text-amber-100 font-serif font-black text-2xl shadow-lg shadow-amber-950/30 mb-1 border-2 border-amber-500/50">
+            {isAdminMode ? <ShieldAlert className="w-7 h-7 text-amber-300" /> : '🏛️'}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white">
+          <div className="text-[10px] font-serif font-black uppercase tracking-widest text-amber-900 dark:text-amber-400">
+            ★ CENTRAL TREASURY LEDGER · EST. 1940 ★
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-serif font-black tracking-tight text-stone-950 dark:text-amber-50">
             {isAdminMode
-              ? 'Database Admin Sign In'
+              ? 'Treasury Master Console'
               : isSignUp
-              ? 'Create your Account'
+              ? 'Open Sovereign Ledger'
               : 'Sign in to finTrack'}
           </h1>
-          <p className="text-xs text-slate-700 dark:text-slate-400 max-w-xs mx-auto leading-relaxed font-semibold">
+          <p className="text-xs font-serif italic text-stone-600 dark:text-stone-400 max-w-xs mx-auto leading-relaxed">
             {isAdminMode
-              ? 'Restricted master database console access for system administration.'
-              : 'Personal financial tracking organized cleanly in your database. Zero AI, $0/month.'}
+              ? 'Restricted sovereign database console access for system administration.'
+              : 'Sovereign financial accounting and vault portfolios. Series 1940.'}
           </p>
         </div>
 
-        {/* Mode Switcher Tabs */}
-        <div className="flex p-1 rounded-2xl bg-sky-100/70 dark:bg-slate-800 text-xs font-bold">
+        {/* 1940s Mode Switcher Tabs */}
+        <div className="flex p-1 rounded-2xl bg-amber-100/60 dark:bg-stone-900 border border-amber-800/20 dark:border-amber-700/30 text-xs font-serif font-bold">
           <button
             type="button"
             onClick={() => {
@@ -161,11 +164,11 @@ export default function LoginPage() {
             }}
             className={`flex-1 py-2 rounded-xl transition-all ${
               !isAdminMode
-                ? 'bg-white dark:bg-slate-900 text-black dark:text-white shadow-sm'
-                : 'text-slate-700 hover:text-black dark:hover:text-slate-200'
+                ? 'bg-amber-800 text-amber-50 shadow-sm border border-amber-600/50'
+                : 'text-stone-700 hover:text-stone-950 dark:hover:text-amber-100'
             }`}
           >
-            Member Login
+            Member Ledger
           </button>
           <button
             type="button"
@@ -178,12 +181,12 @@ export default function LoginPage() {
             }}
             className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
               isAdminMode
-                ? 'bg-sky-600 text-white shadow-sm shadow-sky-600/30'
-                : 'text-slate-700 hover:text-black dark:hover:text-slate-200'
+                ? 'bg-amber-800 text-amber-50 shadow-sm border border-amber-600/50'
+                : 'text-stone-700 hover:text-stone-950 dark:hover:text-amber-100'
             }`}
           >
             <ShieldAlert className="w-3.5 h-3.5" />
-            <span>DB Admin</span>
+            <span>Master Admin</span>
           </button>
         </div>
 

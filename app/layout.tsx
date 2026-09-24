@@ -27,15 +27,15 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#090d16' },
+    { media: '(prefers-color-scheme: light)', color: '#fbf7ed' },
+    { media: '(prefers-color-scheme: dark)', color: '#14100c' },
   ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
-      <body className="min-h-full flex bg-[#f0f7ff] dark:bg-[#090d16] text-black dark:text-slate-100 antialiased selection:bg-sky-500/20">
+      <body className="min-h-full flex bg-[#fbf7ed] dark:bg-[#14100c] text-[#1c1713] dark:text-[#f6eedb] antialiased selection:bg-amber-600/25">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <ToastProvider>
