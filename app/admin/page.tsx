@@ -170,9 +170,9 @@ export default function DbAdminPage() {
 
   const handleExportMasterDb = async () => {
     try {
-      showToast('Generating Master DB Workbook...', 'info');
+      const now = new Date();
       const [monthlySetting, goals] = await Promise.all([
-        getMonthlySetting(9, 2026),
+        getMonthlySetting(now.getMonth() + 1, now.getFullYear()),
         getGoals(),
       ]);
 

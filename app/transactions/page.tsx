@@ -45,6 +45,7 @@ export default function TransactionsPage() {
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<'all' | 'expense' | 'income' | 'recurring'>('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest');
@@ -86,6 +87,11 @@ export default function TransactionsPage() {
   // Filter & Sort Logic
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
+      // Transaction Type Filter
+      if (selectedType === 'income' && e.type !== 'income') return false;
+      if (selectedType === 'expense' && e.type === 'income') return false;
+      if (selectedType === 'recurring' && !e.is_recurring) return false;
+
       // Search
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
@@ -117,11 +123,21 @@ export default function TransactionsPage() {
       if (sortBy === 'lowest') return Number(a.amount) - Number(b.amount);
       return 0;
     });
-  }, [expenses, searchQuery, selectedCategory, selectedPaymentMethod, startDate, endDate, sortBy]);
+  }, [expenses, selectedType, searchQuery, selectedCategory, selectedPaymentMethod, startDate, endDate, sortBy]);
 
-  // Total filtered amount
-  const totalFilteredAmount = useMemo(() => {
-    return filteredExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  // Totals Breakdown
+  const { totalInflow, totalOutflow, netTotal } = useMemo(() => {
+    let inflow = 0;
+    let outflow = 0;
+    filteredExpenses.forEach((e) => {
+      if (e.type === 'income') inflow += Number(e.amount);
+      else outflow += Number(e.amount);
+    });
+    return {
+      totalInflow: inflow,
+      totalOutflow: outflow,
+      netTotal: inflow - outflow,
+    };
   }, [filteredExpenses]);
 
   // Group by Date for display
@@ -139,9 +155,9 @@ export default function TransactionsPage() {
       setDeletingId(id);
       try {
         await deleteExpense(id);
-        showToast('Expense deleted ✓', 'info');
+        showToast('Transaction deleted ✓', 'info');
       } catch {
-        showToast('Failed to delete expense', 'error');
+        showToast('Failed to delete transaction', 'error');
       } finally {
         setDeletingId(null);
       }
@@ -150,8 +166,9 @@ export default function TransactionsPage() {
 
   const handleExportFiltered = async () => {
     try {
+      const now = new Date();
       const [setting, goals] = await Promise.all([
-        getMonthlySetting(9, 2026),
+        getMonthlySetting(now.getMonth() + 1, now.getFullYear()),
         getGoals(),
       ]);
       exportToExcel({
@@ -171,6 +188,7 @@ export default function TransactionsPage() {
 
   const clearFilters = () => {
     setSearchQuery('');
+    setSelectedType('all');
     setSelectedCategory('all');
     setSelectedPaymentMethod('all');
     setStartDate('');
@@ -179,25 +197,33 @@ export default function TransactionsPage() {
   };
 
   const hasActiveFilters =
-    searchQuery || selectedCategory !== 'all' || selectedPaymentMethod !== 'all' || startDate || endDate;
+    searchQuery || selectedType !== 'all' || selectedCategory !== 'all' || selectedPaymentMethod !== 'all' || startDate || endDate;
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-5 md:py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
             Transactions
           </h1>
-          <p className="text-xs text-slate-700 dark:text-slate-400 mt-0.5">
-            {filteredExpenses.length} transactions · Total: <span className="font-bold text-black dark:text-white">{formatINR(totalFilteredAmount)}</span>
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-400 mt-1">
+            <span>{filteredExpenses.length} transactions</span>
+            <span>·</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold">In: +{formatINR(totalInflow)}</span>
+            <span>·</span>
+            <span className="text-rose-600 dark:text-rose-400 font-bold">Out: {formatINR(totalOutflow)}</span>
+            <span>·</span>
+            <span className={`font-black ${netTotal >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+              Net: {formatINR(netTotal)}
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportFiltered}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-sky-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-black dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-800 shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-sky-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-800 shadow-sm"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Export</span>
@@ -208,9 +234,31 @@ export default function TransactionsPage() {
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/20 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add Expense</span>
+            <span>Add Transaction</span>
           </Link>
         </div>
+      </div>
+
+      {/* Type Filter Pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+        {[
+          { id: 'all', label: 'All Activity' },
+          { id: 'expense', label: 'Expenses (Outflow)' },
+          { id: 'income', label: 'Income (Inflow)' },
+          { id: 'recurring', label: 'Subscriptions & Recurring' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setSelectedType(tab.id as any)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              selectedType === tab.id
+                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm'
+                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Search & Filter Toolbar */}
@@ -353,70 +401,93 @@ export default function TransactionsPage() {
 
                 {/* Items in this date */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl border border-sky-100 dark:border-slate-800 divide-y divide-sky-100/80 dark:divide-slate-800/80 overflow-hidden shadow-sm">
-                  {items.map((exp) => (
-                    <div
-                      key={exp.id}
-                      className="flex items-center justify-between p-3.5 hover:bg-sky-50/60 dark:hover:bg-slate-850 transition-colors group"
-                    >
-                      {/* Details */}
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
-                          style={{
-                            backgroundColor: exp.category?.color
-                              ? `${exp.category.color}20`
-                              : '#e0f2fe',
-                          }}
-                        >
-                          {exp.category?.icon || '💰'}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-bold text-sm text-black dark:text-white truncate">
-                            {exp.merchant || exp.category?.name || 'Expense'}
+                  {items.map((exp) => {
+                    const isIncome = exp.type === 'income';
+                    return (
+                      <div
+                        key={exp.id}
+                        className="flex items-center justify-between p-3.5 hover:bg-sky-50/60 dark:hover:bg-slate-850 transition-colors group"
+                      >
+                        {/* Details */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${
+                              isIncome ? 'border border-emerald-500/30' : ''
+                            }`}
+                            style={{
+                              backgroundColor: exp.category?.color
+                                ? `${exp.category.color}20`
+                                : isIncome
+                                ? '#ecfdf5'
+                                : '#e0f2fe',
+                            }}
+                          >
+                            {exp.category?.icon || (isIncome ? '💵' : '💰')}
                           </div>
-                          <div className="text-xs text-slate-700 dark:text-slate-400 truncate flex items-center gap-1.5 font-medium">
-                            <span>{exp.category?.name || 'Other'}</span>
-                            <span>·</span>
-                            <span className="flex items-center gap-1">
-                              <CreditCard className="w-3 h-3" />
-                              {exp.payment_method?.name || 'UPI'}
-                            </span>
-                            {exp.note && (
-                              <>
-                                <span>·</span>
-                                <span className="truncate max-w-[160px] text-slate-500">{exp.note}</span>
-                              </>
-                            )}
+                          <div className="min-w-0">
+                            <div className="font-bold text-sm text-slate-900 dark:text-white truncate flex items-center gap-2">
+                              <span>{exp.merchant || exp.category?.name || (isIncome ? 'Income Inflow' : 'Expense')}</span>
+                              {isIncome && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                  Inflow
+                                </span>
+                              )}
+                              {exp.is_recurring && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                  🔁 Recurring
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-600 dark:text-slate-400 truncate flex items-center gap-1.5 font-medium">
+                              <span>{exp.category?.name || 'Other'}</span>
+                              <span>·</span>
+                              <span className="flex items-center gap-1">
+                                <CreditCard className="w-3 h-3" />
+                                {exp.payment_method?.name || 'Account'}
+                              </span>
+                              {exp.note && (
+                                <>
+                                  <span>·</span>
+                                  <span className="truncate max-w-[160px] text-slate-500">{exp.note}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Amount & Actions */}
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`font-black text-sm ${
+                              isIncome
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-slate-900 dark:text-white'
+                            }`}
+                          >
+                            {isIncome ? `+${formatINR(exp.amount)}` : formatINR(exp.amount)}
+                          </span>
+
+                          <div className="flex items-center gap-1 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => setEditingExpense(exp)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-black dark:hover:text-white hover:bg-sky-50 dark:hover:bg-slate-800"
+                              title="Edit"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(exp.id)}
+                              disabled={deletingId === exp.id}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </div>
                       </div>
-
-                      {/* Right Amount & Actions */}
-                      <div className="flex items-center gap-3">
-                        <span className="font-black text-sm text-black dark:text-white">
-                          {formatINR(exp.amount)}
-                        </span>
-
-                        <div className="flex items-center gap-1 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => setEditingExpense(exp)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-black dark:hover:text-white hover:bg-sky-50 dark:hover:bg-slate-800"
-                            title="Edit"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(exp.id)}
-                            disabled={deletingId === exp.id}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );

@@ -24,11 +24,11 @@ export default function AddExpensePage() {
       </div>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Add Expense
+        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          Add Transaction
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Record your spending instantly.
+          Record expense spending or income inflow in under 5 seconds.
         </p>
       </div>
 

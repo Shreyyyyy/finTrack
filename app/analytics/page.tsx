@@ -11,6 +11,10 @@ import {
   Target,
   FileSpreadsheet,
   Layers,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Repeat,
+  Sparkles,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -23,8 +27,6 @@ import {
   YAxis,
   Tooltip,
   Legend,
-  AreaChart,
-  Area,
 } from 'recharts';
 import { Expense, Category, PaymentMethod, MonthlySetting } from '@/types';
 import { getExpenses, getCategories, getPaymentMethods, getMonthlySetting } from '@/lib/data/store';
@@ -41,6 +43,10 @@ const PERIODS = ['Today', 'This Week', 'This Month', 'Last Month', 'This Year', 
 type Period = (typeof PERIODS)[number];
 
 export default function AnalyticsPage() {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('This Month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -49,9 +55,9 @@ export default function AnalyticsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [monthlySetting, setMonthlySetting] = useState<MonthlySetting>({
-    id: 'ms-9-2026',
-    month: 9,
-    year: 2026,
+    id: `ms-${currentMonth}-${currentYear}`,
+    month: currentMonth,
+    year: currentYear,
     income: 0,
     monthly_budget: 0,
     savings_target: 0,
@@ -63,7 +69,7 @@ export default function AnalyticsPage() {
         getExpenses(),
         getCategories(),
         getPaymentMethods(),
-        getMonthlySetting(9, 2026),
+        getMonthlySetting(currentMonth, currentYear),
       ]);
       setExpenses(exp);
       setCategories(cat);
@@ -71,12 +77,14 @@ export default function AnalyticsPage() {
       setMonthlySetting(setting);
     }
     load();
-  }, []);
+  }, [currentMonth, currentYear]);
 
-  // Filter expenses according to period
-  const filteredExpenses = useMemo(() => {
-    const now = new Date();
+  // Filter items according to period
+  const filteredItems = useMemo(() => {
     const todayStr = now.toISOString().split('T')[0];
+
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
     return expenses.filter((e) => {
       if (!e.expense_date) return false;
@@ -96,17 +104,17 @@ export default function AnalyticsPage() {
 
       if (selectedPeriod === 'This Month') {
         const parts = e.expense_date.split('-');
-        return parseInt(parts[0], 10) === 2026 && parseInt(parts[1], 10) === 9;
+        return parseInt(parts[0], 10) === currentYear && parseInt(parts[1], 10) === currentMonth;
       }
 
       if (selectedPeriod === 'Last Month') {
         const parts = e.expense_date.split('-');
-        return parseInt(parts[0], 10) === 2026 && parseInt(parts[1], 10) === 8;
+        return parseInt(parts[0], 10) === prevYear && parseInt(parts[1], 10) === prevMonth;
       }
 
       if (selectedPeriod === 'This Year') {
         const parts = e.expense_date.split('-');
-        return parseInt(parts[0], 10) === 2026;
+        return parseInt(parts[0], 10) === currentYear;
       }
 
       if (selectedPeriod === 'Custom Range') {
@@ -117,25 +125,41 @@ export default function AnalyticsPage() {
 
       return true;
     });
-  }, [expenses, selectedPeriod, customStart, customEnd]);
+  }, [expenses, selectedPeriod, customStart, customEnd, currentMonth, currentYear, now]);
 
-  // Aggregate Metrics
-  const totalSpending = useMemo(
-    () => filteredExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
-    [filteredExpenses]
+  // Separate Expenses and Incomes
+  const periodExpenses = useMemo(() => filteredItems.filter((e) => e.type !== 'income'), [filteredItems]);
+  const periodIncomes = useMemo(() => filteredItems.filter((e) => e.type === 'income'), [filteredItems]);
+
+  // Cashflow Metrics
+  const totalOutflow = useMemo(
+    () => periodExpenses.reduce((sum, e) => sum + Number(e.amount), 0),
+    [periodExpenses]
   );
 
-  const txCount = filteredExpenses.length;
+  const totalInflow = useMemo(() => {
+    const recordedIncome = periodIncomes.reduce((sum, e) => sum + Number(e.amount), 0);
+    // If user hasn't explicitly logged income transactions this month but has monthlySetting.income, reflect that
+    if (recordedIncome === 0 && selectedPeriod === 'This Month') {
+      return monthlySetting.income;
+    }
+    return recordedIncome;
+  }, [periodIncomes, selectedPeriod, monthlySetting.income]);
 
-  // Category Distribution for Donut Chart
+  const netCashflow = totalInflow - totalOutflow;
+  const savingsRate = totalInflow > 0 ? (netCashflow / totalInflow) * 100 : 0;
+  const txCount = filteredItems.length;
+
+  // Category Distribution for Donut Chart (Expenses only)
   const categoryData = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredExpenses.forEach((e) => {
+    periodExpenses.forEach((e) => {
       const catId = e.category_id || 'other';
       map[catId] = (map[catId] || 0) + Number(e.amount);
     });
 
     return categories
+      .filter((c) => c.type !== 'income')
       .map((cat) => ({
         name: cat.name,
         icon: cat.icon,
@@ -144,12 +168,12 @@ export default function AnalyticsPage() {
       }))
       .filter((c) => c.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [filteredExpenses, categories]);
+  }, [periodExpenses, categories]);
 
   // Payment Method Distribution for Bar Chart
   const paymentData = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredExpenses.forEach((e) => {
+    periodExpenses.forEach((e) => {
       const pmId = e.payment_method_id || 'other';
       map[pmId] = (map[pmId] || 0) + Number(e.amount);
     });
@@ -160,56 +184,36 @@ export default function AnalyticsPage() {
         amount: map[pm.id] || 0,
       }))
       .filter((p) => p.amount > 0);
-  }, [filteredExpenses, paymentMethods]);
+  }, [periodExpenses, paymentMethods]);
 
-  // Month-over-Month Comparison (August 2026 vs September 2026)
-  const monthlyComparison = useMemo(() => {
-    const augExpenses = expenses.filter((e) => {
-      const parts = e.expense_date.split('-');
-      return parseInt(parts[0], 10) === 2026 && parseInt(parts[1], 10) === 8;
+  // 50/30/20 Needs vs Wants breakdown for Period
+  const { needsTotal, wantsTotal, recurringTotal } = useMemo(() => {
+    let needs = 0;
+    let wants = 0;
+    let recurring = 0;
+    const catMap = new Map(categories.map((c) => [c.id, c]));
+
+    periodExpenses.forEach((e) => {
+      const amt = Number(e.amount) || 0;
+      const cat = catMap.get(e.category_id || '');
+      if (cat?.group === 'needs') needs += amt;
+      else wants += amt;
+
+      if (e.is_recurring || cat?.name.toLowerCase().includes('subscription')) {
+        recurring += amt;
+      }
     });
-    const sepExpenses = expenses.filter((e) => {
-      const parts = e.expense_date.split('-');
-      return parseInt(parts[0], 10) === 2026 && parseInt(parts[1], 10) === 9;
-    });
 
-    const augTotal = augExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-    const sepTotal = sepExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-
-    const overallDelta = calculateDelta(sepTotal, augTotal);
-
-    // Category breakdown comparison
-    const catComp = categories.map((cat) => {
-      const augCat = augExpenses
-        .filter((e) => e.category_id === cat.id)
-        .reduce((sum, e) => sum + Number(e.amount), 0);
-      const sepCat = sepExpenses
-        .filter((e) => e.category_id === cat.id)
-        .reduce((sum, e) => sum + Number(e.amount), 0);
-
-      const delta = calculateDelta(sepCat, augCat);
-      return {
-        category: cat,
-        augAmount: augCat,
-        sepAmount: sepCat,
-        delta,
-      };
-    }).filter((c) => c.augAmount > 0 || c.sepAmount > 0);
-
-    return {
-      augTotal,
-      sepTotal,
-      overallDelta,
-      categories: catComp,
-    };
-  }, [expenses, categories]);
+    return { needsTotal: needs, wantsTotal: wants, recurringTotal: recurring };
+  }, [periodExpenses, categories]);
 
   // Deterministic Mathematical Forecasting (Current Month)
   const forecasting = useMemo(() => {
-    const { daysElapsed, totalDays } = getMonthDaysInfo(9, 2026);
+    const { daysElapsed, totalDays } = getMonthDaysInfo(currentMonth, currentYear);
     const currentMonthExpenses = expenses.filter((e) => {
+      if (!e.expense_date || e.type === 'income') return false;
       const parts = e.expense_date.split('-');
-      return parseInt(parts[0], 10) === 2026 && parseInt(parts[1], 10) === 9;
+      return parseInt(parts[0], 10) === currentYear && parseInt(parts[1], 10) === currentMonth;
     });
     const currentSpent = currentMonthExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
     const avgDaily = daysElapsed > 0 ? currentSpent / daysElapsed : 0;
@@ -226,23 +230,58 @@ export default function AnalyticsPage() {
       monthlyBudget,
       projectedDiff,
     };
-  }, [expenses, monthlySetting]);
+  }, [expenses, monthlySetting, currentMonth, currentYear]);
+
+  // Month-over-Month Comparison
+  const monthlyComparison = useMemo(() => {
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+    const prevMonthExpenses = expenses.filter((e) => {
+      if (!e.expense_date || e.type === 'income') return false;
+      const parts = e.expense_date.split('-');
+      return parseInt(parts[0], 10) === prevYear && parseInt(parts[1], 10) === prevMonth;
+    });
+    const currMonthExpenses = expenses.filter((e) => {
+      if (!e.expense_date || e.type === 'income') return false;
+      const parts = e.expense_date.split('-');
+      return parseInt(parts[0], 10) === currentYear && parseInt(parts[1], 10) === currentMonth;
+    });
+
+    const prevTotal = prevMonthExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+    const currTotal = currMonthExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
+    const overallDelta = calculateDelta(currTotal, prevTotal);
+
+    return {
+      prevMonthName: MONTH_NAMES[prevMonth - 1],
+      currMonthName: MONTH_NAMES[currentMonth - 1],
+      prevTotal,
+      currTotal,
+      overallDelta,
+    };
+  }, [expenses, currentMonth, currentYear]);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-5 md:py-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-black dark:text-white">
-            Spending Analytics
-          </h1>
-          <p className="text-xs text-slate-700 dark:text-slate-400 font-semibold mt-0.5">
-            Deterministic insights & mathematical breakdowns (Zero AI).
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              Financial Analytics
+            </h1>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              Deterministic (Zero AI)
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+            Cashflow inflows vs outflows, 50/30/20 proportions, and mathematical burn rate.
           </p>
         </div>
 
         {/* Period Selector Tabs */}
-        <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800">
+        <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
           {PERIODS.map((period) => (
             <button
               key={period}
@@ -250,7 +289,7 @@ export default function AnalyticsPage() {
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 selectedPeriod === period
                   ? 'bg-sky-600 text-white shadow-sm'
-                  : 'text-slate-700 dark:text-slate-400 hover:text-black dark:hover:text-white'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {period}
@@ -261,74 +300,123 @@ export default function AnalyticsPage() {
 
       {/* Custom Range Inputs */}
       {selectedPeriod === 'Custom Range' && (
-        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-sky-100 dark:border-slate-800">
+        <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
           <div>
-            <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">Start Date</label>
+            <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">
+              Start Date
+            </label>
             <input
               type="date"
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 text-black dark:text-white font-medium"
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium"
             />
           </div>
           <div>
-            <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">End Date</label>
+            <label className="block text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400 mb-1">
+              End Date
+            </label>
             <input
               type="date"
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-sky-50/70 dark:bg-slate-800 border border-sky-100 dark:border-slate-700 text-black dark:text-white font-medium"
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium"
             />
           </div>
         </div>
       )}
 
-      {/* Top Stat Cards */}
+      {/* Top Stat Cards: Cashflow & Financial Pulse */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
-          label="Total Period Spend"
-          value={formatINR(totalSpending)}
-          subtext={`${selectedPeriod}`}
-          icon={<TrendingDown className="w-4 h-4 text-emerald-500" />}
+          label="Total Inflows (Income)"
+          value={formatINR(totalInflow)}
+          subtext={`${selectedPeriod} Inflow`}
+          icon={<ArrowUpRight className="w-4 h-4 text-emerald-500" />}
+          variant="emerald"
         />
         <StatCard
-          label="Transactions"
-          value={String(txCount)}
-          subtext="Total recorded entries"
-          icon={<CreditCard className="w-4 h-4 text-sky-500" />}
+          label="Total Outflows (Spend)"
+          value={formatINR(totalOutflow)}
+          subtext={`${selectedPeriod} Spending`}
+          icon={<ArrowDownLeft className="w-4 h-4 text-rose-500" />}
         />
         <StatCard
-          label="Daily Average (Sep)"
-          value={formatINR(forecasting.avgDaily)}
-          subtext="Based on 9 days elapsed"
-          icon={<BarChart3 className="w-4 h-4 text-amber-500" />}
+          label="Net Cashflow"
+          value={formatINR(netCashflow)}
+          subtext={`Savings Rate: ${formatPercentage(savingsRate)}`}
+          icon={<Target className="w-4 h-4 text-sky-500" />}
+          variant={netCashflow >= 0 ? 'emerald' : 'rose'}
         />
         <StatCard
-          label="Projected Month End"
-          value={formatINR(forecasting.projected)}
-          subtext={
-            forecasting.projectedDiff > 0
-              ? `${formatINR(forecasting.projectedDiff)} over limit`
-              : `${formatINR(Math.abs(forecasting.projectedDiff))} under limit`
-          }
-          icon={<Target className="w-4 h-4 text-teal-500" />}
-          variant={forecasting.projectedDiff > 0 ? 'rose' : 'emerald'}
+          label="Recurring Fixed Burn"
+          value={formatINR(recurringTotal)}
+          subtext="Subscriptions & commitments"
+          icon={<Repeat className="w-4 h-4 text-amber-500" />}
         />
+      </div>
+
+      {/* 50/30/20 & Burn Rate Split */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Needs Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-400">
+            <span>Essential Needs</span>
+            <span className="text-sky-600 dark:text-sky-400">Target ~50%</span>
+          </div>
+          <div className="text-2xl font-black text-slate-900 dark:text-white">
+            {formatINR(needsTotal)}
+          </div>
+          <p className="text-[11px] text-slate-500">
+            {totalOutflow > 0 ? ((needsTotal / totalOutflow) * 100).toFixed(1) : 0}% of your total spending.
+          </p>
+        </div>
+
+        {/* Wants Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-400">
+            <span>Lifestyle Wants</span>
+            <span className="text-pink-600 dark:text-pink-400">Target ~30%</span>
+          </div>
+          <div className="text-2xl font-black text-slate-900 dark:text-white">
+            {formatINR(wantsTotal)}
+          </div>
+          <p className="text-[11px] text-slate-500">
+            {totalOutflow > 0 ? ((wantsTotal / totalOutflow) * 100).toFixed(1) : 0}% of your total spending.
+          </p>
+        </div>
+
+        {/* Daily Burn Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-400">
+            <span>Daily Burn Rate</span>
+            <span className="text-emerald-600 dark:text-emerald-400">{forecasting.daysElapsed}d passed</span>
+          </div>
+          <div className="text-2xl font-black text-slate-900 dark:text-white">
+            {formatINR(forecasting.avgDaily)}
+            <span className="text-xs text-slate-500 font-normal"> / day</span>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Projected month-end spend: {formatINR(forecasting.projected)}
+          </p>
+        </div>
       </div>
 
       {/* Charts Section: Donut & Payment Methods */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Breakdown Donut */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-300">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300">
               Spending by Category
             </h3>
-            <span className="text-xs text-slate-700 dark:text-slate-400 font-semibold">{categoryData.length} Categories</span>
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold">
+              {categoryData.length} Categories Active
+            </span>
           </div>
 
           {categoryData.length === 0 ? (
-            <p className="text-xs text-slate-400 py-12 text-center">No data for this period.</p>
+            <p className="text-xs text-slate-400 py-12 text-center">No expense activity in this period.</p>
           ) : (
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -359,7 +447,9 @@ export default function AnalyticsPage() {
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value) => <span className="text-xs font-bold text-slate-800 dark:text-slate-300">{value}</span>}
+                    formatter={(value) => (
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-300">{value}</span>
+                    )}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -368,26 +458,33 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Payment Methods Bar Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-300">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300">
               Spending by Payment Method
             </h3>
-            <span className="text-xs text-slate-700 dark:text-slate-400 font-semibold">{paymentData.length} Methods</span>
+            <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold">
+              {paymentData.length} Methods
+            </span>
           </div>
 
           {paymentData.length === 0 ? (
-            <p className="text-xs text-slate-400 py-12 text-center">No data for this period.</p>
+            <p className="text-xs text-slate-400 py-12 text-center">No payment activity in this period.</p>
           ) : (
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={paymentData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#000000', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fontSize: 10, fill: '#000000', fontWeight: 600 }}
-                    tickFormatter={(val) => `₹${val / 1000}k`}
+                    tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }}
+                    tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
                   />
                   <Tooltip
                     formatter={(val) => [formatINR(Number(val)), 'Spent']}
@@ -398,7 +495,7 @@ export default function AnalyticsPage() {
                       fontSize: '12px',
                     }}
                   />
-                  <Bar dataKey="amount" fill="#0284c7" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                  <Bar dataKey="amount" fill="#0284c7" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -406,107 +503,51 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Month-over-Month Comparison Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-sky-100 dark:border-slate-800 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-black uppercase tracking-wider text-black dark:text-white">
-              Month-over-Month Comparison
-            </h3>
-            <p className="text-xs text-slate-700 dark:text-slate-400 font-medium">August 2026 vs September 2026 (Pure deterministic math)</p>
+      {/* Month-over-Month Comparison Card */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-300">
+            Month-over-Month Variance ({monthlyComparison.prevMonthName} vs {monthlyComparison.currMonthName})
+          </h3>
+          <span
+            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+              monthlyComparison.overallDelta.isIncrease
+                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+            }`}
+          >
+            {monthlyComparison.overallDelta.isIncrease ? '▲ +' : '▼ -'}
+            {Math.abs(monthlyComparison.overallDelta.percentage).toFixed(1)}% vs last month
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[10px] text-slate-500 uppercase font-bold">{monthlyComparison.prevMonthName} Total</span>
+            <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
+              {formatINR(monthlyComparison.prevTotal)}
+            </div>
           </div>
 
-          {/* Overall Change Badge */}
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-400">Overall:</div>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[10px] text-slate-500 uppercase font-bold">{monthlyComparison.currMonthName} Total</span>
+            <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
+              {formatINR(monthlyComparison.currTotal)}
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[10px] text-slate-500 uppercase font-bold">Net Difference</span>
             <div
-              className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
-                monthlyComparison.overallDelta.isIncrease
-                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300'
-                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300'
+              className={`text-xl font-black mt-1 ${
+                monthlyComparison.overallDelta.deltaAmount > 0
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : 'text-emerald-600 dark:text-emerald-400'
               }`}
             >
-              {monthlyComparison.overallDelta.isIncrease ? (
-                <TrendingUp className="w-3.5 h-3.5" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5" />
-              )}
-              <span>
-                {monthlyComparison.overallDelta.isIncrease ? '+' : ''}
-                {formatPercentage(monthlyComparison.overallDelta.percentage)} ({formatINR(monthlyComparison.overallDelta.deltaAmount)})
-              </span>
+              {monthlyComparison.overallDelta.deltaAmount > 0 ? '+' : ''}
+              {formatINR(monthlyComparison.overallDelta.deltaAmount)}
             </div>
-          </div>
-        </div>
-
-        {/* Category Comparison Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {monthlyComparison.categories.map(({ category, augAmount, sepAmount, delta }) => (
-            <div
-              key={category.id}
-              className="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-slate-800/50 border border-sky-100 dark:border-slate-800 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl">{category.icon}</span>
-                <div>
-                  <div className="text-xs font-bold text-black dark:text-slate-200">{category.name}</div>
-                  <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-400">
-                    Aug: {formatINR(augAmount)} → Sep: {formatINR(sepAmount)}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className={`text-xs font-bold px-2 py-0.5 rounded-lg ${
-                  delta.isIncrease
-                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                }`}
-              >
-                {delta.isIncrease ? '+' : ''}
-                {formatPercentage(delta.percentage)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Deterministic Mathematical Forecasting Card */}
-      <div className="bg-gradient-to-br from-white via-sky-50/70 to-blue-50/40 dark:from-slate-900 dark:to-slate-950 text-black dark:text-white rounded-3xl p-6 border border-sky-200/90 dark:border-slate-800 shadow-md space-y-4">
-        <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-sky-600 dark:text-emerald-400" />
-          <h3 className="text-sm font-black uppercase tracking-wider text-black dark:text-white">
-            Mathematical Month-End Projection (Zero AI)
-          </h3>
-        </div>
-
-        <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-          Based strictly on your spending pace in September 2026:
-        </p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-850 border border-sky-100 dark:border-slate-800 shadow-sm">
-            <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400">Current Spend</div>
-            <div className="text-lg font-black text-black dark:text-white mt-1">{formatINR(forecasting.currentSpent)}</div>
-            <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-500 mt-0.5">{forecasting.daysElapsed} days elapsed</div>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-850 border border-sky-100 dark:border-slate-800 shadow-sm">
-            <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400">Daily Average</div>
-            <div className="text-lg font-black text-amber-600 dark:text-amber-400 mt-1">{formatINR(forecasting.avgDaily)}</div>
-            <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-500 mt-0.5">₹/day in Sep</div>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-850 border border-sky-100 dark:border-slate-800 shadow-sm">
-            <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400">Projected Total</div>
-            <div className="text-lg font-black text-sky-600 dark:text-emerald-400 mt-1">{formatINR(forecasting.projected)}</div>
-            <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-500 mt-0.5">30-day projection</div>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/90 dark:bg-slate-850 border border-sky-100 dark:border-slate-800 shadow-sm">
-            <div className="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-400">Budget Limit</div>
-            <div className="text-lg font-black text-black dark:text-white mt-1">{formatINR(forecasting.monthlyBudget)}</div>
-            <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-500 mt-0.5">Target cap</div>
           </div>
         </div>
       </div>

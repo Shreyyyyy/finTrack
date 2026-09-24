@@ -187,10 +187,21 @@ export async function getExpenses(filterUserId?: string): Promise<Expense[]> {
 
       const { data, error } = await query;
       if (!error && data) {
-        return data.map((item: any) => ({
-          ...item,
-          profile: profiles.find((p) => p.id === item.user_id),
-        })) as Expense[];
+        return data.map((item: any) => {
+          const isIncome = item.type === 'income' || item.note?.includes('[INCOME]');
+          const isRecurring = Boolean(item.is_recurring || item.note?.includes('[RECURRING]'));
+          const cleanNote = item.note
+            ? item.note.replace(/\[INCOME\]/g, '').replace(/\[RECURRING\]/g, '').trim()
+            : item.note;
+
+          return {
+            ...item,
+            note: cleanNote || null,
+            type: isIncome ? 'income' : 'expense',
+            is_recurring: isRecurring,
+            profile: profiles.find((p) => p.id === item.user_id),
+          };
+        }) as Expense[];
       }
     } catch (err) {
       console.warn('Supabase query failed, falling back to local storage', err);
@@ -215,12 +226,23 @@ export async function getExpenses(filterUserId?: string): Promise<Expense[]> {
     list = list.filter((e) => e.user_id === targetUserId);
   }
 
-  return list.map((exp) => ({
-    ...exp,
-    category: categories.find((c) => c.id === exp.category_id),
-    payment_method: paymentMethods.find((pm) => pm.id === exp.payment_method_id),
-    profile: profiles.find((p) => p.id === exp.user_id),
-  })).sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
+  return list.map((exp) => {
+    const isIncome = exp.type === 'income' || exp.note?.includes('[INCOME]');
+    const isRecurring = Boolean(exp.is_recurring || exp.note?.includes('[RECURRING]'));
+    const cleanNote = exp.note
+      ? exp.note.replace(/\[INCOME\]/g, '').replace(/\[RECURRING\]/g, '').trim()
+      : exp.note;
+
+    return {
+      ...exp,
+      note: cleanNote || null,
+      type: (isIncome ? 'income' : 'expense') as 'income' | 'expense',
+      is_recurring: isRecurring,
+      category: categories.find((c) => c.id === exp.category_id),
+      payment_method: paymentMethods.find((pm) => pm.id === exp.payment_method_id),
+      profile: profiles.find((p) => p.id === exp.user_id),
+    };
+  }).sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
 }
 
 export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): Promise<Expense> {
@@ -240,6 +262,16 @@ export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): P
     paymentMethodId = matched && isValidUUID(matched.id) ? matched.id : null;
   }
 
+  const isIncome = expense.type === 'income';
+  const isRecurring = Boolean(expense.is_recurring);
+  let dbNote = expense.note?.trim() || '';
+  if (isIncome && !dbNote.includes('[INCOME]')) {
+    dbNote = `[INCOME] ${dbNote}`.trim();
+  }
+  if (isRecurring && !dbNote.includes('[RECURRING]')) {
+    dbNote = `[RECURRING] ${dbNote}`.trim();
+  }
+
   if (isSupabaseConfigured()) {
     try {
       const supabase = createClient();
@@ -255,7 +287,7 @@ export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): P
             category_id: categoryId,
             payment_method_id: paymentMethodId,
             merchant: expense.merchant?.trim() || null,
-            note: expense.note?.trim() || null,
+            note: dbNote || null,
             expense_date: expense.expense_date,
           })
           .select(`
@@ -267,7 +299,12 @@ export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): P
 
         if (!error && data) {
           emitChange();
-          return data as Expense;
+          return {
+            ...data,
+            note: expense.note?.trim() || null,
+            type: isIncome ? 'income' : 'expense',
+            is_recurring: isRecurring,
+          } as Expense;
         }
         if (error) {
           console.warn('Supabase insert expense failed, storing locally', error);
@@ -284,6 +321,9 @@ export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): P
     ...expense,
     id: newId,
     amount: Number(expense.amount),
+    type: isIncome ? 'income' : 'expense',
+    is_recurring: isRecurring,
+    recurring_interval: expense.recurring_interval || (isRecurring ? 'monthly' : undefined),
     created_at: new Date().toISOString(),
   };
 
@@ -294,6 +334,18 @@ export async function addExpense(expense: Omit<Expense, 'id' | 'created_at'>): P
 }
 
 export async function updateExpense(id: string, updates: Partial<Expense>): Promise<Expense | null> {
+  const isIncome = updates.type === 'income';
+  const isRecurring = Boolean(updates.is_recurring);
+  let dbNote = updates.note !== undefined ? (updates.note?.trim() || '') : undefined;
+  if (dbNote !== undefined) {
+    if (isIncome && !dbNote.includes('[INCOME]')) {
+      dbNote = `[INCOME] ${dbNote}`.trim();
+    }
+    if (isRecurring && !dbNote.includes('[RECURRING]')) {
+      dbNote = `[RECURRING] ${dbNote}`.trim();
+    }
+  }
+
   if (isSupabaseConfigured() && isValidUUID(id)) {
     try {
       const supabase = createClient();
@@ -304,7 +356,7 @@ export async function updateExpense(id: string, updates: Partial<Expense>): Prom
           category_id: updates.category_id && isValidUUID(updates.category_id) ? updates.category_id : undefined,
           payment_method_id: updates.payment_method_id && isValidUUID(updates.payment_method_id) ? updates.payment_method_id : undefined,
           merchant: updates.merchant,
-          note: updates.note,
+          note: dbNote,
           expense_date: updates.expense_date,
           updated_at: new Date().toISOString(),
         })
@@ -318,7 +370,12 @@ export async function updateExpense(id: string, updates: Partial<Expense>): Prom
 
       if (!error && data) {
         emitChange();
-        return data as Expense;
+        return {
+          ...data,
+          note: updates.note !== undefined ? updates.note : data.note,
+          type: isIncome ? 'income' : 'expense',
+          is_recurring: isRecurring,
+        } as Expense;
       }
     } catch (err) {
       console.warn('Supabase update failed, updating locally', err);
@@ -333,6 +390,8 @@ export async function updateExpense(id: string, updates: Partial<Expense>): Prom
     ...list[index],
     ...updates,
     amount: updates.amount !== undefined ? Number(updates.amount) : list[index].amount,
+    type: updates.type || list[index].type || 'expense',
+    is_recurring: updates.is_recurring !== undefined ? updates.is_recurring : list[index].is_recurring,
     updated_at: new Date().toISOString(),
   };
   setLocalItem(STORAGE_KEYS.EXPENSES, [...list]);

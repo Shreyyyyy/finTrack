@@ -37,6 +37,8 @@ import { DashboardTransactionsTable } from '@/components/dashboard/DashboardTran
 import { MobileMinimalOverview } from '@/components/dashboard/MobileMinimalOverview';
 import { FinancialPulseWidget } from '@/components/dashboard/FinancialPulseWidget';
 import { SavingsInvestmentsSection } from '@/components/dashboard/SavingsInvestmentsSection';
+import { FinancialHealthScoreCard } from '@/components/dashboard/FinancialHealthScoreCard';
+import { SubscriptionsRadarCard } from '@/components/dashboard/SubscriptionsRadarCard';
 import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
@@ -268,7 +270,7 @@ export default function DashboardPage() {
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-md shadow-sky-600/20 active:scale-95 transition-all"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add Expense</span>
+            <span>Add Transaction</span>
           </Link>
         </div>
       </div>
@@ -323,6 +325,27 @@ export default function DashboardPage() {
                   categories={categories}
                   month={selectedMonth}
                   year={selectedYear}
+                  income={summary.income}
+                />
+              </div>
+            </div>
+
+            {/* Financial Health Score (50/30/20) & Subscriptions Radar */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              <div className="lg:col-span-7 flex flex-col justify-between">
+                <FinancialHealthScoreCard
+                  score={summary.financialHealthScore}
+                  savingsRate={summary.savingsRate}
+                  budgetUtilization={summary.budgetUtilization}
+                  needsRatio={summary.income > 0 ? (summary.needsSpent / summary.income) * 100 : 0}
+                  wantsRatio={summary.income > 0 ? (summary.wantsSpent / summary.income) * 100 : 0}
+                  recurringTotal={summary.recurringTotal}
+                />
+              </div>
+
+              <div className="lg:col-span-5 flex flex-col justify-between">
+                <SubscriptionsRadarCard
+                  expenses={expenses}
                   income={summary.income}
                 />
               </div>

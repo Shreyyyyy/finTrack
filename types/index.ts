@@ -23,6 +23,9 @@ export interface UserSummary {
   lastActiveDate?: string;
 }
 
+export type TransactionType = 'expense' | 'income';
+export type CategoryGroup = 'needs' | 'wants' | 'savings' | 'income';
+
 export interface Category {
   id: string;
   user_id?: string;
@@ -31,6 +34,8 @@ export interface Category {
   color: string;
   budget_amount: number;
   is_default?: boolean;
+  type?: TransactionType;
+  group?: CategoryGroup;
   created_at?: string;
 }
 
@@ -47,10 +52,13 @@ export interface Expense {
   id: string;
   user_id?: string;
   amount: number;
+  type?: TransactionType; // 'expense' (default) or 'income'
   category_id?: string | null;
   payment_method_id?: string | null;
   merchant?: string | null;
   note?: string | null;
+  is_recurring?: boolean;
+  recurring_interval?: 'monthly' | 'weekly' | 'yearly';
   expense_date: string; // YYYY-MM-DD
   created_at?: string;
   updated_at?: string;
@@ -122,7 +130,9 @@ export interface DashboardSummary {
   month: number;
   year: number;
   income: number;
+  actualIncome: number;
   totalSpent: number;
+  netCashflow: number;
   remainingBudget: number;
   savings: number;
   savingsRate: number;
@@ -134,4 +144,8 @@ export interface DashboardSummary {
   daysInMonth: number;
   highestCategory?: { name: string; amount: number; percentage: number };
   highestDay?: { date: string; amount: number };
+  needsSpent: number;
+  wantsSpent: number;
+  recurringTotal: number;
+  financialHealthScore: number;
 }

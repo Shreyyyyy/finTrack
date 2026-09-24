@@ -48,11 +48,12 @@ export function DesktopSidebar() {
   const handleQuickExport = async () => {
     try {
       showToast('Generating Excel workbook...', 'info');
+      const now = new Date();
       const [expenses, categories, paymentMethods, monthlySetting, goals] = await Promise.all([
         getExpenses(),
         getCategories(),
         getPaymentMethods(),
-        getMonthlySetting(9, 2026),
+        getMonthlySetting(now.getMonth() + 1, now.getFullYear()),
         getGoals(),
       ]);
 
