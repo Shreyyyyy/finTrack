@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { LayoutDashboard, BarChart3, ReceiptText, Wallet } from 'lucide-react';
+import { LayoutDashboard, BarChart3, ReceiptText, Wallet, ScrollText } from 'lucide-react';
 
-export type DashboardTabType = 'overview' | 'analytics' | 'transactions' | 'salary';
+export type DashboardTabType = 'overview' | 'analytics' | 'transactions' | 'salary' | 'balance-sheet';
 
 interface DashboardTabsProps {
   activeTab: DashboardTabType;
@@ -14,6 +14,7 @@ interface DashboardTabsProps {
 export function DashboardTabs({ activeTab, onChangeTab, transactionCount = 0 }: DashboardTabsProps) {
   const tabs: { id: DashboardTabType; label: string; icon: React.ElementType; badge?: string | number }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'balance-sheet', label: 'Balance Sheets', icon: ScrollText, badge: 'Monthly Archive' },
     { id: 'analytics', label: 'Analytics Mix', icon: BarChart3, badge: 'Pie & Trends' },
     { id: 'transactions', label: 'Transactions', icon: ReceiptText, badge: transactionCount > 0 ? transactionCount : undefined },
     { id: 'salary', label: 'Salary & Budget', icon: Wallet },

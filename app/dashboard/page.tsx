@@ -39,6 +39,7 @@ import { FinancialPulseWidget } from '@/components/dashboard/FinancialPulseWidge
 import { SavingsInvestmentsSection } from '@/components/dashboard/SavingsInvestmentsSection';
 import { FinancialHealthScoreCard } from '@/components/dashboard/FinancialHealthScoreCard';
 import { SubscriptionsRadarCard } from '@/components/dashboard/SubscriptionsRadarCard';
+import { MonthlyBalanceSheetArchive } from '@/components/dashboard/MonthlyBalanceSheetArchive';
 import { exportToExcel } from '@/lib/excel/exporter';
 import { showToast } from '@/components/ui/Toast';
 
@@ -403,6 +404,21 @@ export default function DashboardPage() {
             <RecentExpenses expenses={expenses} limit={10} />
           </div>
         </div>
+      )}
+
+      {/* BALANCE SHEETS & ARCHIVE TAB */}
+      {activeTab === 'balance-sheet' && (
+        <MonthlyBalanceSheetArchive
+          expenses={expenses}
+          categories={categories}
+          currentSelectedMonth={selectedMonth}
+          currentSelectedYear={selectedYear}
+          onSelectMonthYear={(m, y) => {
+            setSelectedMonth(m);
+            setSelectedYear(y);
+            showToast(`Active dashboard set to ${MONTH_NAMES[m - 1]} ${y} ✓`, 'success');
+          }}
+        />
       )}
 
       {/* ANALYTICS MIX TAB */}

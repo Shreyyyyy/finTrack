@@ -14,8 +14,8 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
 } from 'lucide-react';
-import { Category, PaymentMethod, Expense, TransactionType } from '@/types';
-import { getCategories, getPaymentMethods, addExpense, updateExpense } from '@/lib/data/store';
+import { Category, PaymentMethod, Expense, TransactionType, Goal } from '@/types';
+import { getCategories, getPaymentMethods, addExpense, updateExpense, getGoals, addGoalTransaction } from '@/lib/data/store';
 import { showToast } from '@/components/ui/Toast';
 
 interface ExpenseFormProps {
@@ -66,11 +66,26 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
     Boolean(initialExpense?.merchant || initialExpense?.note || initialExpense?.is_recurring)
   );
 
+  // Portfolio Direct Allocation State
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [allocateToPortfolio, setAllocateToPortfolio] = useState<boolean>(false);
+  const [targetGoalId, setTargetGoalId] = useState<string>('');
+  const [allocationPercent, setAllocationPercent] = useState<number>(100);
+  const [customAllocationAmount, setCustomAllocationAmount] = useState<string>('');
+
   // Load categories and payment methods
   useEffect(() => {
     async function loadMetadata() {
-      const [cats, pms] = await Promise.all([getCategories(), getPaymentMethods()]);
+      const [cats, pms, userGoals] = await Promise.all([
+        getCategories(),
+        getPaymentMethods(),
+        getGoals(),
+      ]);
       setCategories(cats);
+      setGoals(userGoals);
+      if (userGoals.length > 0 && !targetGoalId) {
+        setTargetGoalId(userGoals[0].id);
+      }
 
       // Guarantee Credit Card is present in payment methods list
       const pmsList = [...pms];
@@ -198,10 +213,34 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
           expense_date: expenseDate,
         });
 
-        showToast(
-          transactionType === 'income' ? 'Income recorded ✓' : 'Expense recorded ✓',
-          'success'
-        );
+        // If income is credited to portfolio goal
+        if (transactionType === 'income' && allocateToPortfolio && targetGoalId) {
+          const allocAmt = customAllocationAmount
+            ? parseFloat(customAllocationAmount)
+            : Math.round(numericAmount * (allocationPercent / 100));
+
+          if (allocAmt > 0) {
+            await addGoalTransaction(
+              targetGoalId,
+              allocAmt,
+              'deposit',
+              `Allocated from ${merchant.trim() || 'Income inflow'}`
+            );
+            const matchedGoal = goals.find((g) => g.id === targetGoalId);
+            showToast(
+              `Income recorded & +₹${allocAmt.toLocaleString('en-IN')} credited to ${matchedGoal?.name || 'Vault'}! 🏛️`,
+              'success'
+            );
+          } else {
+            showToast('Income recorded ✓', 'success');
+          }
+        } else {
+          showToast(
+            transactionType === 'income' ? 'Income recorded ✓' : 'Expense recorded ✓',
+            'success'
+          );
+        }
+
         if (onSuccess) {
           onSuccess(created);
         } else {
@@ -374,6 +413,111 @@ export function ExpenseForm({ initialExpense, onSuccess, onCancel }: ExpenseForm
           })}
         </div>
       </div>
+
+      {/* 4.5. 1940s Portfolio Vault Direct Allocation (When Income) */}
+      {transactionType === 'income' && (
+        <div className="rounded-3xl p-5 border-2 border-double border-amber-600/40 bg-gradient-to-br from-amber-50 via-amber-100/30 to-amber-50/50 dark:from-stone-900 dark:via-amber-950/20 dark:to-stone-950 shadow-sm space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-700 text-white flex items-center justify-center text-xl shadow-md shadow-amber-900/20 shrink-0">
+                🏛️
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black tracking-wider uppercase text-amber-950 dark:text-amber-300 font-serif">
+                    1940s Wealth Vault Deposit
+                  </span>
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
+                    Portfolio
+                  </span>
+                </div>
+                <div className="text-[11px] text-amber-800/80 dark:text-amber-400/90 font-medium">
+                  Direct this incoming income/salary into a specific portfolio asset or goal.
+                </div>
+              </div>
+            </div>
+
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                checked={allocateToPortfolio}
+                onChange={(e) => setAllocateToPortfolio(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-700" />
+            </label>
+          </div>
+
+          {allocateToPortfolio && (
+            <div className="space-y-3.5 pt-3 border-t border-amber-600/30">
+              {goals.length === 0 ? (
+                <div className="p-3.5 rounded-2xl bg-amber-200/40 dark:bg-amber-950/40 text-xs text-amber-950 dark:text-amber-200 font-medium border border-amber-300/60 dark:border-amber-800">
+                  No portfolio vaults created yet. Create a goal in <strong>Savings & Invest</strong> to begin auto-allocating income!
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-amber-950 dark:text-amber-300 mb-1.5 font-serif">
+                      Target Portfolio Asset / Goal Vault
+                    </label>
+                    <select
+                      value={targetGoalId}
+                      onChange={(e) => setTargetGoalId(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold bg-white dark:bg-stone-900 border border-amber-600/40 text-stone-900 dark:text-amber-100 focus:outline-none shadow-2xs"
+                    >
+                      {goals.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name} · Target: ₹{g.target_amount.toLocaleString('en-IN')} (Current: ₹{g.current_amount.toLocaleString('en-IN')})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-amber-950 dark:text-amber-300 font-serif">
+                        Portion to Credit into Vault
+                      </span>
+                      <span className="text-xs font-black text-amber-800 dark:text-amber-300 font-mono">
+                        Credit: ₹
+                        {customAllocationAmount
+                          ? parseFloat(customAllocationAmount || '0').toLocaleString('en-IN')
+                          : (
+                              (parseFloat(amount) || 0) *
+                              (allocationPercent / 100)
+                            ).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[25, 50, 75, 100].map((pct) => (
+                        <button
+                          type="button"
+                          key={pct}
+                          onClick={() => {
+                            setAllocationPercent(pct);
+                            const num = parseFloat(amount) || 0;
+                            setCustomAllocationAmount(String(Math.round((num * pct) / 100)));
+                          }}
+                          className={`py-1.5 rounded-xl text-xs font-black transition-all ${
+                            allocationPercent === pct &&
+                            customAllocationAmount ===
+                              String(Math.round(((parseFloat(amount) || 0) * pct) / 100))
+                              ? 'bg-amber-700 text-white shadow-xs'
+                              : 'bg-white dark:bg-stone-900 text-amber-950 dark:text-amber-300 border border-amber-600/30 hover:bg-amber-100/80 dark:hover:bg-amber-950/40'
+                          }`}
+                        >
+                          {pct === 100 ? '100% (All)' : `${pct}%`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 5. Optional Fields Accordion (Merchant, Note, Date, Recurring) */}
       <div className="border border-sky-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
