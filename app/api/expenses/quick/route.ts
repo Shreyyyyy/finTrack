@@ -26,33 +26,56 @@ function parseNaturalExpense(text: string) {
   const cleanText = text.replace(amountMatch ? amountMatch[0] : '', '').trim();
   const lower = cleanText.toLowerCase();
 
+  let type: 'expense' | 'income' = 'expense';
   let category = 'Other';
-  if (/food|lunch|dinner|breakfast|snack|coffee|tea|cafe|burger|pizza|zomato|swiggy|chai|starbucks|mcdonalds|subway|restaurant|eat/i.test(lower)) {
-    category = 'Food';
+
+  if (/salary|payroll|paycheck|wages|stipend/i.test(lower)) {
+    category = 'Salary';
+    type = 'income';
+  } else if (/freelance|upwork|fiverr|consulting|client/i.test(lower)) {
+    category = 'Freelance & Consulting';
+    type = 'income';
+  } else if (/refund|cashback|reimbursement|repay/i.test(lower)) {
+    category = 'Refunds & Cashbacks';
+    type = 'income';
+  } else if (/dividend|interest|yield|stocks|mutual fund|sip|crypto|gold|invest/i.test(lower)) {
+    if (/dividend|interest|yield|gain|profit/i.test(lower)) {
+      category = 'Investments & Dividends';
+      type = 'income';
+    } else {
+      category = 'Investment';
+    }
+  } else if (/rent received|rental income/i.test(lower)) {
+    category = 'Rental Income';
+    type = 'income';
+  } else if (/credited|credit|received|deposited|deposit|income/i.test(lower)) {
+    category = 'Other Income';
+    type = 'income';
+  } else if (/food|lunch|dinner|breakfast|snack|coffee|tea|cafe|burger|pizza|zomato|swiggy|chai|starbucks|mcdonalds|subway|restaurant|eat/i.test(lower)) {
+    category = 'Food & Dining';
   } else if (/uber|ola|cab|auto|metro|petrol|diesel|fuel|bus|train|flight|transport|taxi|rapido/i.test(lower)) {
-    category = 'Transport';
+    category = 'Transportation';
   } else if (/amazon|flipkart|shopping|clothes|shoes|myntra|zara|h&m/i.test(lower)) {
     category = 'Shopping';
   } else if (/electricity|wifi|internet|bill|recharge|water|gas|rent|maintenance|jio|airtel/i.test(lower)) {
-    category = 'Bills';
+    category = 'Bills & Utilities';
   } else if (/grocery|groceries|blinkit|zepto|instamart|milk|vegetables|fruits|supermarket/i.test(lower)) {
     category = 'Groceries';
   } else if (/movie|cinema|netflix|spotify|game|party|club|prime/i.test(lower)) {
     category = 'Entertainment';
   } else if (/doctor|medicine|pharmacy|hospital|gym|health|fitness/i.test(lower)) {
-    category = 'Health';
-  } else if (/invest|stocks|mutual fund|sip|crypto|gold/i.test(lower)) {
-    category = 'Investment';
+    category = 'Health & Medical';
   }
 
   let paymentMethod = 'UPI';
   if (/cash/i.test(lower)) paymentMethod = 'Cash';
-  else if (/card|credit|debit/i.test(lower)) paymentMethod = 'Credit Card';
+  else if (/card|credit card|debit/i.test(lower)) paymentMethod = 'Credit Card';
 
   return {
     amount: parsedAmount,
     category,
     paymentMethod,
+    type,
     note: cleanText || category,
   };
 }
@@ -87,7 +110,18 @@ export async function POST(request: NextRequest) {
   const todayStr = new Date().toISOString().split('T')[0];
   const expenseDate = body.date && /^\d{4}-\d{2}-\d{2}$/.test(body.date) ? body.date : todayStr;
   const merchant = body.merchant ? String(body.merchant).substring(0, 100) : null;
-  const note = body.note ? String(body.note).substring(0, 200) : (parsed ? parsed.note : null);
+  const rawNote = body.note ? String(body.note).substring(0, 200) : (parsed ? parsed.note : null);
+
+  const isIncome =
+    body.type === 'income' ||
+    body.is_income === true ||
+    parsed?.type === 'income' ||
+    /salary|freelance|consulting|dividend|refund|cashback|rental income|other income/i.test(categoryInput) ||
+    /credit|credited|salary|freelance|cashback|refund|received|deposit|deposited/i.test(naturalInput || '');
+
+  const finalNote = isIncome
+    ? (rawNote ? (rawNote.includes('[INCOME]') ? rawNote : `[INCOME] ${rawNote}`) : `[INCOME] ${categoryInput}`)
+    : (rawNote || categoryInput);
 
   const logFinish = (statusCode: number, success: boolean, message?: string, error?: string) => {
     addShortcutLog({
@@ -99,7 +133,7 @@ export async function POST(request: NextRequest) {
       amount,
       category: categoryInput,
       paymentMethod: paymentInput,
-      note: note || undefined,
+      note: finalNote,
       statusCode,
       success,
       message,
@@ -133,20 +167,25 @@ export async function POST(request: NextRequest) {
         (p) => p.id.toLowerCase() === paymentInput.toLowerCase() || p.name.toLowerCase() === paymentInput.toLowerCase()
       );
 
-      const msg = `Expense added ✓: ₹${amount.toLocaleString('en-IN')} for ${matchedCat ? matchedCat.name : categoryInput}`;
+      const categoryName = matchedCat ? matchedCat.name : categoryInput;
+      const msg = isIncome
+        ? `Income credited ✓: ₹${amount.toLocaleString('en-IN')} for ${categoryName}`
+        : `Expense added ✓: ₹${amount.toLocaleString('en-IN')} for ${categoryName}`;
       logFinish(200, true, msg);
       return NextResponse.json({
         success: true,
         message: msg,
+        type: isIncome ? 'income' : 'expense',
         expense: {
           id: 'exp-shortcut-' + Date.now(),
           amount,
-          category_id: matchedCat ? matchedCat.id : 'cat-1',
-          category_name: matchedCat ? matchedCat.name : categoryInput,
+          type: isIncome ? 'income' : 'expense',
+          category_id: matchedCat ? matchedCat.id : (isIncome ? 'cat-inc-1' : 'cat-1'),
+          category_name: categoryName,
           payment_method_id: matchedPm ? matchedPm.id : 'pm-1',
           payment_method_name: matchedPm ? matchedPm.name : paymentInput,
           merchant,
-          note: note || categoryInput,
+          note: finalNote,
           expense_date: expenseDate,
           created_at: new Date().toISOString(),
         },
@@ -167,7 +206,7 @@ export async function POST(request: NextRequest) {
           p_amount: amount,
           p_category: categoryInput,
           p_payment: paymentInput,
-          p_note: note,
+          p_note: finalNote,
           p_merchant: merchant,
           p_date: expenseDate,
         });
@@ -176,8 +215,15 @@ export async function POST(request: NextRequest) {
           trace.rpcError = `${rpcError.code}: ${rpcError.message}`;
         } else if (rpcData) {
           if (rpcData.success) {
-            logFinish(200, true, rpcData.message);
-            return NextResponse.json(rpcData);
+            const returnedMsg = isIncome
+              ? `Income credited ✓: ₹${amount.toLocaleString('en-IN')} for ${categoryInput}`
+              : rpcData.message;
+            logFinish(200, true, returnedMsg);
+            return NextResponse.json({
+              ...rpcData,
+              message: returnedMsg,
+              type: isIncome ? 'income' : 'expense',
+            });
           } else {
             logFinish(401, false, undefined, rpcData.error);
             return NextResponse.json(rpcData, { status: 401 });
@@ -309,7 +355,7 @@ export async function POST(request: NextRequest) {
         category_id: finalCategoryId,
         payment_method_id: finalPaymentMethodId,
         merchant,
-        note: note || (matchedCategory ? matchedCategory.name : categoryInput),
+        note: finalNote,
         expense_date: expenseDate,
       })
       .select()
@@ -329,13 +375,19 @@ export async function POST(request: NextRequest) {
     }
 
     const categoryDisplayName = matchedCategory ? matchedCategory.name : categoryInput;
-    const successMsg = `Expense added ✓: ₹${amount.toLocaleString('en-IN')} for ${categoryDisplayName}`;
+    const successMsg = isIncome
+      ? `Income credited ✓: ₹${amount.toLocaleString('en-IN')} for ${categoryDisplayName}`
+      : `Expense added ✓: ₹${amount.toLocaleString('en-IN')} for ${categoryDisplayName}`;
     logFinish(200, true, successMsg);
 
     return NextResponse.json({
       success: true,
       message: successMsg,
-      expense: newExpense,
+      type: isIncome ? 'income' : 'expense',
+      expense: {
+        ...newExpense,
+        type: isIncome ? 'income' : 'expense',
+      },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';
@@ -357,13 +409,22 @@ export async function GET() {
       'x-api-key': 'Your API Key',
       'Content-Type': 'application/json',
     },
-    sample_payload: {
+    sample_payload_expense: {
       amount: 350,
-      category: 'Food',
+      category: 'Food & Dining',
       payment_method: 'UPI',
-      merchant: 'Dinner',
-      note: 'Quick entry',
+      note: 'Dinner with friends',
     },
-    categories: DEFAULT_CATEGORIES.map((c) => ({ id: c.id, name: c.name, icon: c.icon })),
+    sample_payload_credit_income: {
+      amount: 50000,
+      category: 'Salary',
+      type: 'income',
+      payment_method: 'Net Banking',
+      note: 'Monthly salary credited',
+    },
+    sample_payload_natural_text: {
+      text: '5000 salary' /* or 'credited 2500 freelance', '250 coffee' */,
+    },
+    categories: DEFAULT_CATEGORIES.map((c) => ({ id: c.id, name: c.name, type: c.type, icon: c.icon })),
   });
 }
