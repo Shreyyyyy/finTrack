@@ -275,6 +275,7 @@ export default function DashboardPage() {
             expenses={expenses}
             categories={categories}
             monthlySetting={monthlySetting}
+            income={summary.income}
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}
             totalSpent={summary.totalSpent}
@@ -295,7 +296,11 @@ export default function DashboardPage() {
                   <span className="text-[10px] font-black uppercase tracking-wider text-rose-950 dark:text-rose-300">
                     📜 Disbursed Funds
                   </span>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-rose-200 text-rose-950 border border-rose-300">
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${
+                    summary.budgetUtilization > 100
+                      ? 'bg-rose-200 text-rose-950 border-rose-300'
+                      : 'bg-emerald-100 text-emerald-950 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+                  }`}>
                     {summary.budgetUtilization.toFixed(0)}% LIMIT
                   </span>
                 </div>
@@ -327,7 +332,15 @@ export default function DashboardPage() {
                   {formatINR(summary.remainingBudget)}
                 </div>
                 <div className="text-xs font-serif text-stone-600 dark:text-stone-400">
-                  Safe: <strong className="font-mono font-bold text-stone-900 dark:text-stone-200">{formatINR(safeDailyAllowance)}</strong>/day
+                  {summary.remainingBudget > 0 ? (
+                    <>
+                      Safe: <strong className="font-mono font-bold text-stone-900 dark:text-stone-200">{formatINR(safeDailyAllowance)}</strong>/day
+                    </>
+                  ) : (
+                    <span className="text-rose-700 dark:text-rose-400 font-bold">
+                      Allowance exhausted
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -348,25 +361,39 @@ export default function DashboardPage() {
                   {formatINR(summary.income)}
                 </div>
                 <div className="text-xs font-serif italic text-stone-600 dark:text-stone-400">
-                  {monthExpenses.length} vouchers registered
+                  {summary.actualIncome > 0
+                    ? `${monthExpenses.length} vouchers (${formatINR(summary.actualIncome)} credited)`
+                    : `${monthExpenses.length} vouchers registered`}
                 </div>
               </div>
 
-              {/* Card 4: 1940s Sovereign Hunter Green Banknote - Net Surplus */}
-              <div className="bg-gradient-to-br from-teal-100/90 via-teal-50 to-white dark:from-stone-900 dark:via-teal-950/40 dark:to-stone-950 rounded-2xl p-4 sm:p-5 border-2 border-teal-600/60 dark:border-teal-500/50 shadow-sm flex flex-col justify-between space-y-2">
+              {/* Card 4: 1940s Retained Surplus / Deficit */}
+              <div className={`bg-gradient-to-br ${
+                summary.netCashflow < 0
+                  ? 'from-rose-100/90 via-rose-50 to-white dark:from-stone-900 dark:via-rose-950/40 dark:to-stone-950 border-rose-700/50 dark:border-rose-600/40'
+                  : 'from-teal-100/90 via-teal-50 to-white dark:from-stone-900 dark:via-teal-950/40 dark:to-stone-950 border-teal-600/60 dark:border-teal-500/50'
+              } rounded-2xl p-4 sm:p-5 border-2 shadow-sm flex flex-col justify-between space-y-2`}>
                 <div className="flex items-center justify-between text-xs font-serif">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-teal-950 dark:text-teal-300">
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${
+                    summary.netCashflow < 0 ? 'text-rose-950 dark:text-rose-300' : 'text-teal-950 dark:text-teal-300'
+                  }`}>
                     🏛️ Retained Surplus
                   </span>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-teal-200 text-teal-950 border border-teal-300">
-                    {summary.savingsRate.toFixed(0)}% SAVED
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${
+                    summary.netCashflow < 0
+                      ? 'bg-rose-200 text-rose-950 border-rose-300'
+                      : 'bg-teal-200 text-teal-950 border-teal-300'
+                  }`}>
+                    {summary.netCashflow < 0 ? 'DEFICIT' : `${summary.savingsRate.toFixed(0)}% SAVED`}
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-mono font-black tracking-tight text-[#24543d] dark:text-emerald-400">
+                <div className={`text-xl sm:text-2xl font-mono font-black tracking-tight ${
+                  summary.netCashflow < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-[#24543d] dark:text-emerald-400'
+                }`}>
                   {formatINR(summary.netCashflow)}
                 </div>
                 <div className="text-xs font-serif italic text-stone-600 dark:text-stone-400">
-                  Sovereign operating surplus
+                  {summary.netCashflow < 0 ? 'Operating deficit in current cycle' : 'Sovereign operating surplus'}
                 </div>
               </div>
             </div>

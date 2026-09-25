@@ -22,42 +22,79 @@ export function calculateDashboardSummary(
     return expYear === year && expMonth === month;
   });
 
+  // Category map for rapid lookup
+  const categoryMap = new Map<string, Category>();
+  categories.forEach((c) => categoryMap.set(c.id, c));
+
   // Separate expenses from income transactions
   const monthExpenses = currentMonthItems.filter((e) => e.type !== 'income');
   const monthIncomes = currentMonthItems.filter((e) => e.type === 'income');
 
-  // Actual Income logged via transactions
+  // Actual verified income logged via vouchers
   const actualIncome = monthIncomes.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-  // Use logged actual income if available; otherwise fallback to monthly budget setting income
-  const effectiveIncome = actualIncome > 0 ? actualIncome : (Number(income) || 0);
+
+  // Distinguish salary vouchers from other credits (refunds, cashbacks, freelance, gifts, etc.)
+  const salaryVouchers = monthIncomes.filter((e) => {
+    const cat = categoryMap.get(e.category_id || '')?.name || '';
+    const note = e.note || '';
+    return /salary|payroll|paycheck|wages|stipend/i.test(cat) || /salary|payroll|paycheck|wages|stipend/i.test(note);
+  });
+  const salaryVouchersTotal = salaryVouchers.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const otherInflows = actualIncome - salaryVouchersTotal;
+
+  const plannedSalary = Number(income) || 0;
+  let effectiveIncome = 0;
+
+  if (plannedSalary > 0) {
+    if (salaryVouchersTotal > 0) {
+      // User planned a salary and logged salary vouchers -> take the greater of the two plus any non-salary earnings
+      effectiveIncome = Math.max(plannedSalary, salaryVouchersTotal) + otherInflows;
+    } else {
+      // User planned a salary and hasn't logged salary voucher yet -> planned salary plus all actual income received
+      effectiveIncome = plannedSalary + actualIncome;
+    }
+  } else {
+    // No planned salary -> strictly all actual verified income vouchers
+    effectiveIncome = actualIncome;
+  }
 
   // Total spending
   const totalSpent = monthExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
-  // Net Cashflow
+  // Net Cashflow: positive means surplus, negative means operating deficit
   const netCashflow = effectiveIncome - totalSpent;
 
-  // Remaining budget
-  const remainingBudget = Math.max(0, monthly_budget - totalSpent);
+  // Spendable Budget & Treasury Allowance:
+  // When income is credited (freelance, refunds, cashbacks, salary), your Treasury Allowance increases!
+  const plannedBudget = Number(monthly_budget) || 0;
+  let effectiveBudget = 0;
 
-  // Savings
+  if (plannedBudget > 0) {
+    // If a budget was planned, any additional income credited directly expands the spendable allowance!
+    const extraAllowance = plannedSalary > 0 ? Math.max(0, effectiveIncome - plannedSalary) : actualIncome;
+    effectiveBudget = plannedBudget + extraAllowance;
+  } else {
+    // If no explicit spending budget is configured, the allowance is all available income minus savings target
+    effectiveBudget = Math.max(0, effectiveIncome - (Number(setting.savings_target) || 0));
+  }
+
+  // Remaining Treasury Allowance
+  const remainingBudget = Math.max(0, effectiveBudget - totalSpent);
+
+  // Savings: strictly positive retained cash
   const savings = Math.max(0, netCashflow);
 
-  // Savings rate
-  const savingsRate = effectiveIncome > 0 ? (netCashflow / effectiveIncome) * 100 : 0;
+  // Savings rate (% of total income saved; 0 if in deficit)
+  const savingsRate = effectiveIncome > 0 && netCashflow > 0 ? (netCashflow / effectiveIncome) * 100 : 0;
 
-  // Budget utilization
-  const budgetUtilization = monthly_budget > 0 ? (totalSpent / monthly_budget) * 100 : 0;
+  // Budget utilization (% of effective spendable budget used)
+  const budgetUtilization = effectiveBudget > 0 ? (totalSpent / effectiveBudget) * 100 : 0;
 
   // Average daily spending
   const averageDailySpending = daysElapsed > 0 ? totalSpent / daysElapsed : 0;
 
   // Projected monthly spending
   const projectedSpending = averageDailySpending * totalDays;
-
-  // Category map for rapid lookup
-  const categoryMap = new Map<string, Category>();
-  categories.forEach((c) => categoryMap.set(c.id, c));
 
   // 50/30/20 Needs vs Wants vs Recurring analysis
   let needsSpent = 0;
@@ -121,7 +158,7 @@ export function calculateDashboardSummary(
   else if (savingsRate < 0) healthScore -= 20;
 
   // 2. Budget adherence weight (max 25 pts)
-  if (monthly_budget > 0) {
+  if (effectiveBudget > 0) {
     if (budgetUtilization <= 85) healthScore += 20;
     else if (budgetUtilization <= 100) healthScore += 12;
     else if (budgetUtilization > 120) healthScore -= 25;
@@ -149,7 +186,7 @@ export function calculateDashboardSummary(
     savings,
     savingsRate,
     budgetUtilization,
-    monthlyBudget: monthly_budget,
+    monthlyBudget: effectiveBudget,
     projectedSpending,
     averageDailySpending,
     daysElapsed,

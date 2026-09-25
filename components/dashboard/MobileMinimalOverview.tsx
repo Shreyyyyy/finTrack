@@ -12,6 +12,7 @@ interface MobileMinimalOverviewProps {
   categories: Category[];
   goals?: Goal[];
   monthlySetting: MonthlySetting;
+  income?: number;
   selectedMonth: number;
   selectedYear: number;
   totalSpent: number;
@@ -26,6 +27,7 @@ export function MobileMinimalOverview({
   categories,
   goals = [],
   monthlySetting,
+  income,
   selectedMonth,
   selectedYear,
   totalSpent,
@@ -34,6 +36,8 @@ export function MobileMinimalOverview({
   daysRemaining,
   onEditPlan,
 }: MobileMinimalOverviewProps) {
+  const effectiveInflow = income !== undefined ? income : monthlySetting.income;
+
   // Monthly committed savings & investments deducted directly from salary
   const totalMonthlyCommitted = useMemo(() => {
     return goals.reduce((sum, g) => {
@@ -47,7 +51,7 @@ export function MobileMinimalOverview({
   // True free cash surplus left in hand after deducting both savings/investments and expenses from salary
   const freeCashInHand = Math.max(
     0,
-    monthlySetting.income - totalSpent - totalMonthlyCommitted
+    effectiveInflow - totalSpent - totalMonthlyCommitted
   );
 
   return (
@@ -58,7 +62,7 @@ export function MobileMinimalOverview({
         categories={categories}
         month={selectedMonth}
         year={selectedYear}
-        income={monthlySetting.income}
+        income={effectiveInflow}
       />
 
       {/* 2. 1940s Banknote Numbers Grid (Salary, Spent, Saved & Invested, Free Cash) */}
@@ -70,7 +74,7 @@ export function MobileMinimalOverview({
             <Wallet className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
           </div>
           <div className="text-lg font-mono font-black text-stone-950 dark:text-amber-50 tabular-nums">
-            {formatINR(monthlySetting.income)}
+            {formatINR(effectiveInflow)}
           </div>
           <div className="text-[10px] font-serif italic text-stone-600 dark:text-stone-400">
             Treasury Inflow
